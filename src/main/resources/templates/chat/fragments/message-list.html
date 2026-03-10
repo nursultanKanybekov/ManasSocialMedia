@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="messageList">
+    <div th:each="msg : ${messages}"
+         class="chat-msg"
+         th:classappend="${msg.sender.id == currentUser.id} ? 'chat-msg--own'">
+        <img th:src="${msg.sender.profile != null and msg.sender.profile.avatarUrl != null
+                       ? msg.sender.profile.avatarUrl
+                       : '/images/default-avatar.svg'}"
+             class="msg-avatar" alt="avatar"/>
+        <div class="msg-bubble">
+            <strong th:text="${msg.sender.fullName}">Sender</strong>
+            <p th:text="${msg.content}">Content</p>
+            <time th:text="${#temporals.format(msg.createdAt, 'HH:mm')}">12:00</time>
+        </div>
+    </div>
+</div>
+</body>
+</html>

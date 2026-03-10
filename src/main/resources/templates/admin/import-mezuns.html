@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Import Mezuns')}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <a th:href="@{/admin}" style="display:inline-flex;align-items:center;gap:6px;color:#1b2a6b;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;margin-bottom:20px;">← Back to Admin</a>
+
+        <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin-bottom:24px;">📥 Import Alumni from Excel</h1>
+
+        <!-- Success / Error messages -->
+        <div th:if="${successMsg}" style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-family:Montserrat,sans-serif;font-size:13px;color:#2e7d32;" th:text="${successMsg}"></div>
+        <div th:if="${errorMsg}"   style="background:#fdecea;border:1px solid #ef9a9a;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-family:Montserrat,sans-serif;font-size:13px;color:#c62828;" th:text="${errorMsg}"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+
+            <!-- Upload Card -->
+            <div style="background:white;border-radius:16px;padding:32px;box-shadow:0 2px 16px rgba(27,42,107,0.09);">
+                <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;color:#1b2a6b;margin-bottom:20px;">Upload Excel File</h2>
+                <form th:action="@{/admin/import-mezuns}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                    <div style="border:2px dashed #c5cae9;border-radius:12px;padding:32px;text-align:center;margin-bottom:20px;cursor:pointer;"
+                         onclick="document.getElementById('excelFile').click()">
+                        <div style="font-size:40px;margin-bottom:12px;">📊</div>
+                        <p style="font-family:Montserrat,sans-serif;font-weight:700;color:#1b2a6b;font-size:14px;margin:0 0 6px;">Click to select Excel file</p>
+                        <p style="font-family:Montserrat,sans-serif;font-size:12px;color:#8a91a8;margin:0;" id="fileNameDisplay">Supports .xlsx files</p>
+                    </div>
+                    <input type="file" id="excelFile" name="file" accept=".xlsx,.xls" style="display:none"
+                           onchange="document.getElementById('fileNameDisplay').textContent = this.files[0]?.name || 'No file selected'"/>
+
+                    <button type="submit"
+                            style="width:100%;padding:13px;background:#1b2a6b;color:white;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;cursor:pointer;">
+                        Import Mezuns
+                    </button>
+                </form>
+            </div>
+
+            <!-- Instructions Card -->
+            <div style="background:white;border-radius:16px;padding:32px;box-shadow:0 2px 16px rgba(27,42,107,0.09);">
+                <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;color:#1b2a6b;margin-bottom:16px;">📋 Excel Format</h2>
+                <p style="font-family:Montserrat,sans-serif;font-size:12px;color:#8a91a8;margin-bottom:16px;">First row is the header (skipped). Columns must be in this order:</p>
+
+                <table style="width:100%;border-collapse:collapse;font-family:Montserrat,sans-serif;font-size:12px;">
+                    <thead>
+                    <tr style="background:#f0f2f8;">
+                        <th style="padding:8px 12px;text-align:left;color:#1b2a6b;border-radius:6px 0 0 6px;">Col</th>
+                        <th style="padding:8px 12px;text-align:left;color:#1b2a6b;">Field</th>
+                        <th style="padding:8px 12px;text-align:left;color:#1b2a6b;border-radius:0 6px 6px 0;">Required</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="col : ${ {'A - Name','B - Surname','C - Email (login)','D - Graduation Year','E - Faculty name/code','F - Image URL','G - Student Number','H - Password'} }">
+                        <td style="padding:8px 12px;border-bottom:1px solid #f0f2f8;color:#8a91a8;" th:text="${colStat.index == 0 ? 'A' : colStat.index == 1 ? 'B' : colStat.index == 2 ? 'C' : colStat.index == 3 ? 'D' : colStat.index == 4 ? 'E' : colStat.index == 5 ? 'F' : colStat.index == 6 ? 'G' : 'H'}">A</td>
+                        <td style="padding:8px 12px;border-bottom:1px solid #f0f2f8;color:#1b2a6b;font-weight:600;" th:text="${col}">Field</td>
+                        <td style="padding:8px 12px;border-bottom:1px solid #f0f2f8;">
+                            <span th:if="${colStat.index == 2}" style="background:#fdecea;color:#c62828;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">Required</span>
+                            <span th:unless="${colStat.index == 2}" style="background:#f0f2f8;color:#8a91a8;padding:2px 8px;border-radius:20px;font-size:11px;">Optional</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-top:16px;background:#fff8e1;border-radius:8px;padding:12px;font-family:Montserrat,sans-serif;font-size:12px;color:#f57f17;">
+                    💡 If no password is provided, default password <strong>Manas2025!</strong> will be used. Users with duplicate emails will be skipped.
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Result Errors -->
+        <div th:if="${importResult != null and not #lists.isEmpty(importResult.errors())}"
+             style="background:white;border-radius:16px;padding:24px;box-shadow:0 2px 16px rgba(27,42,107,0.09);margin-top:24px;">
+            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#1b2a6b;margin-bottom:16px;">⚠️ Import Warnings / Errors</h3>
+            <div th:each="err : ${importResult.errors()}"
+                 style="font-family:Montserrat,sans-serif;font-size:12px;color:#c62828;padding:6px 0;border-bottom:1px solid #fdecea;"
+                 th:text="${err}"></div>
+        </div>
+
+    </main>
+</div>
+</body>
+</html>

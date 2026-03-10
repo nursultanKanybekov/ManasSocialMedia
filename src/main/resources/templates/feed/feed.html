@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('Feed')}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <main class="main-content">
+        <div class="feed-layout">
+
+            <!-- LEFT: User stats -->
+            <aside class="feed-left">
+                <div class="widget user-stats-widget">
+                    <img th:src="${currentUser.profile != null and currentUser.profile.avatarUrl != null
+                                   ? currentUser.profile.avatarUrl : '/images/default-avatar.svg'}"
+                         class="widget-avatar" alt="avatar"/>
+                    <h3 th:text="${currentUser.fullName}">Name</h3>
+                    <span class="role-badge" th:text="${currentUser.role}">ROLE</span>
+                    <div class="stat-row" th:if="${currentUser.profile != null}">
+                        <div class="stat">
+                            <strong th:text="${currentUser.profile.totalPoints}">0</strong>
+                            <small>Points</small>
+                        </div>
+                        <div class="stat">
+                            <strong th:text="${currentUser.profile.rankPosition != null ? '#' + currentUser.profile.rankPosition : '-'}">-</strong>
+                            <small>Rank</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget">
+                    <h4>🏆 Top This Week</h4>
+                    <ul class="top-list">
+                        <li th:each="p, i : ${topUsers}" class="top-list-item">
+                            <span class="rank-num" th:text="${i.index + 1}">1</span>
+                            <a th:href="@{/mezun/{id}(id=${p.user.id})}"
+                               th:text="${p.user.fullName}">Name</a>
+                            <span class="pts" th:text="${p.totalPoints} + ' pts'">0 pts</span>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- CENTER: Feed -->
+            <div class="feed-center">
+
+                <!-- Post Create Box (Instagram style) -->
+                <div class="post-create-box" id="postCreateBox">
+                    <div class="create-header">
+                        <img th:src="${currentUser.profile != null and currentUser.profile.avatarUrl != null
+                                       ? currentUser.profile.avatarUrl : '/images/default-avatar.svg'}"
+                             class="create-avatar" alt="avatar"/>
+                        <textarea id="postContent" name="content"
+                                  class="create-textarea"
+                                  placeholder="What's on your mind?"
+                                  rows="2"
+                                  onclick="expandPostBox()"></textarea>
+                    </div>
+
+                    <!-- Expanded section (image preview + actions) -->
+                    <div id="postExpanded" style="display:none;">
+                        <!-- Image preview -->
+                        <div id="imagePreviewWrap" style="display:none; margin: 12px 0;">
+                            <div style="position:relative;display:inline-block;">
+                                <img id="imagePreview" src="" alt="preview"
+                                     style="max-width:100%;max-height:320px;border-radius:12px;object-fit:cover;"/>
+                                <button onclick="removeImage()"
+                                        style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;">✕</button>
+                            </div>
+                        </div>
+
+                        <div class="create-footer">
+                            <!-- Image upload trigger -->
+                            <label for="postImage" class="btn-action" style="cursor:pointer;" title="Add photo">
+                                📷 Photo
+                                <input type="file" id="postImage" name="image" accept="image/*"
+                                       style="display:none;" onchange="previewImage(this)"/>
+                            </label>
+
+                            <!-- Post type -->
+                            <select id="postType" name="postType" class="type-select">
+                                <option value="GENERAL">💬 General</option>
+                                <option value="SUCCESS_STORY">🌟 Success Story</option>
+                                <option value="NEWS">📰 News</option>
+                                <option value="ANNOUNCEMENT">📢 Announcement</option>
+                            </select>
+
+                            <div style="flex:1;"></div>
+
+                            <button onclick="cancelPost()" class="btn-action" style="margin-right:8px;">Cancel</button>
+                            <button id="postSubmitBtn" class="btn btn-primary" onclick="submitPost()">
+                                🚀 Post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error display -->
+                <div id="postError" style="display:none; color:#c0392b; padding:8px 0;"></div>
+
+                <!-- Feed Filter Tabs -->
+                <div class="feed-tabs">
+                    <button class="tab-btn active"
+                            onclick="setActiveTab(this)"
+                            hx-get="/feed/posts?page=0"
+                            hx-target="#feed-list"
+                            hx-swap="innerHTML">All</button>
+                    <button class="tab-btn"
+                            onclick="setActiveTab(this)"
+                            hx-get="/feed/posts?page=0&amp;type=NEWS"
+                            hx-target="#feed-list"
+                            hx-swap="innerHTML">📰 News</button>
+                    <button class="tab-btn"
+                            onclick="setActiveTab(this)"
+                            hx-get="/feed/posts?page=0&amp;type=SUCCESS_STORY"
+                            hx-target="#feed-list"
+                            hx-swap="innerHTML">🌟 Success</button>
+                    <button class="tab-btn"
+                            onclick="setActiveTab(this)"
+                            hx-get="/feed/posts?page=0&amp;type=ANNOUNCEMENT"
+                            hx-target="#feed-list"
+                            hx-swap="innerHTML">📢 Announcements</button>
+                </div>
+
+                <!-- Feed list: first page rendered server-side, subsequent pages via HTMX -->
+                <div id="feed-list">
+
+                    <!-- Server-side rendered initial posts -->
+                    <div th:each="post : ${initialPosts}" class="post-card"
+                         th:classappend="${post.isPinned} ? 'post-pinned'">
+
+                        <div th:if="${post.isPinned}" class="pin-badge">📌 Pinned</div>
+
+                        <div class="post-header">
+                            <a th:href="@{/mezun/{id}(id=${post.author.id})}">
+                                <img th:src="${post.author.profile != null and post.author.profile.avatarUrl != null
+                                               ? post.author.profile.avatarUrl : '/images/default-avatar.svg'}"
+                                     class="post-avatar" alt="avatar"/>
+                            </a>
+                            <div class="post-meta">
+                                <a th:href="@{/mezun/{id}(id=${post.author.id})}"
+                                   class="post-author" th:text="${post.author.fullName}">Author</a>
+                                <span class="role-badge-sm" th:text="${post.author.role}">ROLE</span>
+                                <span class="post-type-badge" th:switch="${post.postType.name()}">
+                                    <span th:case="'SUCCESS_STORY'">🌟 Success</span>
+                                    <span th:case="'NEWS'">📰 News</span>
+                                    <span th:case="'ANNOUNCEMENT'">📢 Announcement</span>
+                                    <span th:case="*">💬 General</span>
+                                </span>
+                                <time class="post-time"
+                                      th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy HH:mm')}">Date</time>
+                            </div>
+                            <div th:if="${currentUserId != null and post.author.id == currentUserId}" class="post-actions-menu">
+                                <button class="btn-icon"
+                                        th:attr="data-post-id=${post.id}"
+                                        onclick="deletePost(this.dataset.postId, this)"
+                                        title="Delete">🗑</button>
+                            </div>
+                        </div>
+
+                        <div class="post-content">
+                            <p th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
+                        </div>
+
+                        <div th:if="${post.imageUrl != null}" class="post-image-wrap">
+                            <img th:src="${post.imageUrl}" alt="post image" class="post-image"
+                                 onclick="openImageModal(this.src)" style="cursor:zoom-in;"/>
+                        </div>
+
+                        <div class="post-footer">
+                            <div th:id="${'like-' + post.id}">
+                                <button class="btn-action"
+                                        th:classappend="${initialLikedIds != null and #lists.contains(initialLikedIds, post.id.toString())} ? ' liked'"
+                                        th:attr="data-post-id=${post.id}"
+                                        onclick="toggleLike(this.dataset.postId)">
+                                    <span th:text="${initialLikedIds != null and #lists.contains(initialLikedIds, post.id.toString())} ? '❤️' : '🤍'">🤍</span>
+                                    <span th:text="${post.likesCount}">0</span>
+                                </button>
+                            </div>
+                            <button class="btn-action"
+                                    th:attr="data-post-id=${post.id}"
+                                    onclick="toggleComments(this.dataset.postId)">
+                                💬 <span th:id="${'ccount-' + post.id}" th:text="${post.commentsCount}">0</span>
+                            </button>
+                        </div>
+
+                        <div th:id="${'comments-' + post.id}" class="comments-section" style="display:none;"></div>
+                        <div th:id="${'comment-row-' + post.id}" class="comment-input-row" style="display:none;">
+                            <input type="text" th:id="${'comment-input-' + post.id}"
+                                   name="content" placeholder="Write a comment..." class="comment-input"
+                                   th:attr="data-post-id=${post.id}"
+                                   onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
+                            <button class="comment-send-btn"
+                                    th:attr="data-post-id=${post.id}"
+                                    onclick="submitComment(this.dataset.postId)">➤</button>
+                        </div>
+                    </div>
+
+                    <!-- Empty state if no posts -->
+                    <div th:if="${#lists.isEmpty(initialPosts)}" class="empty-state">
+                        <p>No posts yet. Be the first to share! 🎉</p>
+                    </div>
+
+                    <!-- Load more (HTMX pagination) -->
+                    <div th:if="${initialNextPage > -1}"
+                         th:attr="hx-get=${'/feed/posts?page=' + initialNextPage}"
+                         hx-trigger="intersect once"
+                         hx-swap="outerHTML"
+                         class="load-more-trigger">
+                        <div class="loading-spinner-sm"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Jobs widget -->
+            <aside class="feed-right">
+                <div class="widget">
+                    <h4>💼 Open Jobs</h4>
+                    <div hx-get="/career/jobs/widget"
+                         hx-trigger="load"
+                         hx-swap="innerHTML">
+                        <div class="loading-spinner-sm"></div>
+                    </div>
+                    <a th:href="@{/career/jobs}" class="widget-link">All Jobs →</a>
+                </div>
+            </aside>
+
+        </div>
+    </main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script>
+    // CSRF tokens are available via meta tags injected in header fragment
+    const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+    function expandPostBox() {
+        document.getElementById('postExpanded').style.display = 'block';
+    }
+
+    function cancelPost() {
+        document.getElementById('postContent').value = '';
+        document.getElementById('postExpanded').style.display = 'none';
+        document.getElementById('imagePreviewWrap').style.display = 'none';
+        document.getElementById('imagePreview').src = '';
+        document.getElementById('postImage').value = '';
+        document.getElementById('postError').style.display = 'none';
+    }
+
+    function previewImage(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('imagePreview').src = e.target.result;
+            document.getElementById('imagePreviewWrap').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeImage() {
+        document.getElementById('imagePreview').src = '';
+        document.getElementById('imagePreviewWrap').style.display = 'none';
+        document.getElementById('postImage').value = '';
+    }
+
+    function setActiveTab(btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    async function submitPost() {
+        const content = document.getElementById('postContent').value.trim();
+        if (!content) {
+            showError('Post content cannot be empty.');
+            return;
+        }
+
+        const btn = document.getElementById('postSubmitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Posting...';
+
+        const formData = new FormData();
+        formData.append('content', content);
+        formData.append('postType', document.getElementById('postType').value);
+        const imgFile = document.getElementById('postImage').files[0];
+        if (imgFile) formData.append('image', imgFile);
+
+        try {
+            const headers = {};
+            if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+            const res = await fetch('/feed/post/create', {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            });
+
+            if (!res.ok) throw new Error('Server error ' + res.status);
+
+            const html = await res.text();
+            const list = document.getElementById('feed-list');
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            list.insertBefore(tmp.firstElementChild, list.firstChild);
+
+            // Process HTMX on new element
+            if (window.htmx) htmx.process(list.firstElementChild);
+
+            cancelPost();
+        } catch (err) {
+            showError('Failed to post. Please try again.');
+            console.error(err);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🚀 Post';
+        }
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('postError');
+        el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 4000);
+    }
+</script>
+</body>
+</html>

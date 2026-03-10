@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="postList">
+
+    <div th:each="post : ${posts}" class="post-card"
+         th:classappend="${post.isPinned} ? 'post-pinned'">
+
+        <div th:if="${post.isPinned}" class="pin-badge">📌 Pinned</div>
+
+        <div class="post-header">
+            <a th:href="@{/mezun/{id}(id=${post.author.id})}">
+                <img th:src="${post.author.profile != null and post.author.profile.avatarUrl != null
+                               ? post.author.profile.avatarUrl : '/images/default-avatar.svg'}"
+                     class="post-avatar" alt="avatar"/>
+            </a>
+            <div class="post-meta">
+                <a th:href="@{/mezun/{id}(id=${post.author.id})}"
+                   class="post-author" th:text="${post.author.fullName}">Author</a>
+                <span class="role-badge-sm" th:text="${post.author.role}">ROLE</span>
+                <span class="post-type-badge" th:switch="${post.postType.name()}">
+                    <span th:case="'SUCCESS_STORY'">🌟 Success</span>
+                    <span th:case="'NEWS'">📰 News</span>
+                    <span th:case="'ANNOUNCEMENT'">📢 Announcement</span>
+                    <span th:case="*">💬 General</span>
+                </span>
+                <time class="post-time"
+                      th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy HH:mm')}">Date</time>
+            </div>
+            <div th:if="${currentUserId != null and post.author.id == currentUserId}" class="post-actions-menu">
+                <button class="btn-icon"
+                        th:attr="data-post-id=${post.id}"
+                        onclick="deletePost(this.dataset.postId, this)"
+                        title="Delete">🗑</button>
+            </div>
+        </div>
+
+        <div class="post-content">
+            <p th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
+        </div>
+
+        <div th:if="${post.imageUrl != null}" class="post-image-wrap">
+            <img th:src="${post.imageUrl}" alt="post image" class="post-image"
+                 onclick="openImageModal(this.src)" style="cursor:zoom-in;"/>
+        </div>
+
+        <div class="post-footer">
+            <!-- Like button: plain onclick, no HTMX -->
+            <div th:id="${'like-' + post.id}">
+                <button class="btn-action"
+                        th:classappend="${likedPostIds != null and #lists.contains(likedPostIds, post.id.toString())} ? ' liked'"
+                        th:attr="data-post-id=${post.id}"
+                        onclick="toggleLike(this.dataset.postId)">
+                    <span th:text="${likedPostIds != null and #lists.contains(likedPostIds, post.id.toString())} ? '❤️' : '🤍'">🤍</span>
+                    <span th:text="${post.likesCount}">0</span>
+                </button>
+            </div>
+            <!-- Comment button -->
+            <button class="btn-action"
+                    th:attr="data-post-id=${post.id}"
+                    onclick="toggleComments(this.dataset.postId)">
+                💬 <span th:id="${'ccount-' + post.id}" th:text="${post.commentsCount}">0</span>
+            </button>
+        </div>
+
+        <div th:id="${'comments-' + post.id}" class="comments-section" style="display:none;"></div>
+
+        <div th:id="${'comment-row-' + post.id}" class="comment-input-row" style="display:none;">
+            <input type="text"
+                   th:id="${'comment-input-' + post.id}"
+                   th:attr="data-post-id=${post.id}"
+                   name="content"
+                   placeholder="Write a comment..."
+                   class="comment-input"
+                   onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
+            <button class="comment-send-btn"
+                    th:attr="data-post-id=${post.id}"
+                    onclick="submitComment(this.dataset.postId)">➤</button>
+        </div>
+    </div>
+
+    <!-- Load More -->
+    <div th:if="${nextPage > -1}"
+         th:attr="hx-get=${'/feed/posts?page=' + nextPage}"
+         hx-trigger="intersect once"
+         hx-swap="outerHTML"
+         class="load-more-trigger">
+        <div class="loading-spinner-sm"></div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(posts)}" class="empty-state">
+        <p>No posts yet. Be the first to share! 🎉</p>
+    </div>
+</div>

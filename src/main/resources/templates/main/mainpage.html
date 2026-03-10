@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head(#{page.home})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<!-- layout-body removed: sidebar is now fixed positioned -->
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<main class="main-content" style="padding:0; overflow-x:hidden;">
+
+    <!-- ── HERO ── -->
+    <section class="hero" style="position:relative;height:420px;background:linear-gradient(135deg,#1b2a6b 0%,#111c4e 60%,#8b1a1a 100%);display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;">
+        <div style="position:absolute;inset:0;background-image:url('/images/manas_top.jpg');background-size:cover;background-position:center;opacity:0.25;"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(17,28,78,0.96) 0%,rgba(17,28,78,0.55) 50%,rgba(17,28,78,0.15) 100%);"></div>
+        <!-- Role badge top-right -->
+        <div style="position:absolute;top:24px;right:36px;z-index:2;display:flex;align-items:center;gap:8px;padding:7px 16px;background:rgba(255,255,255,0.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);border-radius:30px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#27ae60;"></div>
+            <span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:white;" th:text="${currentUser.role}">STUDENT</span>
+        </div>
+        <div style="position:relative;z-index:2;padding:0 48px 60px;">
+            <p style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:6px;" th:text="#{main.hero.greeting}">Welcome back,</p>
+            <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:38px;color:white;margin-bottom:8px;line-height:1.1;">
+                <span th:text="${currentUser.fullName}">Name</span>&nbsp;<span style="color:#e74c3c;">!</span>
+            </h1>
+            <p style="font-size:15px;color:rgba(255,255,255,0.65);margin-bottom:22px;" th:text="#{main.hero.subtitle}">Your alumni ecosystem</p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <a th:href="@{/profile/{id}(id=${currentUser.id})}" style="padding:11px 24px;border-radius:10px;background:#c0392b;color:white;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:7px;box-shadow:0 4px 16px rgba(192,57,43,.45);" th:text="#{main.hero.btn.profile}">My Profile</a>
+                <a th:href="@{/career/jobs}" style="padding:11px 22px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);color:white;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;backdrop-filter:blur(4px);" th:text="#{main.hero.btn.jobs}">Browse Jobs</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SERVICE CARDS (overlapping hero) ── -->
+    <div style="position:relative;z-index:10;margin-top:-50px;padding:0 32px 0;">
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:14px;">
+            <a th:href="@{/university-news}" class="svc-card" style="background:white;border-radius:16px;padding:20px 14px;text-align:center;box-shadow:0 8px 32px rgba(27,42,107,0.13);text-decoration:none;border-bottom:3px solid transparent;transition:.2s;">
+                <div style="width:50px;height:50px;border-radius:50%;background:rgba(27,42,107,0.07);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px;">🏛</div>
+                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;" th:text="#{nav.university_news}">University News</div>
+            </a>
+            <a th:href="@{/career/jobs}" class="svc-card" style="background:white;border-radius:16px;padding:20px 14px;text-align:center;box-shadow:0 8px 32px rgba(27,42,107,0.13);text-decoration:none;border-bottom:3px solid transparent;transition:.2s;">
+                <div style="width:50px;height:50px;border-radius:50%;background:rgba(27,42,107,0.07);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px;">💼</div>
+                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;" th:text="#{nav.career}">Jobs</div>
+            </a>
+            <a th:href="@{/articles}" class="svc-card" style="background:white;border-radius:16px;padding:20px 14px;text-align:center;box-shadow:0 8px 32px rgba(27,42,107,0.13);text-decoration:none;border-bottom:3px solid transparent;transition:.2s;">
+                <div style="width:50px;height:50px;border-radius:50%;background:rgba(27,42,107,0.07);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px;">📝</div>
+                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;" th:text="#{nav.articles}">Articles</div>
+            </a>
+            <a th:href="@{/chat}" class="svc-card" style="background:white;border-radius:16px;padding:20px 14px;text-align:center;box-shadow:0 8px 32px rgba(27,42,107,0.13);text-decoration:none;border-bottom:3px solid transparent;transition:.2s;">
+                <div style="width:50px;height:50px;border-radius:50%;background:rgba(27,42,107,0.07);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px;">💬</div>
+                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;" th:text="#{nav.chat}">Chat</div>
+            </a>
+            <a th:href="@{/competitions}" class="svc-card" style="background:white;border-radius:16px;padding:20px 14px;text-align:center;box-shadow:0 8px 32px rgba(27,42,107,0.13);text-decoration:none;border-bottom:3px solid transparent;transition:.2s;">
+                <div style="width:50px;height:50px;border-radius:50%;background:rgba(27,42,107,0.07);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px;">🥇</div>
+                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;" th:text="#{nav.competitions}">Competitions</div>
+            </a>
+            <a th:href="@{/events}" class="svc-card" style="background:white;border-radius:16px;padding:20px 14px;text-align:center;box-shadow:0 8px 32px rgba(27,42,107,0.13);text-decoration:none;border-bottom:3px solid transparent;transition:.2s;">
+                <div style="width:50px;height:50px;border-radius:50%;background:rgba(27,42,107,0.07);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px;">📅</div>
+                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;" th:text="#{nav.events}">Events</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ── MAIN CONTENT ── -->
+    <div style="padding:28px 32px 40px;">
+
+        <!-- Latest News + Upcoming Events -->
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:24px;margin-bottom:28px;">
+
+            <!-- Latest News -->
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:17px;color:#1b2a6b;display:flex;align-items:center;gap:8px;">
+                        <span style="width:4px;height:20px;background:#e74c3c;border-radius:2px;display:inline-block;"></span>
+                        <span th:text="#{main.section.latest_news}">Latest News</span>
+                    </h2>
+                    <a th:href="@{/news}" style="font-size:12px;font-weight:700;color:#1b2a6b;text-decoration:none;font-family:Montserrat,sans-serif;" th:text="#{main.see_all}">See all →</a>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" th:if="${not #lists.isEmpty(latestNews)}">
+                    <div th:each="post : ${latestNews}" style="background:white;border-radius:14px;padding:18px;box-shadow:0 2px 12px rgba(27,42,107,0.08);border-left:3px solid #e74c3c;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                            <img th:src="${post.author.profile != null and post.author.profile.avatarUrl != null ? post.author.profile.avatarUrl : '/images/default-avatar.svg'}"
+                                 style="width:32px;height:32px;border-radius:50%;object-fit:cover;" alt="avatar"/>
+                            <div>
+                                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;" th:text="${post.author.fullName}">Author</div>
+                                <div style="font-size:10px;color:#8a91a8;" th:text="${#temporals.format(post.createdAt,'dd MMM yyyy')}">Date</div>
+                            </div>
+                        </div>
+                        <p style="font-size:13px;color:#2c3e50;line-height:1.5;margin:0;"
+                           th:text="${post.contentI18n != null and post.contentI18n.get(#locale.language) != null ? post.contentI18n.get(#locale.language) : (post.contentI18n != null ? post.contentI18n.get('en') : '')}">Content</p>
+                    </div>
+                </div>
+                <div th:if="${#lists.isEmpty(latestNews)}" style="background:white;border-radius:14px;padding:30px;text-align:center;color:#8a91a8;">
+                    <span th:text="#{main.no_news}">No news yet</span>
+                </div>
+            </div>
+
+            <!-- Upcoming Events -->
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:17px;color:#1b2a6b;display:flex;align-items:center;gap:8px;">
+                        <span style="width:4px;height:20px;background:#e74c3c;border-radius:2px;display:inline-block;"></span>
+                        <span th:text="#{main.section.upcoming_events}">Upcoming Events</span>
+                    </h2>
+                    <a th:href="@{/events}" style="font-size:12px;font-weight:700;color:#1b2a6b;text-decoration:none;font-family:Montserrat,sans-serif;" th:text="#{main.see_all}">See all →</a>
+                </div>
+                <div th:each="event : ${upcomingEvents}" style="background:white;border-radius:14px;padding:14px 16px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;">
+                    <div style="min-width:48px;height:52px;background:#1b2a6b;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;">
+                        <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:18px;line-height:1;" th:text="${event.eventDate != null ? #temporals.format(event.eventDate,'dd') : '--'}">20</div>
+                        <div style="font-size:9px;font-weight:700;letter-spacing:.5px;opacity:.7;" th:text="${event.eventDate != null ? #temporals.format(event.eventDate,'MMM') : '---'}">APR</div>
+                    </div>
+                    <div style="flex:1;">
+                        <a th:href="@{/events/{id}(id=${event.id})}" style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;text-decoration:none;display:block;" th:text="${event.title}">Event Title</a>
+                        <span th:style="${event.eventType == 'ONLINE' ? 'font-size:10px;padding:2px 8px;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;background:#e8f5e9;color:#2e7d32;' : 'font-size:10px;padding:2px 8px;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;background:#e3f2fd;color:#1565c0;'}"
+                              th:text="${event.eventType}">OFFLINE</span>
+                    </div>
+                </div>
+                <div th:if="${#lists.isEmpty(upcomingEvents)}" style="background:white;border-radius:14px;padding:30px;text-align:center;color:#8a91a8;">
+                    <span th:text="#{main.no_events}">No upcoming events</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Competitions + Top Rating + University News -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 280px;gap:24px;">
+
+            <!-- Competitions -->
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:17px;color:#1b2a6b;display:flex;align-items:center;gap:8px;">
+                        <span style="width:4px;height:20px;background:#e74c3c;border-radius:2px;display:inline-block;"></span>
+                        <span th:text="#{main.section.competitions}">Competitions</span>
+                    </h2>
+                    <a th:href="@{/competitions}" style="font-size:12px;font-weight:700;color:#1b2a6b;text-decoration:none;font-family:Montserrat,sans-serif;" th:text="#{main.see_all}">See all →</a>
+                </div>
+                <div th:each="comp : ${latestCompetitions}" style="background:white;border-radius:12px;padding:14px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:10px;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                        <a th:href="@{/competitions/{id}(id=${comp.id})}" style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;text-decoration:none;" th:text="${comp.title}">Title</a>
+                        <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;white-space:nowrap;"
+                              th:style="${comp.status == 'ACTIVE' ? 'background:#fff3e0;color:#e65100;' : (comp.status == 'UPCOMING' ? 'background:#e3f2fd;color:#1565c0;' : 'background:#f5f5f5;color:#757575;')}" th:text="${comp.status}">UPCOMING</span>
+                    </div>
+                    <p th:if="${comp.prize != null}" style="font-size:11px;color:#8a91a8;margin-top:4px;">🏆 <span th:text="${comp.prize}">Prize</span></p>
+                </div>
+                <div th:if="${#lists.isEmpty(latestCompetitions)}" style="background:white;border-radius:12px;padding:30px;text-align:center;color:#8a91a8;">
+                    <span th:text="#{main.no_competitions}">No competitions yet</span>
+                </div>
+            </div>
+
+            <!-- University News -->
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:17px;color:#1b2a6b;display:flex;align-items:center;gap:8px;">
+                        <span style="width:4px;height:20px;background:#e74c3c;border-radius:2px;display:inline-block;"></span>
+                        <span th:text="#{nav.university_news}">University News</span>
+                    </h2>
+                    <a th:href="@{/university-news}" style="font-size:12px;font-weight:700;color:#1b2a6b;text-decoration:none;font-family:Montserrat,sans-serif;" th:text="#{main.see_all}">See all →</a>
+                </div>
+                <div th:each="post : ${universityNews}" style="background:white;border-radius:12px;padding:14px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:10px;border-left:3px solid #1b2a6b;">
+                    <p style="font-size:13px;color:#2c3e50;line-height:1.5;margin:0 0 8px;"
+                       th:text="${post.contentI18n != null and post.contentI18n.get(#locale.language) != null ? post.contentI18n.get(#locale.language) : (post.contentI18n != null ? post.contentI18n.get('en') : '')}">Content</p>
+                    <div style="font-size:10px;color:#8a91a8;" th:text="${#temporals.format(post.createdAt,'dd MMM yyyy')}">Date</div>
+                </div>
+                <div th:if="${#lists.isEmpty(universityNews)}" style="background:white;border-radius:12px;padding:30px;text-align:center;color:#8a91a8;">
+                    <span th:text="#{main.no_news}">No news yet</span>
+                </div>
+            </div>
+
+            <!-- Top Rating Widget -->
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:17px;color:#1b2a6b;display:flex;align-items:center;gap:8px;">
+                        <span style="width:4px;height:20px;background:#e74c3c;border-radius:2px;display:inline-block;"></span>
+                        <span th:text="#{widget.top_this_week}">Top Rating</span>
+                    </h2>
+                </div>
+                <div style="background:white;border-radius:14px;padding:16px;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+                    <div th:each="p, i : ${topUsers}" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f2f8;">
+                        <span style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:#1b2a6b;min-width:20px;" th:text="${i.index + 1}">1</span>
+                        <img th:src="${p.user.profile != null and p.user.profile.avatarUrl != null ? p.user.profile.avatarUrl : '/images/default-avatar.svg'}"
+                             style="width:28px;height:28px;border-radius:50%;object-fit:cover;" alt="avatar"/>
+                        <a th:href="@{/profile/{id}(id=${p.user.id})}" style="flex:1;font-size:12px;font-weight:600;color:#2c3e50;text-decoration:none;" th:text="${p.user.fullName}">Name</a>
+                        <span style="font-size:11px;font-weight:700;color:#e74c3c;" th:text="${p.totalPoints}">0</span>
+                    </div>
+                    <a th:href="@{/leaderboard}" style="display:block;text-align:center;padding:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;color:#1b2a6b;text-decoration:none;margin-top:6px;" th:text="#{widget.see_all}">See all →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

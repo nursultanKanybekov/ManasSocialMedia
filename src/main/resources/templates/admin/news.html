@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('University News Management')}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
+
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div>
+            <div class="page-title">📰 University News</div>
+            <div class="page-subtitle">Manage university announcements and news</div>
+        </div>
+        <a th:href="@{/admin/news/new}" class="btn btn-primary">+ Add News</a>
+    </div>
+
+    <div th:if="${successMsg}" class="alert alert-success" th:text="${successMsg}"></div>
+
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(27,42,107,0.08);overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr style="background:#f8f9ff;border-bottom:2px solid #e8eaf6;">
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;">News Title</th>
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;">Author</th>
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;">Date</th>
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;">Likes</th>
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${posts == null or posts.empty}">
+                    <td colspan="5" style="padding:40px;text-align:center;color:#8a91a8;">No university news yet. <a th:href="@{/admin/news/new}" style="color:#1b2a6b;font-weight:700;">Add the first one!</a></td>
+                </tr>
+                <tr th:each="post : ${posts.content}" style="border-bottom:1px solid #f0f2f8;">
+                    <td style="padding:14px 16px;">
+                        <a th:href="@{/articles/{id}(id=${post.id})}" style="font-family:Montserrat,sans-serif;font-weight:600;font-size:13px;color:#1b2a6b;text-decoration:none;"
+                           th:text="${#strings.abbreviate(post.getLocalizedContent('en'), 80)}">Title</a>
+                    </td>
+                    <td style="padding:14px 16px;font-size:13px;color:#2c3e50;" th:text="${post.author.fullName}">Author</td>
+                    <td style="padding:14px 16px;font-size:12px;color:#8a91a8;" th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy')}">Date</td>
+                    <td style="padding:14px 16px;font-size:13px;font-weight:700;color:#1b2a6b;" th:text="${post.likesCount}">0</td>
+                    <td style="padding:14px 16px;">
+                        <form th:action="@{/admin/news/{id}/delete(id=${post.id})}" method="post" style="display:inline"
+                              onsubmit="return confirm('Delete this news post?');">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" style="padding:5px 12px;background:#dc3545;color:white;border:none;border-radius:6px;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- Pagination -->
+        <div th:if="${posts != null and posts.totalPages > 1}" style="padding:16px;display:flex;justify-content:center;gap:8px;">
+            <a th:if="${!posts.first}" th:href="@{/admin/news(page=${posts.number-1})}"
+               style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;color:#1b2a6b;">← Prev</a>
+            <span style="padding:7px 14px;background:#1b2a6b;color:white;border-radius:8px;font-size:12px;font-weight:700;"
+                  th:text="${posts.number + 1} + ' / ' + ${posts.totalPages}">1/1</span>
+            <a th:if="${!posts.last}" th:href="@{/admin/news(page=${posts.number+1})}"
+               style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;color:#1b2a6b;">Next →</a>
+        </div>
+    </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

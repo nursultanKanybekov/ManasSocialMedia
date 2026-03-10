@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head(#{nav.events})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+            <div>
+                <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;" th:text="#{event.list.title}">Events &amp; Meetings</h1>
+                <p style="color:#8a91a8;font-size:13px;" th:text="#{event.list.subtitle}">Connect with alumni at events</p>
+            </div>
+            <a sec:authorize="hasAnyRole('SECRETARY','ADMIN','MEZUN')" th:href="@{/events/new}"
+               style="padding:10px 20px;background:#c0392b;color:white;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;" th:text="#{event.create}">+ New Event</a>
+        </div>
+
+        <!-- Type Filter -->
+        <div style="background:white;border-radius:12px;padding:16px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;display:flex;gap:10px;">
+            <a th:href="@{/events}" th:style="${selectedType == null ? 'background:#1b2a6b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}"
+               style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;" th:text="#{event.type.all}">All</a>
+            <a th:href="@{/events(eventType='OFFLINE')}" th:style="${selectedType == 'OFFLINE' ? 'background:#1b2a6b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}"
+               style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;" th:text="#{event.type.offline}">Offline</a>
+            <a th:href="@{/events(eventType='ONLINE')}" th:style="${selectedType == 'ONLINE' ? 'background:#1b2a6b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}"
+               style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;" th:text="#{event.type.online}">Online</a>
+            <a th:href="@{/events(eventType='HYBRID')}" th:style="${selectedType == 'HYBRID' ? 'background:#1b2a6b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}"
+               style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;" th:text="#{event.type.hybrid}">Hybrid</a>
+        </div>
+
+        <!-- Events Grid -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;" th:if="${eventPage != null and not eventPage.empty}">
+            <div th:each="event : ${eventPage.content}" style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+                <div style="background:#1b2a6b;padding:20px;display:flex;align-items:center;gap:16px;">
+                    <div style="min-width:52px;height:56px;background:rgba(255,255,255,0.12);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;">
+                        <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:20px;line-height:1;" th:text="${event.eventDate != null ? #temporals.format(event.eventDate,'dd') : '--'}">--</div>
+                        <div style="font-size:9px;font-weight:700;letter-spacing:.5px;opacity:.7;" th:text="${event.eventDate != null ? #temporals.format(event.eventDate,'MMM') : '---'}">---</div>
+                    </div>
+                    <div>
+                        <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;margin-bottom:6px;display:inline-block;"
+                              th:style="${event.eventType == 'ONLINE' ? 'background:rgba(46,204,113,0.2);color:#27ae60;' : event.eventType == 'HYBRID' ? 'background:rgba(155,89,182,0.2);color:#8e44ad;' : 'background:rgba(255,255,255,0.15);color:white;'}"
+                              th:text="${event.eventType}">OFFLINE</span>
+                        <h3 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;color:white;" th:text="${event.title}">Title</h3>
+                    </div>
+                </div>
+                <div style="padding:16px;">
+                    <p th:if="${event.description != null}" style="font-size:12px;color:#2c3e50;line-height:1.5;margin-bottom:10px;"
+                       th:text="${#strings.abbreviate(event.description, 80)}">Description</p>
+                    <div th:if="${event.location != null}" style="font-size:11px;color:#8a91a8;margin-bottom:6px;">📍 <span th:text="${event.location}">Location</span></div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+                        <span style="font-size:11px;color:#8a91a8;">
+                            👥 <span th:text="${event.registrationCount}">0</span>
+                            <span th:if="${event.maxParticipants != null}"> / <span th:text="${event.maxParticipants}">100</span></span>
+                        </span>
+                        <a th:href="@{/events/{id}(id=${event.id})}"
+                           style="padding:7px 14px;background:#1b2a6b;color:white;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;" th:text="#{competition.view}">View</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${eventPage == null or eventPage.empty}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+            <div style="font-size:48px;margin-bottom:16px;">📅</div>
+            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;margin-bottom:8px;" th:text="#{event.empty.title}">No Events Found</h3>
+            <p style="color:#8a91a8;" th:text="#{event.empty.subtitle}">Check back soon for upcoming events.</p>
+        </div>
+
+        <!-- Pagination -->
+        <div th:if="${eventPage != null and eventPage.totalPages > 1}" style="display:flex;justify-content:center;gap:8px;margin-top:24px;">
+            <a th:if="${not eventPage.first}"
+               th:href="@{/events(page=${eventPage.number - 1},eventType=${selectedType})}"
+               style="padding:8px 16px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;text-decoration:none;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;">← Prev</a>
+            <span style="padding:8px 16px;background:#1b2a6b;color:white;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;"
+                  th:text="${eventPage.number + 1} + ' / ' + ${eventPage.totalPages}">1/5</span>
+            <a th:if="${not eventPage.last}"
+               th:href="@{/events(page=${eventPage.number + 1},eventType=${selectedType})}"
+               style="padding:8px 16px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;text-decoration:none;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;">Next →</a>
+        </div>
+    </main>
+</div>
+</body>
+</html>

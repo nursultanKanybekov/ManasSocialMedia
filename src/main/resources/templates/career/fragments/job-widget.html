@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="jobWidget">
+    <div th:if="${jobs.isEmpty()}" class="empty-state-sm">No open positions right now.</div>
+    <ul class="widget-list" th:if="${!jobs.isEmpty()}">
+        <li th:each="job : ${jobs}" class="widget-list-item">
+            <a th:href="@{/career/jobs/{id}(id=${job.id})}"
+               th:text="${job.getLocalizedTitle(lang)}">Job Title</a>
+            <span class="job-type-badge-sm" th:text="${job.jobType}">TYPE</span>
+        </li>
+    </ul>
+</div>
+</body>
+</html>

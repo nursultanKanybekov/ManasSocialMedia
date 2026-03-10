@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(#{nav.articles})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+            <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin:0;" th:text="#{nav.articles}">Articles</h1>
+            <a th:href="@{/articles/new}" style="background:#1b2a6b;color:white;padding:10px 20px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">✍️ Write Article</a>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;" th:if="${posts != null and not posts.empty}">
+            <a th:each="post : ${posts.content}" th:href="@{/articles/{id}(id=${post.id})}"
+               style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(27,42,107,0.08);text-decoration:none;display:flex;flex-direction:column;">
+                <div style="background:linear-gradient(135deg,#1b2a6b,#111c4e);padding:24px;flex:1;">
+                    <h3 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:white;margin-bottom:10px;"
+                        th:text="${#strings.abbreviate(post.contentI18n != null and post.contentI18n.get(#locale.language) != null ? post.contentI18n.get(#locale.language) : (post.contentI18n != null ? post.contentI18n.get('en') : ''), 100)}">Title</h3>
+                </div>
+                <div style="padding:14px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <img th:src="${post.author.profile != null and post.author.profile.avatarUrl != null ? post.author.profile.avatarUrl : '/images/default-avatar.svg'}"
+                             style="width:28px;height:28px;border-radius:50%;object-fit:cover;" alt="avatar"/>
+                        <span style="font-size:12px;font-weight:600;color:#1b2a6b;" th:text="${post.author.fullName}">Author</span>
+                        <span style="font-size:11px;color:#8a91a8;margin-left:auto;" th:text="${#temporals.format(post.createdAt,'dd MMM')}">Date</span>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:10px;font-size:11px;color:#8a91a8;">
+                        <span>❤️ <span th:text="${post.likesCount}">0</span></span>
+                        <span>💬 <span th:text="${post.commentsCount}">0</span></span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div th:if="${posts == null or posts.empty}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+            <div style="font-size:48px;margin-bottom:16px;">📝</div>
+            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;margin-bottom:8px;">No Articles Yet</h3>
+        </div>
+    </main>
+</div>
+</body>
+</html>

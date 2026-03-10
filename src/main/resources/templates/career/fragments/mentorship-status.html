@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="mentorshipStatus">
+    <div th:if="${success}" class="alert alert-success">✅ Mentorship request sent successfully!</div>
+    <div th:if="${error}" class="alert alert-error" th:text="${error}">Error</div>
+</div>
+</body>
+</html>

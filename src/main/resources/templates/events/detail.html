@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(${event.title})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <a th:href="@{/events}" style="display:inline-flex;align-items:center;gap:6px;color:#1b2a6b;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;margin-bottom:20px;">← <span th:text="#{event.back}">Back to Events</span></a>
+
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:24px;">
+            <div>
+                <div style="background:linear-gradient(135deg,#1b2a6b,#111c4e);border-radius:16px;padding:32px;color:white;margin-bottom:20px;">
+                    <span style="font-size:11px;padding:4px 12px;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;display:inline-block;margin-bottom:14px;"
+                          th:style="${event.eventType == 'ONLINE' ? 'background:rgba(46,204,113,0.2);color:#2ecc71;' : event.eventType == 'HYBRID' ? 'background:rgba(155,89,182,0.2);color:#c39bd3;' : 'background:rgba(255,255,255,0.15);color:white;'}"
+                          th:text="${event.eventType}">OFFLINE</span>
+                    <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:26px;margin-bottom:12px;" th:text="${event.title}">Title</h1>
+                    <p th:if="${event.eventDate != null}" style="font-size:15px;color:rgba(255,255,255,0.8);">📅 <span th:text="${#temporals.format(event.eventDate,'dd MMMM yyyy HH:mm')}">Date</span></p>
+                </div>
+                <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+                    <h3 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#1b2a6b;margin-bottom:12px;" th:text="#{competition.about}">About</h3>
+                    <p th:if="${event.description != null}" style="font-size:14px;color:#2c3e50;line-height:1.6;margin-bottom:16px;" th:text="${event.description}">Description</p>
+                    <div th:if="${event.location != null}" style="padding:12px 16px;background:#f0f2f8;border-radius:10px;margin-bottom:10px;">
+                        <div style="font-size:11px;color:#8a91a8;font-family:Montserrat,sans-serif;font-weight:700;margin-bottom:3px;">📍 LOCATION</div>
+                        <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${event.location}">Location</div>
+                    </div>
+                    <div th:if="${event.meetingLink != null}" style="padding:12px 16px;background:#e8f5e9;border-radius:10px;">
+                        <div style="font-size:11px;color:#2e7d32;font-family:Montserrat,sans-serif;font-weight:700;margin-bottom:3px;">🔗 MEETING LINK</div>
+                        <a th:href="${event.meetingLink}" target="_blank" style="font-size:13px;color:#2e7d32;font-weight:600;word-break:break-all;" th:text="${event.meetingLink}">Link</a>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div style="background:white;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:16px;">
+                    <div style="text-align:center;margin-bottom:20px;">
+                        <div style="font-family:Montserrat,sans-serif;font-weight:900;font-size:32px;color:#1b2a6b;" th:text="${event.registrationCount}">0</div>
+                        <div style="font-size:13px;color:#8a91a8;" th:text="#{competition.registered}">registered</div>
+                        <div th:if="${event.maxParticipants != null}" style="font-size:11px;color:#8a91a8;">of <span th:text="${event.maxParticipants}">100</span></div>
+                    </div>
+                    <button id="regBtn"
+                            th:text="${registered ? #{event.unregister} : #{event.register}}"
+                            th:data-id="${event.id}"
+                            onclick="toggleReg(this.getAttribute('data-id'))"
+                            style="width:100%;padding:12px;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;cursor:pointer;background:#c0392b;color:white;">Register</button>
+                </div>
+            </div>
+        </div>
+    </main>
+<script th:inline="javascript">
+function toggleReg(id) {
+    fetch('/events/' + id + '/register', {method: 'POST', headers: {'X-CSRF-TOKEN': document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] || ''}})
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('regBtn').textContent = d.registered ? /*[[#{event.unregister}]]*/ 'Unregister' : /*[[#{event.register}]]*/ 'Register';
+        });
+}
+</script>
+</body>
+</html>

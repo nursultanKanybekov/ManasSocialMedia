@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<span th:fragment="badge"
+      id="notif-badge"
+      class="notif-badge"
+      th:classappend="${unreadCount > 0} ? ' notif-badge--active'"
+      th:text="${unreadCount > 0 ? unreadCount : ''}"
+      th:title="${unreadCount + ' unread notifications'}"
+      hx-get="/notifications/count"
+      hx-target="#notif-badge"
+      hx-swap="outerHTML"
+      hx-trigger="every 30s">
+</span>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<nav th:fragment="navbar" class="navbar">
+
+    <!-- Brand -->
+    <div class="navbar-brand" id="app-navbar-brand">
+        <img th:src="@{/images/university_logo.png}" alt="Manas"
+             onerror="this.style.display='none';document.getElementById('brand-fb').style.display='flex'"/>
+        <div id="brand-fb" style="display:none" class="brand-logo-fallback">
+            <span>M</span>
+        </div>
+        <div class="brand-name">Manas<span>Mezun</span></div>
+    </div>
+
+    <!-- Mobile burger -->
+    <button class="burger-btn" onclick="toggleMobileSidebar()" aria-label="Menu">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+    </button>
+
+    <!-- Search -->
+    <div class="navbar-search" sec:authorize="isAuthenticated()">
+        <span class="search-icon">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+        </span>
+        <input type="text" th:placeholder="#{navbar.search.placeholder}" id="global-search"/>
+    </div>
+
+    <!-- Right side -->
+    <div class="navbar-right">
+
+        <!-- Language switcher -->
+        <div class="lang-switcher">
+            <a th:href="@{''(lang='ky')}" class="lang-btn" th:classappend="${#locale.language == 'ky'} ? ' active'">KY</a>
+            <a th:href="@{''(lang='ru')}" class="lang-btn" th:classappend="${#locale.language == 'ru'} ? ' active'">RU</a>
+            <a th:href="@{''(lang='tr')}" class="lang-btn" th:classappend="${#locale.language == 'tr'} ? ' active'">TR</a>
+            <a th:href="@{''(lang='en')}" class="lang-btn" th:classappend="${#locale.language == 'en'} ? ' active'">EN</a>
+        </div>
+
+        <!-- Notification bell (authenticated) -->
+        <div sec:authorize="isAuthenticated()" class="notif-bell-wrap dropdown-wrap">
+            <button class="icon-btn notif-bell-btn" onclick="toggleDropdown('notif-dd')" title="Notifications">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 01-3.46 0"/>
+                </svg>
+                <span id="notif-badge"
+                      class="notif-badge"
+                      hx-get="/notifications/count"
+                      hx-target="#notif-badge"
+                      hx-swap="outerHTML"
+                      hx-trigger="load">
+                </span>
+            </button>
+            <div class="dropdown" id="notif-dd" style="min-width:320px;">
+                <div class="dropdown-header">
+                    <span th:text="#{notif.title}">Notifications</span>
+                    <span class="mark-all"
+                          hx-post="/notifications/mark-all-read"
+                          hx-target="#notif-badge"
+                          hx-swap="outerHTML"
+                          hx-include="[name=_csrf]"
+                          th:text="#{notif.mark_all}">Mark all read</span>
+                </div>
+                <div id="notif-dropdown-body"
+                     hx-get="/notifications/dropdown"
+                     hx-trigger="load, click from:.mark-all"
+                     hx-swap="innerHTML">
+                    <div style="padding:16px;text-align:center;color:var(--muted)">...</div>
+                </div>
+                <a th:href="@{/notifications}" class="notif-see-all" th:text="#{notif.see_all}">See all notifications</a>
+            </div>
+        </div>
+
+        <!-- Chat shortcut -->
+        <a th:href="@{/chat}" class="icon-btn" sec:authorize="isAuthenticated()" title="Chat">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+        </a>
+
+        <!-- User menu -->
+        <div sec:authorize="isAuthenticated()" class="dropdown-wrap">
+            <button class="avatar-btn" onclick="toggleDropdown('av-dd')">
+                <div class="avatar-circle" id="nav-avatar">
+                    <img th:if="${#authentication.principal.avatarUrl != null}"
+                         th:src="${#authentication.principal.avatarUrl}" alt="avatar"/>
+                    <span th:unless="${#authentication.principal.avatarUrl != null}"
+                          th:text="${#strings.substring(#authentication.principal.fullName, 0, 2).toUpperCase()}">UN</span>
+                </div>
+                <div class="avatar-info">
+                    <div class="av-name" th:text="${#strings.abbreviate(#authentication.principal.fullName, 18)}">User</div>
+                    <div class="av-role" th:text="${#authentication.principal.role}">STUDENT</div>
+                </div>
+                <svg class="avatar-chevron" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="6,9 12,15 18,9"/>
+                </svg>
+            </button>
+            <div class="dropdown avatar-dropdown" id="av-dd">
+                <div class="av-profile-row">
+                    <div class="av-big">
+                        <img th:if="${#authentication.principal.avatarUrl != null}"
+                             th:src="${#authentication.principal.avatarUrl}" alt="avatar"/>
+                        <span th:unless="${#authentication.principal.avatarUrl != null}"
+                              th:text="${#strings.substring(#authentication.principal.fullName, 0, 2).toUpperCase()}">UN</span>
+                    </div>
+                    <div class="av-detail">
+                        <strong th:text="${#authentication.principal.fullName}">Full Name</strong>
+                        <span th:text="${#authentication.principal.role}">STUDENT</span>
+                    </div>
+                </div>
+                <a th:href="@{/profile/{id}(id=${#authentication.principal.id})}" class="av-menu-item">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                    </svg>
+                    <span th:text="#{nav.my_profile}">My Profile</span>
+                </a>
+                <a th:href="@{/profile/me/edit}" class="av-menu-item">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+                    </svg>
+                    <span th:text="#{nav.settings}">Settings</span>
+                </a>
+                <a th:href="@{/notifications}" class="av-menu-item">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 01-3.46 0"/>
+                    </svg>
+                    <span th:text="#{nav.notifications}">Notifications</span>
+                </a>
+                <form th:action="@{/auth/logout}" method="post" style="display:contents">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="av-menu-item logout">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                            <polyline points="16,17 21,12 16,7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        <span th:text="#{nav.logout}">Logout</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Login (not authenticated) -->
+        <div sec:authorize="!isAuthenticated()">
+            <a th:href="@{/auth/login}" class="btn btn-primary btn-sm" th:text="#{nav.login}">Login</a>
+        </div>
+
+    </div>
+</nav>
+</body>
+</html>

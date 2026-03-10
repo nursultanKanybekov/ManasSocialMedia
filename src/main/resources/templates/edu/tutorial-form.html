@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Add Tutorial')}"></head>
+<style>
+.form-section { background:white; border-radius:16px; padding:28px 32px; box-shadow:0 2px 16px rgba(27,42,107,0.09); margin-bottom:20px; }
+.form-label { display:block; font-family:Montserrat,sans-serif; font-size:11px; font-weight:700; color:#8a91a8; text-transform:uppercase; margin-bottom:8px; }
+.form-input { width:100%; padding:11px 16px; border:1.5px solid #e2e5f0; border-radius:10px; font-family:Montserrat,sans-serif; font-size:13px; color:#1b2a6b; outline:none; box-sizing:border-box; transition:.2s; }
+.form-input:focus { border-color:#1b2a6b; }
+.type-option { display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 24px; border:2px solid #e0e3ef; border-radius:12px; cursor:pointer; transition:.2s; }
+.type-option:hover { border-color:#1b2a6b; }
+.type-option input[type=radio] { display:none; }
+.type-option.selected-text  { border-color:#1565c0; background:#e3f2fd; }
+.type-option.selected-video { border-color:#c62828; background:#fce4ec; }
+.type-option.selected-audio { border-color:#2e7d32; background:#e8f5e9; }
+</style>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <a th:href="@{/edu}" style="display:inline-flex;align-items:center;gap:6px;color:#1b2a6b;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;margin-bottom:20px;">← Back to Tutorials</a>
+        <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin-bottom:24px;">📝 Add Tutorial</h1>
+
+        <form th:action="@{/edu/new}" method="post" style="max-width:760px;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+            <!-- Type selection -->
+            <div class="form-section">
+                <label class="form-label">Content Type *</label>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;" id="typeGrid">
+                    <label class="type-option selected-text" id="lbl-TEXT" onclick="selectType('TEXT')">
+                        <input type="radio" name="mediaType" value="TEXT" checked/>
+                        <span style="font-size:36px;">📖</span>
+                        <span style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:#1565c0;">Read</span>
+                        <span style="font-size:11px;color:#8a91a8;text-align:center;">Article or text guide</span>
+                    </label>
+                    <label class="type-option" id="lbl-VIDEO" onclick="selectType('VIDEO')">
+                        <input type="radio" name="mediaType" value="VIDEO"/>
+                        <span style="font-size:36px;">🎬</span>
+                        <span style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:#c62828;">Watch</span>
+                        <span style="font-size:11px;color:#8a91a8;text-align:center;">YouTube or video link</span>
+                    </label>
+                    <label class="type-option" id="lbl-AUDIO" onclick="selectType('AUDIO')">
+                        <input type="radio" name="mediaType" value="AUDIO"/>
+                        <span style="font-size:36px;">🎧</span>
+                        <span style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:#2e7d32;">Listen</span>
+                        <span style="font-size:11px;color:#8a91a8;text-align:center;">Podcast or audio file</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Basic Info -->
+            <div class="form-section">
+                <div style="margin-bottom:18px;">
+                    <label class="form-label">Title *</label>
+                    <input type="text" name="title" required maxlength="200" placeholder="Enter tutorial title" class="form-input"/>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+                    <div>
+                        <label class="form-label">Category</label>
+                        <input type="text" name="category" list="catList" maxlength="100" placeholder="e.g. Programming, Business..." class="form-input"/>
+                        <datalist id="catList">
+                            <option th:each="c : ${categories}" th:value="${c}"></option>
+                        </datalist>
+                    </div>
+                    <div>
+                        <label class="form-label">Media / Link URL</label>
+                        <input type="url" name="mediaUrl" id="mediaUrlInput" placeholder="https://youtube.com/... or audio URL" class="form-input"/>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">Short Description</label>
+                    <textarea name="description" maxlength="300" placeholder="Brief summary (shown in card preview)" class="form-input" style="min-height:70px;resize:vertical;"></textarea>
+                </div>
+            </div>
+
+            <!-- Content (for TEXT type) -->
+            <div class="form-section" id="contentSection">
+                <label class="form-label">Content (Markdown / HTML)</label>
+                <textarea name="content" id="contentArea" placeholder="Write your tutorial content here..."
+                          class="form-input" style="min-height:300px;resize:vertical;font-family:monospace;font-size:13px;"></textarea>
+                <p style="font-size:11px;color:#8a91a8;margin-top:6px;">Supports basic HTML tags like &lt;b&gt;, &lt;i&gt;, &lt;ul&gt;, &lt;a&gt;, &lt;img&gt;</p>
+            </div>
+
+            <button type="submit" style="padding:13px 32px;background:#1b2a6b;color:white;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;cursor:pointer;">
+                🚀 Publish Tutorial
+            </button>
+        </form>
+    </main>
+</div>
+
+<script>
+function selectType(type) {
+    ['TEXT','VIDEO','AUDIO'].forEach(t => {
+        const lbl = document.getElementById('lbl-'+t);
+        lbl.classList.remove('selected-text','selected-video','selected-audio');
+    });
+    const cls = { TEXT:'selected-text', VIDEO:'selected-video', AUDIO:'selected-audio' };
+    document.getElementById('lbl-'+type).classList.add(cls[type]);
+
+    // Show/hide content area
+    const contentSection = document.getElementById('contentSection');
+    const mediaUrl = document.getElementById('mediaUrlInput');
+    if (type === 'TEXT') {
+        contentSection.style.display = 'block';
+        mediaUrl.placeholder = 'Optional external link';
+    } else if (type === 'VIDEO') {
+        contentSection.style.display = 'none';
+        mediaUrl.placeholder = 'https://youtube.com/watch?v=... or direct .mp4 URL';
+    } else {
+        contentSection.style.display = 'none';
+        mediaUrl.placeholder = 'https://... podcast/audio URL (.mp3, Spotify, etc.)';
+    }
+}
+</script>
+</body>
+</html>

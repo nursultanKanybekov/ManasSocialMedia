@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(${room.name})}"></head>
+<style>
+    .fg-layout { display:flex; height:calc(100vh - 60px); }
+    .fg-members { width:260px; background:white; border-right:1px solid #e2e5f0; display:flex; flex-direction:column; flex-shrink:0; }
+    .fg-members-header { padding:16px 18px; border-bottom:1px solid #e2e5f0; }
+    .fg-members-header h3 { font-family:Montserrat,sans-serif; font-weight:800; font-size:13px; color:#1b2a6b; margin:0 0 2px; }
+    .fg-members-header span { font-family:Montserrat,sans-serif; font-size:11px; color:#8a91a8; }
+    .fg-member-list { overflow-y:auto; flex:1; padding:8px 0; }
+    .fg-member { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer; transition:.15s; }
+    .fg-member:hover { background:#f7f8fc; }
+    .fg-member img { width:34px; height:34px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+    .fg-member-info { min-width:0; }
+    .fg-member-name { font-family:Montserrat,sans-serif; font-weight:700; font-size:12px; color:#1b2a6b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .fg-member-role { font-family:Montserrat,sans-serif; font-size:10px; color:#8a91a8; }
+    .fg-chat { flex:1; display:flex; flex-direction:column; background:#f7f8fc; }
+    .fg-header { background:linear-gradient(135deg,#1b2a6b,#111c4e); padding:14px 20px; display:flex; align-items:center; gap:14px; flex-shrink:0; }
+    .fg-msgs { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:10px; }
+    .fg-msg { display:flex; gap:10px; align-items:flex-start; }
+    .fg-msg img { width:32px; height:32px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+    .fg-bubble { background:white; border-radius:0 12px 12px 12px; padding:9px 13px; max-width:520px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+    .fg-bubble .sender { font-family:Montserrat,sans-serif; font-weight:700; font-size:11px; color:#1b2a6b; }
+    .fg-bubble .text { font-size:13px; color:#2c3e50; margin-top:3px; }
+    .fg-bubble .time { font-size:10px; color:#8a91a8; margin-top:4px; }
+    .fg-own .fg-bubble { background:#1b2a6b; border-radius:12px 0 12px 12px; }
+    .fg-own .fg-bubble .sender, .fg-own .fg-bubble .text, .fg-own .fg-bubble .time { color:rgba(255,255,255,0.9); }
+    .fg-own { flex-direction:row-reverse; }
+    .fg-input { padding:14px 20px; background:white; border-top:1px solid #e2e5f0; display:flex; gap:10px; flex-shrink:0; }
+    .fg-input input { flex:1; padding:10px 16px; border:1.5px solid #e2e5f0; border-radius:10px; font-family:Montserrat,sans-serif; font-size:13px; outline:none; }
+    .fg-input button { background:#1b2a6b; color:white; border:none; padding:10px 20px; border-radius:10px; font-family:Montserrat,sans-serif; font-weight:700; font-size:13px; cursor:pointer; }
+    .role-badge { font-size:9px; padding:1px 6px; border-radius:10px; font-weight:700; }
+    .role-MEZUN { background:#e8f5e9; color:#2e7d32; }
+    .role-STUDENT { background:#e3f2fd; color:#1565c0; }
+    .role-ADMIN { background:#fce4ec; color:#c62828; }
+    .role-SECRETARY { background:#fff8e1; color:#f57f17; }
+</style>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div class="layout-body" style="padding:0;">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="fg-layout">
+
+        <!-- Members panel -->
+        <div class="fg-members">
+            <div class="fg-members-header">
+                <h3>🏫 Faculty Members</h3>
+                <span th:text="${members.size() + ' online'}">0 members</span>
+            </div>
+            <div class="fg-member-list">
+                <div th:each="m : ${members}" class="fg-member"
+                     th:data-href="@{/mezun/{id}(id=${m.id})}" onclick="window.location=this.dataset.href">
+                    <img th:src="${m.profile != null and m.profile.avatarUrl != null ? m.profile.avatarUrl : '/images/default-avatar.svg'}" alt="avatar"/>
+                    <div class="fg-member-info">
+                        <div class="fg-member-name" th:text="${m.fullName}">Name</div>
+                        <span class="role-badge" th:classappend="'role-' + ${m.role.name()}" th:text="${m.role.name()}">ROLE</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat area -->
+        <div class="fg-chat">
+            <div class="fg-header">
+                <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;">🏫</div>
+                <div>
+                    <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:white;" th:text="${room.name}">Faculty Group</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.6);" th:text="${members.size() + ' members'}">0</div>
+                </div>
+            </div>
+
+            <div id="chatMessages" class="fg-msgs">
+                <div th:each="msg : ${messages}"
+                     th:class="${msg.sender.id == currentUser.id ? 'fg-msg fg-own' : 'fg-msg'}">
+                    <img th:src="${msg.sender.profile != null and msg.sender.profile.avatarUrl != null ? msg.sender.profile.avatarUrl : '/images/default-avatar.svg'}" alt=""/>
+                    <div class="fg-bubble">
+                        <div class="sender" th:text="${msg.sender.fullName}">Name</div>
+                        <div class="text" th:text="${msg.content}">Content</div>
+                        <div class="time" th:text="${#temporals.format(msg.createdAt,'HH:mm dd MMM')}">Time</div>
+                    </div>
+                </div>
+                <div th:if="${#lists.isEmpty(messages)}" style="text-align:center;padding:60px 0;color:#8a91a8;">
+                    <div style="font-size:40px;margin-bottom:12px;">👋</div>
+                    <p style="font-family:Montserrat,sans-serif;font-size:14px;">Say hi to your faculty group!</p>
+                </div>
+            </div>
+
+            <div class="fg-input">
+                <input type="text" id="msgInput" placeholder="Write a message..."
+                       onkeydown="if(event.key==='Enter') sendMsg()"/>
+                <button onclick="sendMsg()">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const roomId = /*[[${roomId}]]*/ '';
+    const currentUserId = /*[[${currentUser.id}]]*/ null;
+
+    const chatMessages = document.getElementById('chatMessages');
+    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Connect via STOMP WebSocket
+    const socket = new SockJS('/ws');
+    const stompClient = Stomp.over(socket);
+    stompClient.debug = null;
+    stompClient.connect({}, function () {
+        stompClient.subscribe('/topic/chat.' + roomId, function (frame) {
+            const msg = JSON.parse(frame.body);
+            appendMessage(msg);
+        });
+    });
+
+    function appendMessage(msg) {
+        if (!chatMessages) return;
+        const isOwn = msg.senderId == currentUserId;
+        const avatar = msg.senderAvatarUrl || '/images/default-avatar.svg';
+        const time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+        const div = document.createElement('div');
+        div.className = isOwn ? 'fg-msg fg-own' : 'fg-msg';
+        div.innerHTML = `
+            <img src="${avatar}" alt=""/>
+            <div class="fg-bubble">
+                <div class="sender">${msg.senderName || ''}</div>
+                <div class="text">${msg.content || ''}</div>
+                <div class="time">${time}</div>
+            </div>`;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function sendMsg() {
+        const input = document.getElementById('msgInput');
+        const content = input ? input.value.trim() : '';
+        if (!content || !stompClient) return;
+        stompClient.send('/app/chat.send/' + roomId, {}, JSON.stringify({ content, messageType: 'TEXT' }));
+        input.value = '';
+    }
+</script>
+</body>
+</html>

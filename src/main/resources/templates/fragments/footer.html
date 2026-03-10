@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer th:fragment="footer" class="footer">
+    <div class="footer-brand">
+        <img th:src="@{/images/university_logo.png}" alt="Manas"
+             onerror="this.style.display='none'"/>
+        <div class="footer-brand-text">
+            <strong>ManasMezun</strong>
+            <span>© 2026 Kyrgyz-Turkish Manas University</span>
+        </div>
+    </div>
+    <div class="footer-links">
+        <a th:href="@{/about}"   th:text="#{footer.about}">About</a>
+        <a th:href="@{/contact}" th:text="#{footer.contact}">Contact</a>
+        <a href="#">Privacy</a>
+        <a href="#">Support</a>
+    </div>
+    <div class="footer-copy">v2.0.0</div>
+</footer>
+</body>
+</html>

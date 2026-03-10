@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head(${profileUser.fullName})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+
+        <div class="profile-page">
+
+            <!-- Cover + Avatar -->
+            <div class="profile-hero">
+                <div class="profile-cover"></div>
+                <div class="profile-hero-body">
+                    <img th:src="${profile.avatarUrl != null ? profile.avatarUrl : '/images/default-avatar.svg'}"
+                         class="profile-avatar-lg" alt="avatar"/>
+                    <div class="profile-identity">
+                        <h1 th:text="${profileUser.fullName}">Full Name</h1>
+                        <p class="profile-headline" th:if="${profile.headline}" th:text="${profile.headline}">Headline</p>
+                        <div class="profile-tags">
+                            <span class="role-badge" th:text="${profileUser.role}">STUDENT</span>
+                            <span class="faculty-badge" th:if="${profileUser.faculty != null}"
+                                  th:text="${profileUser.faculty.name}">Faculty</span>
+                            <span th:if="${profileUser.graduationYear != null}"
+                                  class="grad-badge"
+                                  th:text="'Class of ' + ${profileUser.graduationYear}">Class of 2020</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="profile-actions">
+                        <!-- Own profile -->
+                        <div th:if="${isOwn}">
+                            <a th:href="@{/profile/me/edit}" class="btn btn-secondary"
+                               th:text="#{profile.edit}">Edit Profile</a>
+                            <a th:href="@{/profile/resume/{id}(id=${profileUser.id})}"
+                               class="btn btn-outline" th:text="#{profile.download_resume}">Download CV</a>
+                        </div>
+                        <!-- Other user's profile -->
+                        <div th:if="${!isOwn}">
+                            <!-- DM button -->
+                            <form th:action="@{/chat/direct/{id}(id=${profileUser.id})}" method="post" style="display:inline">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="btn btn-secondary" th:text="#{profile.send_message}">Message</button>
+                            </form>
+                            <!-- Mentorship request (STUDENT viewing MEZUN) -->
+                            <div sec:authorize="hasRole('STUDENT')"
+                                 th:if="${profileUser.role.name() == 'MEZUN'}">
+                                <button class="btn btn-primary"
+                                        hx-post="/career/mentorship/request"
+                                        th:attr="hx-vals=|{&quot;mentorId&quot;: &quot;${profileUser.id}&quot;}|"
+                                        hx-target="#mentorship-status"
+                                        hx-swap="innerHTML"
+                                        th:text="#{profile.request_mentorship}">Request Mentorship</button>
+                                <div id="mentorship-status"></div>
+                            </div>
+                            <a th:href="@{/profile/resume/{id}(id=${profileUser.id})}"
+                               class="btn btn-outline" th:text="#{profile.download_resume}">Download CV</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="profile-stats-bar">
+                <div class="stat-item">
+                    <strong th:text="${profile.totalPoints}">0</strong>
+                    <span th:text="#{profile.points}">Points</span>
+                </div>
+                <div class="stat-item">
+                    <strong th:text="${profile.rankPosition != null ? '#' + profile.rankPosition : '-'}">-</strong>
+                    <span th:text="#{profile.rank}">Rank</span>
+                </div>
+                <div class="stat-item">
+                    <strong th:text="${postCount}">0</strong>
+                    <span th:text="#{profile.posts}">Posts</span>
+                </div>
+                <div class="stat-item">
+                    <strong th:text="${#lists.size(userBadges)}">0</strong>
+                    <span th:text="#{profile.badges}">Badges</span>
+                </div>
+            </div>
+
+            <div class="profile-body">
+
+                <!-- About -->
+                <section class="profile-section" th:if="${profile.bio}">
+                    <h3 th:text="#{profile.about}">About</h3>
+                    <p th:text="${profile.bio}">Bio text</p>
+                </section>
+
+                <!-- Skills -->
+                <section class="profile-section" th:if="${!#lists.isEmpty(profile.skills)}">
+                    <h3 th:text="#{profile.skills}">Skills</h3>
+                    <div class="skills-cloud">
+                        <span th:each="skill : ${profile.skills}" class="skill-tag" th:text="${skill}">Skill</span>
+                    </div>
+                </section>
+
+                <!-- Badges -->
+                <section class="profile-section" th:if="${!#lists.isEmpty(userBadges)}">
+                    <h3 th:text="#{profile.badges}">Badges</h3>
+                    <div class="badges-grid">
+                        <div th:each="ub : ${userBadges}" class="badge-item"
+                             th:title="${ub.badge.getLocalizedDescription(lang)}">
+                            <img th:if="${ub.badge.iconUrl != null}" th:src="${ub.badge.iconUrl}"
+                                 class="badge-icon-lg" alt="badge"/>
+                            <span th:text="${ub.badge.getLocalizedName(lang)}">Badge</span>
+                            <small class="badge-tier" th:text="${ub.badge.tier}">BRONZE</small>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Social Links -->
+                <section class="profile-section" th:if="${!#maps.isEmpty(profile.socialLinks)}">
+                    <h3 th:text="#{profile.social_links}">Social Links</h3>
+                    <div class="social-links">
+                        <a th:each="entry : ${profile.socialLinks}"
+                           th:href="${entry.value}" target="_blank" rel="noopener"
+                           class="social-link" th:text="${entry.key}">Link</a>
+                    </div>
+                </section>
+
+                <!-- Recent Posts -->
+                <section class="profile-section" th:if="${!#lists.isEmpty(recentPosts)}">
+                    <h3 th:text="#{profile.recent_posts}">Recent Posts</h3>
+                    <div th:each="post : ${recentPosts}" class="mini-post">
+                        <p th:text="${post.getLocalizedContent(lang)}">Post text</p>
+                        <small th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy')}">Date</small>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

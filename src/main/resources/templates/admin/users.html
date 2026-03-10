@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Admin - Users')}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+
+        <div class="page-header">
+            <h2>User Management</h2>
+            <a th:href="@{/admin}" class="btn btn-outline">← Dashboard</a>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+            <a th:href="@{/admin/users}" class="filter-btn">All</a>
+            <a th:each="r : ${roles}" th:href="@{/admin/users(role=${r.name()})}"
+               class="filter-btn" th:text="${r.name()}">ROLE</a>
+            <a th:each="s : ${statuses}" th:href="@{/admin/users(status=${s.name()})}"
+               class="filter-btn" th:text="${s.name()}">STATUS</a>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Faculty</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="user : ${users}">
+                    <td><a th:href="@{/admin/users/{id}(id=${user.id})}" th:text="${user.fullName}">Name</a></td>
+                    <td th:text="${user.email}">email</td>
+                    <td><span class="role-badge" th:text="${user.role}">ROLE</span></td>
+                    <td><span class="status-badge" th:text="${user.status}">STATUS</span></td>
+                    <td th:text="${user.faculty != null ? user.faculty.name : '-'}">Faculty</td>
+                    <td>
+                        <a th:href="@{/admin/users/{id}(id=${user.id})}" class="btn btn-sm btn-outline">View</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div th:if="${users.isEmpty()}" class="empty-state">No users found.</div>
+
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

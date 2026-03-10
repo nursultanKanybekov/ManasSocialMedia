@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head(#{page.mentorship})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
+
+    <!-- Flash messages -->
+    <div th:if="${successMsg}" style="background:#d4edda;color:#155724;border:1px solid #c3e6cb;border-radius:10px;padding:12px 18px;margin-bottom:16px;font-family:Montserrat,sans-serif;font-weight:600;font-size:13px;">
+        ✅ <span th:text="${successMsg}">Success</span>
+    </div>
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">🤝 Mentorship Hub</div>
+            <div class="page-subtitle">Find a mentor or become one — connect, grow, and guide others</div>
+        </div>
+    </div>
+
+    <!-- MEZUN: Toggle own mentorship availability -->
+    <div sec:authorize="hasRole('MEZUN')" style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+        <div>
+            <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;color:#1b2a6b;">🌟 Your Mentorship Status</div>
+            <div style="font-size:13px;color:#8a91a8;margin-top:2px;">Enable this to appear in the mentor table and accept mentorship requests</div>
+        </div>
+        <div th:if="${myProfile != null}" style="display:flex;align-items:center;gap:12px;">
+            <span th:if="${myProfile.canMentor}" style="padding:5px 14px;background:#d4edda;color:#155724;border-radius:20px;font-size:12px;font-family:Montserrat,sans-serif;font-weight:700;">✅ Active Mentor</span>
+            <span th:unless="${myProfile.canMentor}" style="padding:5px 14px;background:#f8d7da;color:#721c24;border-radius:20px;font-size:12px;font-family:Montserrat,sans-serif;font-weight:700;">⛔ Not Active</span>
+            <form th:action="@{/career/mentorship/toggle-availability}" method="post" style="margin:0;">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit"
+                        th:text="${myProfile.canMentor} ? '🔴 Disable Mentoring' : '🟢 Enable Mentoring'"
+                        th:style="${myProfile.canMentor} ? 'padding:8px 16px;background:#c0392b;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;cursor:pointer;' : 'padding:8px 16px;background:#27ae60;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;cursor:pointer;'">
+                    Toggle
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MEZUN: Pending requests -->
+    <div sec:authorize="hasRole('MEZUN')" th:if="${pendingRequests != null and !pendingRequests.isEmpty()}"
+         style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;">
+        <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#1b2a6b;margin-bottom:14px;">📬 Pending Requests (<span th:text="${#lists.size(pendingRequests)}">0</span>)</div>
+        <div th:each="req : ${pendingRequests}" style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f0f2f8;">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <img th:src="${req.student.profile != null and req.student.profile.avatarUrl != null ? req.student.profile.avatarUrl : '/images/default-avatar.svg'}"
+                     style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #e8eaf6;" alt="avatar"/>
+                <div>
+                    <div style="font-weight:700;font-size:13px;color:#1b2a6b;" th:text="${req.student.fullName}">Student</div>
+                    <div style="font-size:12px;color:#8a91a8;" th:text="${req.topic}">Topic</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <form th:action="@{/career/mentorship/respond/{id}(id=${req.id})}" method="post" style="display:inline">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="accept" value="true"/>
+                    <button type="submit" style="padding:7px 14px;background:#28a745;color:white;border:none;border-radius:7px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">✅ Accept</button>
+                </form>
+                <form th:action="@{/career/mentorship/respond/{id}(id=${req.id})}" method="post" style="display:inline">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="accept" value="false"/>
+                    <button type="submit" style="padding:7px 14px;background:#dc3545;color:white;border:none;border-radius:7px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">❌ Decline</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- My active requests (STUDENT) -->
+    <div sec:authorize="hasRole('STUDENT')" th:if="${myRequests != null and !myRequests.isEmpty()}"
+         style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;">
+        <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#1b2a6b;margin-bottom:14px;">📋 My Mentorship Requests</div>
+        <div th:each="req : ${myRequests}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f2f8;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <img th:src="${req.mentor.profile != null and req.mentor.profile.avatarUrl != null ? req.mentor.profile.avatarUrl : '/images/default-avatar.svg'}"
+                     style="width:34px;height:34px;border-radius:50%;object-fit:cover;" alt="avatar"/>
+                <div>
+                    <div style="font-weight:700;font-size:13px;" th:text="${req.mentor.fullName}">Mentor</div>
+                    <div style="font-size:12px;color:#8a91a8;" th:text="${req.topic}">Topic</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;"
+                      th:style="${req.status.name() == 'ACTIVE'} ? 'background:#d4edda;color:#155724;' : (${req.status.name() == 'COMPLETED'} ? 'background:#cce5ff;color:#004085;' : (${req.status.name() == 'DECLINED'} ? 'background:#f8d7da;color:#721c24;' : 'background:#fff3cd;color:#856404;'))"
+                      th:text="${req.status}">PENDING</span>
+                <form th:if="${req.status.name() == 'ACTIVE'}" th:action="@{/chat/direct/{uid}(uid=${req.mentor.id})}" method="post" style="display:inline;margin:0;">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" style="padding:6px 12px;background:#1b2a6b;color:white;border:none;border-radius:7px;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">💬 Chat</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- === MENTOR TABLE === -->
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(27,42,107,0.08);overflow:hidden;">
+        <!-- Table header / filters -->
+        <div style="padding:16px 20px;border-bottom:1.5px solid #f0f2f8;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+            <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;color:#1b2a6b;">👨‍🏫 Available Mentors</div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <!-- Search -->
+                <form th:action="@{/career/mentorship}" method="get" style="display:flex;gap:8px;align-items:center;">
+                    <input type="text" name="search" th:value="${searchQ}" placeholder="Search name, skill, role..."
+                           style="padding:7px 12px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;outline:none;width:200px;"/>
+                    <!-- Sort -->
+                    <select name="sortBy" onchange="this.form.submit()"
+                            style="padding:7px 12px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;">
+                        <option value="" th:selected="${sortBy == null}">Sort: Default</option>
+                        <option value="points" th:selected="${sortBy == 'points'}">Sort: Points</option>
+                        <option value="name" th:selected="${sortBy == 'name'}">Sort: Name A-Z</option>
+                    </select>
+                    <button type="submit" style="padding:7px 14px;background:#1b2a6b;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">Search</button>
+                    <a th:href="@{/career/mentorship}" style="padding:7px 12px;background:#f0f2f8;color:#1b2a6b;border-radius:8px;font-size:12px;font-family:Montserrat,sans-serif;font-weight:600;text-decoration:none;">Clear</a>
+                </form>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div th:if="${mentorProfiles != null and !mentorProfiles.isEmpty()}">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                <tr style="background:#f8f9ff;">
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">#</th>
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Mentor</th>
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Role / Sphere</th>
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Skills</th>
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Points</th>
+                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p, i : ${mentorProfiles}"
+                    style="border-bottom:1px solid #f0f2f8;transition:background .15s;"
+                    onmouseover="this.style.background='#f8f9ff'" onmouseout="this.style.background='white'">
+                    <td style="padding:14px 16px;font-family:Montserrat,sans-serif;font-weight:700;color:#aaa;font-size:13px;" th:text="${i.index + 1}">1</td>
+                    <td style="padding:14px 16px;">
+                        <a th:href="@{/profile/{id}(id=${p.user.id})}" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+                            <img th:src="${p.avatarUrl != null ? p.avatarUrl : '/images/default-avatar.svg'}"
+                                 style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #e8eaf6;flex-shrink:0;" alt="avatar"/>
+                            <div>
+                                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;" th:text="${p.user.fullName}">Name</div>
+                                <div style="font-size:11px;color:#8a91a8;" th:text="${p.user.faculty != null ? p.user.faculty.name : 'Alumni'}">Faculty</div>
+                            </div>
+                        </a>
+                    </td>
+                    <td style="padding:14px 16px;">
+                        <div style="font-size:13px;color:#2c3e50;" th:text="${p.mentorJobTitle != null ? p.mentorJobTitle : p.headline}">Job Title</div>
+                        <div th:if="${p.user.graduationYear != null}" style="font-size:11px;color:#8a91a8;">Class of <span th:text="${p.user.graduationYear}">2020</span></div>
+                    </td>
+                    <td style="padding:14px 16px;">
+                        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+                                <span th:each="s, si : ${p.skills}" th:if="${si.index < 4}"
+                                      style="padding:3px 8px;background:#e8eaf6;color:#1b2a6b;border-radius:20px;font-size:11px;font-weight:600;font-family:Montserrat,sans-serif;"
+                                      th:text="${s}">Skill</span>
+                            <span th:if="${#lists.size(p.skills) > 4}"
+                                  style="padding:3px 8px;background:#f0f2f8;color:#8a91a8;border-radius:20px;font-size:11px;">
+                                    +<span th:text="${#lists.size(p.skills) - 4}">0</span>
+                                </span>
+                        </div>
+                    </td>
+                    <td style="padding:14px 16px;">
+                        <span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;" th:text="${p.totalPoints}">0</span>
+                        <span style="font-size:11px;color:#8a91a8;"> pts</span>
+                    </td>
+                    <td style="padding:14px 16px;">
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <!-- Chat button -->
+                            <form th:action="@{/chat/direct/{uid}(uid=${p.user.id})}" method="post" style="display:inline;margin:0;">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" style="padding:6px 12px;background:#1b2a6b;color:white;border:none;border-radius:7px;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">💬 Chat</button>
+                            </form>
+                            <!-- Request mentorship (STUDENT only) -->
+                            <div sec:authorize="hasRole('STUDENT')">
+                                <button style="padding:6px 12px;background:#c0392b;color:white;border:none;border-radius:7px;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;cursor:pointer;"
+                                        hx-post="/career/mentorship/request"
+                                        th:attr="hx-vals=|{&quot;mentorId&quot;: &quot;${p.user.id}&quot;}|"
+                                        hx-target="closest td"
+                                        hx-swap="innerHTML">🤝 Request</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty state -->
+        <div th:if="${mentorProfiles == null or mentorProfiles.isEmpty()}"
+             style="padding:60px;text-align:center;color:#8a91a8;">
+            <div style="font-size:48px;margin-bottom:12px;">🤝</div>
+            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;">No Mentors Available Yet</h3>
+            <p>Alumni can enable mentoring in their profile settings to appear here.</p>
+        </div>
+    </div>
+
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

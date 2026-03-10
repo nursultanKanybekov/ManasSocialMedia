@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head(${pageTitle})}"></head>
+<body class="app-layout">
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<main class="main-content">
+    <!-- Flash messages -->
+    <div th:if="${successMsg}" class="alert alert-success" th:text="#{${successMsg}}"></div>
+    <div th:if="${errorMsg}"   class="alert alert-error"   th:text="${errorMsg}"></div>
+    <div th:if="${infoMsg}"    class="alert alert-info"    th:text="#{${infoMsg}}"></div>
+
+    <!-- Page content slot -->
+    <div th:replace="${contentFragment}">Page content goes here</div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>

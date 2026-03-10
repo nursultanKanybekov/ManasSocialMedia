@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head(${competition.title})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <a th:href="@{/competitions}" style="display:inline-flex;align-items:center;gap:6px;color:#1b2a6b;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;margin-bottom:20px;">← <span th:text="#{competition.back}">Back to Competitions</span></a>
+
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:24px;">
+            <!-- Main content -->
+            <div>
+                <div style="background:linear-gradient(135deg,#1b2a6b,#111c4e);border-radius:16px;padding:32px;color:white;margin-bottom:20px;">
+                    <div style="display:flex;gap:10px;margin-bottom:16px;">
+                        <span style="padding:4px 12px;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;"
+                              th:style="${competition.status == 'ACTIVE' ? 'background:rgba(255,165,0,0.25);color:#ffc107;' : competition.status == 'UPCOMING' ? 'background:rgba(255,255,255,0.15);color:white;' : 'background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);'}"
+                              th:text="${competition.status}">UPCOMING</span>
+                    </div>
+                    <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:26px;margin-bottom:12px;" th:text="${competition.title}">Title</h1>
+                    <p th:if="${competition.prize != null}" style="font-size:16px;color:rgba(255,255,255,0.8);">🏆 <span th:text="${competition.prize}">Prize</span></p>
+                </div>
+
+                <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+                    <h3 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#1b2a6b;margin-bottom:12px;" th:text="#{competition.about}">About</h3>
+                    <p style="font-size:14px;color:#2c3e50;line-height:1.6;" th:text="${competition.description}">Description</p>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;" th:if="${competition.startDate != null or competition.endDate != null}">
+                        <div th:if="${competition.startDate != null}" style="padding:16px;background:#f0f2f8;border-radius:10px;">
+                            <div style="font-size:11px;color:#8a91a8;font-family:Montserrat,sans-serif;font-weight:700;margin-bottom:4px;" th:text="#{competition.start_date}">START DATE</div>
+                            <div style="font-size:14px;font-weight:600;color:#1b2a6b;" th:text="${#temporals.format(competition.startDate,'dd MMMM yyyy')}">Date</div>
+                        </div>
+                        <div th:if="${competition.endDate != null}" style="padding:16px;background:#f0f2f8;border-radius:10px;">
+                            <div style="font-size:11px;color:#8a91a8;font-family:Montserrat,sans-serif;font-weight:700;margin-bottom:4px;" th:text="#{competition.end_date}">END DATE</div>
+                            <div style="font-size:14px;font-weight:600;color:#1b2a6b;" th:text="${#temporals.format(competition.endDate,'dd MMMM yyyy')}">Date</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div>
+                <div style="background:white;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:16px;">
+                    <div style="text-align:center;margin-bottom:20px;">
+                        <div style="font-family:Montserrat,sans-serif;font-weight:900;font-size:32px;color:#1b2a6b;" id="reg-count" th:text="${competition.registrationCount}">0</div>
+                        <div style="font-size:13px;color:#8a91a8;" th:text="#{competition.registered}">registered</div>
+                    </div>
+
+                    <!-- Already registered -->
+                    <div th:if="${registered}" style="text-align:center;padding:16px;background:#d4edda;border-radius:10px;margin-bottom:12px;">
+                        <div style="font-size:20px;">✅</div>
+                        <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#155724;margin-top:4px;">You are registered!</div>
+                    </div>
+
+                    <!-- Registration Form (not registered + not closed) -->
+                    <div th:if="${!registered and competition.status != 'CLOSED'}" id="reg-form-wrap">
+                        <div style="margin-bottom:12px;">
+                            <label style="font-size:12px;font-weight:700;color:#8a91a8;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Your Full Name</label>
+                            <input id="reg-name" type="text" th:value="${currentUser.fullName}" readonly
+                                   style="width:100%;padding:9px 12px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;background:#f8f9ff;box-sizing:border-box;"/>
+                        </div>
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:12px;font-weight:700;color:#8a91a8;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Your Email</label>
+                            <input id="reg-email" type="text" th:value="${currentUser.email}" readonly
+                                   style="width:100%;padding:9px 12px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;background:#f8f9ff;box-sizing:border-box;"/>
+                        </div>
+                        <button id="regBtn"
+                                th:data-id="${competition.id}"
+                                onclick="confirmReg(this.getAttribute('data-id'))"
+                                style="width:100%;padding:12px;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;cursor:pointer;background:linear-gradient(135deg,#c0392b,#e74c3c);color:white;transition:opacity .2s;"
+                                th:text="#{competition.register}">Register</button>
+                        <p style="font-size:11px;color:#8a91a8;text-align:center;margin-top:8px;">By registering you agree to participate in this competition</p>
+                    </div>
+
+                    <!-- Closed -->
+                    <div th:if="${competition.status == 'CLOSED' and !registered}" style="text-align:center;padding:14px;background:#f8d7da;border-radius:10px;">
+                        <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#721c24;">Registration Closed</div>
+                    </div>
+
+                    <!-- Unregister link -->
+                    <div th:if="${registered and competition.status != 'CLOSED'}" style="text-align:center;margin-top:8px;">
+                        <span style="font-size:12px;color:#8a91a8;cursor:pointer;text-decoration:underline;"
+                              th:data-id="${competition.id}"
+                              onclick="confirmReg(this.getAttribute('data-id'))">Cancel registration</span>
+                    </div>
+                </div>
+                <div th:if="${competition.organizer != null}" style="background:white;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+                    <div style="font-size:11px;color:#8a91a8;font-family:Montserrat,sans-serif;font-weight:700;margin-bottom:6px;" th:text="#{competition.organizer}">ORGANIZER</div>
+                    <div style="font-size:14px;font-weight:600;color:#1b2a6b;" th:text="${competition.organizer}">Organizer</div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script th:inline="javascript">
+function confirmReg(id) {
+    const btn = document.getElementById('regBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
+    fetch('/competitions/' + id + '/register', {
+        method: 'POST',
+        headers: {'X-CSRF-TOKEN': document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] || '', 'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(d => {
+        const countEl = document.getElementById('reg-count');
+        if (countEl) countEl.textContent = d.count;
+        const wrap = document.getElementById('reg-form-wrap');
+        if (d.registered) {
+            if (wrap) wrap.innerHTML = '<div style="text-align:center;padding:16px;background:#d4edda;border-radius:10px;"><div style=\"font-size:20px;\">✅</div><div style=\"font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#155724;margin-top:4px;\">You are registered!</div></div>';
+        } else {
+            if (btn) { btn.disabled = false; btn.textContent = /*[[#{competition.register}]]*/ 'Register'; }
+        }
+    })
+    .catch(() => { if (btn) { btn.disabled = false; btn.textContent = /*[[#{competition.register}]]*/ 'Register'; }});
+}
+</script>
+</body>
+</html>

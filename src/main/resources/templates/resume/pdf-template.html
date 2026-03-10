@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+        h1 { color: #2563eb; font-size: 24px; margin-bottom: 4px; }
+        .headline { color: #666; font-size: 14px; margin-bottom: 20px; }
+        h2 { font-size: 16px; border-bottom: 2px solid #2563eb; padding-bottom: 4px; margin-top: 24px; }
+        .meta { font-size: 13px; color: #555; margin-bottom: 16px; }
+        .skill-tag { display: inline-block; background: #e0e7ff; color: #3730a3;
+                     padding: 2px 8px; border-radius: 12px; margin: 2px; font-size: 12px; }
+        .badge-item { margin-bottom: 6px; font-size: 13px; }
+        .application-item { margin-bottom: 8px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        td { padding: 4px 8px; }
+    </style>
+</head>
+<body>
+    <h1 th:text="${user.fullName}">Full Name</h1>
+    <div class="headline" th:if="${profile.headline}" th:text="${profile.headline}">Headline</div>
+
+    <div class="meta">
+        <span th:text="${user.email}">email</span>
+        <span th:if="${user.faculty != null}"> | <span th:text="${user.faculty.name}">Faculty</span></span>
+        <span th:if="${user.graduationYear != null}"> | Class of <span th:text="${user.graduationYear}">2024</span></span>
+        <span> | <span th:text="${user.role}">STUDENT</span></span>
+    </div>
+
+    <div th:if="${profile.bio}">
+        <h2>About</h2>
+        <p th:text="${profile.bio}">Bio</p>
+    </div>
+
+    <div th:if="${!profile.skills.isEmpty()}">
+        <h2>Skills</h2>
+        <div>
+            <span th:each="skill : ${profile.skills}" class="skill-tag" th:text="${skill}">Skill</span>
+        </div>
+    </div>
+
+    <div th:if="${!badges.isEmpty()}">
+        <h2>Achievements</h2>
+        <div th:each="ub : ${badges}" class="badge-item">
+            🏅 <span th:text="${ub.badge.nameI18n[lang] ?: ub.badge.nameI18n['en']}">Badge</span>
+            <span style="color:#888"> — </span>
+            <span th:text="${ub.badge.tier}">BRONZE</span>
+        </div>
+    </div>
+
+    <div th:if="${!applications.isEmpty()}">
+        <h2>Job Applications</h2>
+        <div th:each="app : ${applications}" class="application-item">
+            <strong th:text="${app.job.titleI18n[lang] ?: app.job.titleI18n['en']}">Job Title</strong>
+            — <span th:text="${app.status}">PENDING</span>
+            <span style="color:#888"> (<span th:text="${#temporals.format(app.appliedAt, 'MMM yyyy')}">Date</span>)</span>
+        </div>
+    </div>
+
+    <div th:if="${!profile.socialLinks.isEmpty()}">
+        <h2>Links</h2>
+        <div th:each="entry : ${profile.socialLinks}">
+            <span th:text="${entry.key}">Platform</span>: <span th:text="${entry.value}">URL</span>
+        </div>
+    </div>
+</body>
+</html>

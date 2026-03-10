@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="dropdown">
+    <div th:if="${not #lists.isEmpty(notifications)}">
+        <a th:each="n : ${notifications}"
+           th:href="${n.link != null ? n.link : '#'}"
+           class="notif-item"
+           th:classappend="${!n.isRead} ? ' unread'"
+           hx-post="${'/notifications/' + n.id + '/read'}"
+           hx-target="#notif-badge"
+           hx-swap="outerHTML"
+           hx-trigger="click">
+            <span class="notif-color-dot"
+                  th:style="${!n.isRead} ? 'background:var(--navy);' : 'background:#ccc;'"></span>
+            <div class="notif-text">
+                <span th:text="${n.icon != null ? n.icon : '🔔'}">🔔</span>
+                <strong th:text="${n.message}">Message</strong>
+                <span th:text="${#temporals.format(n.createdAt, 'dd MMM, HH:mm')}">time</span>
+            </div>
+        </a>
+    </div>
+    <div th:if="${#lists.isEmpty(notifications)}"
+         style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">
+        &#127881; No new notifications
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="commentList">
+    <div th:each="comment : ${comments}" class="comment-card">
+        <img th:src="${comment.author.profile != null and comment.author.profile.avatarUrl != null
+                       ? comment.author.profile.avatarUrl : '/images/default-avatar.svg'}"
+             class="comment-avatar" alt="avatar"/>
+        <div class="comment-body">
+            <strong th:text="${comment.author.fullName}">Author</strong>
+            <span class="comment-time"
+                  th:text="${#temporals.format(comment.createdAt, 'dd MMM HH:mm')}">Time</span>
+            <p th:text="${comment.content}">Comment text</p>
+        </div>
+    </div>
+    <div th:if="${comments == null or #lists.isEmpty(comments)}" class="empty-comments">
+        No comments yet.
+    </div>
+</div>
+</body>
+</html>

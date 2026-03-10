@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(${mezun.fullName})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div style="max-width:800px;margin:0 auto;">
+            <!-- Profile Card -->
+            <div style="background:white;border-radius:20px;padding:32px;box-shadow:0 4px 24px rgba(27,42,107,0.1);margin-bottom:24px;">
+                <div style="display:flex;gap:24px;align-items:flex-start;">
+                    <img th:src="${mezun.profile != null and mezun.profile.avatarUrl != null ? mezun.profile.avatarUrl : '/images/default-avatar.svg'}"
+                         style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:4px solid #e0e3ef;" alt="avatar"/>
+                    <div style="flex:1;">
+                        <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin-bottom:4px;" th:text="${mezun.fullName}">Name</h1>
+                        <p th:if="${mezun.profile != null and mezun.profile.headline != null}" style="color:#8a91a8;font-size:14px;margin-bottom:8px;" th:text="${mezun.profile.headline}">Headline</p>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                            <span th:if="${mezun.faculty != null}" style="font-size:12px;padding:4px 12px;background:#e8ecf8;color:#1b2a6b;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;" th:text="${mezun.faculty.name}">Faculty</span>
+                            <span th:if="${mezun.graduationYear != null}" style="font-size:12px;padding:4px 12px;background:#fce4ec;color:#c0392b;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;" th:text="'Class of ' + ${mezun.graduationYear}">Class of 2020</span>
+                            <span style="font-size:12px;padding:4px 12px;background:#fff3e0;color:#e65100;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;">🏆 <span th:text="${mezun.profile != null ? mezun.profile.totalPoints : 0}">0</span> pts</span>
+                        </div>
+                    </div>
+                    <a th:href="@{/chat}" style="padding:10px 20px;background:#1b2a6b;color:white;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;" th:text="#{profile.message}">Message</a>
+                </div>
+                <!-- Bio -->
+                <div th:if="${mezun.profile != null and mezun.profile.bio != null}" style="margin-top:20px;padding-top:20px;border-top:1px solid #f0f2f8;">
+                    <h3 style="font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;color:#1b2a6b;margin-bottom:8px;" th:text="#{profile.about}">About</h3>
+                    <p style="font-size:14px;color:#2c3e50;line-height:1.6;" th:text="${mezun.profile.bio}">Bio</p>
+                </div>
+            </div>
+            <a th:href="@{/mezun}" style="display:inline-flex;align-items:center;gap:6px;color:#1b2a6b;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">← <span th:text="#{mezun.back}">Back to Alumni</span></a>
+        </div>
+    </main>
+</div>
+</body>
+</html>

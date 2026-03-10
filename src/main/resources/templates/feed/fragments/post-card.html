@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<div th:fragment="postCard" class="post-card" th:classappend="${post.isPinned} ? 'post-pinned'">
+
+    <!-- Pinned badge -->
+    <div th:if="${post.isPinned}" class="pin-badge">📌 Pinned</div>
+
+    <!-- Header: Avatar + Name + Meta -->
+    <div class="post-header">
+        <a th:href="@{/mezun/{id}(id=${post.author.id})}">
+            <img th:src="${post.author.profile != null and post.author.profile.avatarUrl != null
+                           ? post.author.profile.avatarUrl : '/images/default-avatar.svg'}"
+                 class="post-avatar" alt="avatar"/>
+        </a>
+        <div class="post-meta">
+            <a th:href="@{/mezun/{id}(id=${post.author.id})}"
+               class="post-author" th:text="${post.author.fullName}">Author</a>
+            <span class="role-badge-sm" th:text="${post.author.role}">ROLE</span>
+            <span class="post-type-badge" th:switch="${post.postType.name()}">
+                <span th:case="'SUCCESS_STORY'">🌟 Success</span>
+                <span th:case="'NEWS'">📰 News</span>
+                <span th:case="'ANNOUNCEMENT'">📢 Announcement</span>
+                <span th:case="*">💬 General</span>
+            </span>
+            <time class="post-time"
+                  th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy HH:mm')}">Date</time>
+        </div>
+
+        <!-- Delete (own post or admin) -->
+        <div th:if="${currentUserId != null and post.author.id == currentUserId}" class="post-actions-menu">
+            <button class="btn-icon"
+                    th:attr="hx-delete=@{/feed/post/{id}(id=${post.id})}"
+                    hx-target="closest .post-card"
+                    hx-swap="outerHTML"
+                    hx-confirm="Delete this post?"
+                    title="Delete">🗑</button>
+        </div>
+    </div>
+
+    <!-- Post text content -->
+    <div class="post-content">
+        <p th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
+    </div>
+
+    <!-- Post image (if any) -->
+    <div th:if="${post.imageUrl != null}" class="post-image-wrap">
+        <img th:src="${post.imageUrl}" alt="post image" class="post-image"
+             onclick="openImageModal(this.src)" style="cursor:zoom-in;"/>
+    </div>
+
+    <!-- Footer: Like + Comment count -->
+    <div class="post-footer">
+        <!-- Like button -->
+        <div th:id="${'like-' + post.id}"
+             th:replace="~{feed/fragments/like-btn :: likeBtn(postId=${post.id}, liked=${likedPostIds != null and #lists.contains(likedPostIds, post.id.toString())}, count=${post.likesCount})}">
+        </div>
+
+        <!-- Comment toggle: use data-post-id, NOT th:onclick (blocked in Thymeleaf 3.1) -->
+        <button class="btn-action"
+                th:data-post-id="${post.id}"
+                th:attr="data-comments-target=${'comments-' + post.id}"
+                onclick="toggleComments(this.dataset.postId)">
+            💬 <span th:id="${'ccount-' + post.id}" th:text="${post.commentsCount}">0</span>
+        </button>
+    </div>
+
+    <!-- Comments Section (lazy-loaded via fetch on first expand) -->
+    <div th:id="${'comments-' + post.id}" class="comments-section" style="display:none;"></div>
+
+    <!-- Comment Input Row -->
+    <div class="comment-input-row" th:id="${'comment-row-' + post.id}" style="display:none;">
+        <input type="text"
+               th:id="${'comment-input-' + post.id}"
+               th:data-post-id="${post.id}"
+               name="content"
+               placeholder="Write a comment..."
+               class="comment-input"
+               onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
+        <button class="btn btn-sm btn-primary"
+                th:data-post-id="${post.id}"
+                onclick="submitComment(this.dataset.postId)">Send</button>
+    </div>
+</div>
+
+<script th:inline="javascript" th:if="${post != null}">
+    /*<![CDATA[*/
+    function toggleComments(postId) {
+        const section = document.getElementById('comments-' + postId);
+        const row     = document.getElementById('comment-row-' + postId);
+        const isHidden = section.style.display === 'none';
+
+        if (isHidden && section.dataset.loaded !== 'true') {
+            // Lazy-load comments on first open
+            fetch('/feed/post/' + postId + '/comments')
+                .then(r => r.text())
+                .then(html => {
+                    section.innerHTML = html;
+                    section.dataset.loaded = 'true';
+                })
+                .catch(console.error);
+        }
+
+        section.style.display = isHidden ? 'block' : 'none';
+        row.style.display     = isHidden ? 'flex'  : 'none';
+    }
+
+    async function submitComment(postId) {
+        const input   = document.getElementById('comment-input-' + postId);
+        const content = input.value.trim();
+        if (!content) return;
+
+        const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+        const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        if (csrfToken) headers[csrfHeader] = csrfToken;
+
+        const res = await fetch('/feed/post/' + postId + '/comment', {
+            method: 'POST',
+            headers: headers,
+            body: 'content=' + encodeURIComponent(content)
+        });
+        if (!res.ok) return;
+        const html = await res.text();
+        const section = document.getElementById('comments-' + postId);
+        section.insertAdjacentHTML('beforeend', html);
+        input.value = '';
+
+        const countEl = document.getElementById('ccount-' + postId);
+        if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
+    }
+
+    function openImageModal(src) {
+        let modal = document.getElementById('imgModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'imgModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+            modal.innerHTML = '<img style="max-width:92vw;max-height:92vh;border-radius:8px;"/>';
+            modal.onclick = () => modal.remove();
+            document.body.appendChild(modal);
+        }
+        modal.querySelector('img').src = src;
+        modal.style.display = 'flex';
+    }
+    /*]]>*/
+</script>
+</body>
+</html>

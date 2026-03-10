@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Add University News')}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
+
+    <div style="max-width:700px;margin:0 auto;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+            <a th:href="@{/admin/news}" style="color:#1b2a6b;font-weight:700;text-decoration:none;font-family:Montserrat,sans-serif;font-size:13px;">← Back to News</a>
+        </div>
+
+        <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(27,42,107,0.08);overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#1b2a6b,#2d4a9e);padding:24px;color:white;">
+                <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:18px;">📰 Add University News</div>
+                <div style="font-size:13px;opacity:.85;margin-top:4px;">Create an official university announcement or news article</div>
+            </div>
+            <div style="padding:28px;">
+                <form th:action="@{/admin/news/new}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                    <div style="margin-bottom:18px;">
+                        <label style="font-size:13px;font-weight:700;color:#2c3e50;display:block;margin-bottom:6px;">News Title *</label>
+                        <input type="text" name="title" required
+                               placeholder="Enter news headline..."
+                               style="width:100%;padding:11px 14px;border:1.5px solid #e0e3ef;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;"
+                               onfocus="this.style.borderColor='#1b2a6b'" onblur="this.style.borderColor='#e0e3ef'"/>
+                    </div>
+
+                    <div style="margin-bottom:18px;">
+                        <label style="font-size:13px;font-weight:700;color:#2c3e50;display:block;margin-bottom:6px;">Content *</label>
+                        <textarea name="content" required rows="10"
+                                  placeholder="Write the full news content here..."
+                                  style="width:100%;padding:11px 14px;border:1.5px solid #e0e3ef;border-radius:10px;font-size:14px;box-sizing:border-box;resize:vertical;outline:none;font-family:Open Sans,sans-serif;"
+                                  onfocus="this.style.borderColor='#1b2a6b'" onblur="this.style.borderColor='#e0e3ef'"></textarea>
+                    </div>
+
+                    <div style="margin-bottom:24px;">
+                        <label style="font-size:13px;font-weight:700;color:#2c3e50;display:block;margin-bottom:6px;">Language</label>
+                        <select name="lang" style="padding:10px 14px;border:1.5px solid #e0e3ef;border-radius:10px;font-size:13px;width:200px;">
+                            <option value="en">English</option>
+                            <option value="ru">Russian</option>
+                            <option value="ky">Kyrgyz</option>
+                            <option value="tr">Turkish</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex;gap:12px;">
+                        <button type="submit"
+                                style="padding:12px 28px;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:white;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;cursor:pointer;">
+                            📰 Publish News
+                        </button>
+                        <a th:href="@{/admin/news}"
+                           style="padding:12px 24px;background:#f0f2f8;color:#1b2a6b;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;text-decoration:none;">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

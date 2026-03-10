@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="avatarSection" class="avatar-section" id="avatarSection">
+    <div th:if="${success}" class="alert alert-success" style="margin-bottom:0.5rem">✅ Avatar updated!</div>
+    <div th:if="${error}"   class="alert alert-error"   style="margin-bottom:0.5rem" th:text="${error}">Error</div>
+
+    <img th:src="${avatarUrl != null ? avatarUrl : '/images/default-avatar.svg'}"
+         class="edit-avatar" id="avatarPreview" alt="avatar"/>
+
+    <div class="avatar-upload">
+        <label for="avatarFile" class="btn btn-outline">Change Photo</label>
+        <!-- uploadAvatar() is defined in app.js — always available after initial page load -->
+        <input type="file" id="avatarFile" name="avatar" accept="image/*" style="display:none"
+               onchange="uploadAvatar(this)"/>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head(#{page.career})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<!-- layout-body removed: sidebar is now fixed positioned -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+
+        <div class="page-header">
+            <h2 th:text="#{career.jobs.title}">Job Board</h2>
+            <div sec:authorize="hasAnyRole('EMPLOYER','ADMIN','MEZUN')">
+                <a th:href="@{/career/jobs/new}" class="btn btn-primary" th:text="#{career.post_job}">Post a Job</a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+            <a th:href="@{/career/jobs}" class="filter-btn"
+               th:classappend="${param.type == null} ? 'active'"
+               th:text="#{career.filter.all}">All</a>
+            <a th:each="t : ${jobTypes}"
+               th:href="@{/career/jobs(type=${t.name()})}"
+               class="filter-btn"
+               th:classappend="${param.type != null and param.type[0] == t.name()} ? 'active'"
+               th:text="${t.name()}">Type</a>
+        </div>
+
+        <!-- Job Cards -->
+        <div class="jobs-grid" th:if="${!jobs.content.isEmpty()}">
+            <div th:each="job : ${jobs.content}" class="job-card">
+                <div class="job-card-header">
+                    <h3><a th:href="@{/career/jobs/{id}(id=${job.id})}"
+                           th:text="${job.getLocalizedTitle(lang)}">Job Title</a></h3>
+                    <span class="job-type-badge" th:text="${job.jobType}">FULL_TIME</span>
+                </div>
+                <div class="job-card-meta">
+                    <span th:if="${job.location}">📍 <span th:text="${job.location}">Location</span></span>
+                    <span th:if="${job.salaryRange}">💰 <span th:text="${job.salaryRange}">Salary</span></span>
+                    <span th:if="${job.deadline}">⏰ <span th:text="${#temporals.format(job.deadline, 'dd MMM yyyy')}">Deadline</span></span>
+                </div>
+                <p class="job-desc"
+                   th:text="${#strings.abbreviate(job.getLocalizedDescription(lang), 150)}">Description</p>
+                <div class="job-card-footer">
+                    <a th:href="@{/career/jobs/{id}(id=${job.id})}" class="btn btn-sm btn-primary"
+                       th:text="#{career.view_job}">View Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${jobs.content.isEmpty()}" class="empty-state">
+            <p th:text="#{career.no_jobs}">No active job listings found.</p>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" th:if="${jobs.totalPages > 1}">
+            <a th:if="${!jobs.first}" th:href="@{/career/jobs(page=${jobs.number - 1})}"
+               class="btn btn-outline" th:text="#{common.prev}">Previous</a>
+            <span th:text="${jobs.number + 1} + ' / ' + ${jobs.totalPages}">1 / 5</span>
+            <a th:if="${!jobs.last}" th:href="@{/career/jobs(page=${jobs.number + 1})}"
+               class="btn btn-outline" th:text="#{common.next}">Next</a>
+        </div>
+
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

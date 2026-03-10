@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+
+  # ─── PostgreSQL Database ───────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: manas_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: manas_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d manas_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - manas_net
+
+  # ─── Spring Boot Application ───────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: manas_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/manas_db
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
+      # JPA
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # JWT (change this in production!)
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-min-32-chars!!}
+      # Cloudinary (fill in your credentials)
+      APP_CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-dpkxkjwmy}
+      APP_CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-952176747147999}
+      APP_CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-CcGE7JYPNbPxTMkxi5gSK3vri9E}
+      # Base URL (change to your server's public address)
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8081}
+      # Server
+      SERVER_PORT: 8081
+    ports:
+      - "${HOST_PORT:-8081}:8081"
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - manas_net
+
+volumes:
+  postgres_data:
+  uploads_data:
+
+networks:
+  manas_net:
+    driver: bridge

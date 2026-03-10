@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(#{secretary.title})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<!-- layout-body removed: sidebar is now fixed positioned -->
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+  <main class="main-content">
+
+    <div class="page-header">
+      <h2 th:text="#{secretary.title}">Validation Queue</h2>
+      <span class="badge-count" th:text="${pendingCount} + ' ' + #{secretary.pending}">5 pending</span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(pending)}" class="empty-state">
+      <p th:text="#{secretary.queue_empty}">No pending validations.</p>
+    </div>
+
+    <div class="validation-list">
+      <div th:each="val : ${pending}" class="validation-card">
+        <div class="validation-info">
+          <strong th:text="${val.user.fullName}">Name</strong>
+          <span class="role-badge" th:text="${val.user.role}">STUDENT</span>
+          <span th:text="${val.user.email}">email</span>
+          <span th:if="${val.user.faculty}" th:text="${val.user.faculty.name}">Faculty</span>
+          <span th:text="#{secretary.student_id} + ': ' + ${val.user.studentIdNumber}">ID: 123</span>
+          <span th:if="${val.user.graduationYear}"
+                th:text="#{secretary.grad_year} + ': ' + ${val.user.graduationYear}">Year: 2020</span>
+          <span class="submitted-at"
+                th:text="#{secretary.submitted} + ': ' + ${#temporals.format(val.submittedAt, 'dd MMM yyyy HH:mm')}">Submitted</span>
+        </div>
+        <div class="validation-actions">
+          <form th:action="@{/secretary/approve/{id}(id=${val.id})}" method="post" style="display:inline">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn btn-success" th:text="#{secretary.approve}">✅ Approve</button>
+          </form>
+          <form th:action="@{/secretary/reject/{id}(id=${val.id})}" method="post" style="display:inline">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="text" name="reason" class="form-control-inline"
+                   th:placeholder="#{secretary.reject_reason}" required/>
+            <button type="submit" class="btn btn-danger" th:text="#{secretary.reject}">❌ Reject</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>
