@@ -9,6 +9,8 @@ import com.com.manasuniversityecosystem.repository.*;
 import com.com.manasuniversityecosystem.repository.competition.CompetitionRepository;
 import com.com.manasuniversityecosystem.repository.event.MeetingEventRepository;
 import com.com.manasuniversityecosystem.repository.social.PostRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -32,14 +34,37 @@ public class DataInitializer implements CommandLineRunner {
     private final MeetingEventRepository eventRepository;
     private final PostRepository postRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Override
     @Transactional
     public void run(String... args) {
+        fixRoleConstraint();
         createFaculties();
         createUsers();
         createSampleCompetitions();
         createSampleEvents();
         createSamplePosts();
+    }
+
+    /**
+     * Drop and recreate the role CHECK constraint to include SUPER_ADMIN.
+     * Safe to run multiple times — uses IF EXISTS.
+     */
+    private void fixRoleConstraint() {
+        try {
+            entityManager.createNativeQuery(
+                    "ALTER TABLE app_user DROP CONSTRAINT IF EXISTS app_user_role_check"
+            ).executeUpdate();
+            entityManager.createNativeQuery(
+                    "ALTER TABLE app_user ADD CONSTRAINT app_user_role_check " +
+                            "CHECK (role IN ('STUDENT','MEZUN','EMPLOYER','ADMIN','SECRETARY','SUPER_ADMIN'))"
+            ).executeUpdate();
+            log.info("✅ Role constraint updated to include SUPER_ADMIN");
+        } catch (Exception e) {
+            log.warn("Could not update role constraint (may already be correct): {}", e.getMessage());
+        }
     }
 
     private void createFaculties() {
