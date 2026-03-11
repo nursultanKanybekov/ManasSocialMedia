@@ -186,5 +186,115 @@
             })();
         </script>
     </th:block>
+
+    <!-- ── Universal real-time notification for ALL logged-in users ── -->
+    <th:block sec:authorize="isAuthenticated()">
+        <script th:inline="javascript">
+            (function(){
+                var currentUserId = /*[[${#authentication != null and #authentication.principal != null ? #authentication.principal.id : ''}]]*/ '';
+                if (!currentUserId) return;
+
+                var notifTopic = '/topic/user.' + currentUserId;
+                var retryDelay = 3000;
+
+                // Toast container (shared with secretary toasts)
+                function getWrap() {
+                    var w = document.getElementById('manas-toast-wrap');
+                    if (!w) { w = document.createElement('div'); w.id = 'manas-toast-wrap'; document.body.appendChild(w); }
+                    return w;
+                }
+
+                function playChime() {
+                    try {
+                        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                        [{t:0,f:880,d:0.15},{t:0.15,f:1108,d:0.18}].forEach(function(n){
+                            var osc=ctx.createOscillator(), g=ctx.createGain();
+                            osc.connect(g); g.connect(ctx.destination);
+                            osc.type='sine'; osc.frequency.value=n.f;
+                            g.gain.setValueAtTime(0, ctx.currentTime+n.t);
+                            g.gain.linearRampToValueAtTime(0.22, ctx.currentTime+n.t+0.02);
+                            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+n.t+n.d);
+                            osc.start(ctx.currentTime+n.t); osc.stop(ctx.currentTime+n.t+n.d+0.05);
+                        });
+                    } catch(e){}
+                }
+
+                function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+                function showNotifToast(icon, message, link) {
+                    playChime();
+                    var wrap = getWrap();
+                    var toast = document.createElement('div');
+                    toast.className = 'manas-toast';
+                    toast.innerHTML =
+                        '<div class="mn-toast-avatar">' + esc(icon) + '</div>' +
+                        '<div class="mn-toast-body">' +
+                        '<div class="mn-toast-title">New notification</div>' +
+                        '<div class="mn-toast-sub">' + esc(message) + '</div>' +
+                        '<div class="mn-toast-actions">' +
+                        (link ? '<a href="' + esc(link) + '" class="mn-toast-btn mn-toast-btn-primary">View &#8594;</a>' : '') +
+                        '<button class="mn-toast-btn mn-toast-btn-secondary" onclick="mnDismiss(this)">Dismiss</button>' +
+                        '</div>' +
+                        '</div>' +
+                        '<button class="mn-toast-close" onclick="mnDismiss(this)">&#x2715;</button>';
+
+                    wrap.appendChild(toast);
+
+                    // Bump the notification bell badge
+                    var badge = document.getElementById('notif-badge');
+                    if (badge) {
+                        var cur = parseInt(badge.textContent) || 0;
+                        badge.textContent = cur + 1;
+                        badge.style.display = 'flex';
+                    }
+
+                    // Browser push notification
+                    if (window.Notification && Notification.permission === 'granted') {
+                        new Notification(message, { icon: '/images/university_logo.png' });
+                    }
+
+                    var timer = setTimeout(function(){ if (toast.parentNode) { toast.classList.add('hiding'); setTimeout(function(){ toast.remove(); }, 300); } }, 8000);
+                    toast._timer = timer;
+                }
+
+                // Make sure mnDismiss is defined (may already be from secretary block)
+                if (!window.mnDismiss) {
+                    window.mnDismiss = function(btn) {
+                        var t = btn.closest('.manas-toast'); if (!t) return;
+                        clearTimeout(t._timer); t.classList.add('hiding');
+                        setTimeout(function(){ t.remove(); }, 300);
+                    };
+                }
+
+                function connectUserWS() {
+                    if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') { setTimeout(connectUserWS, 500); return; }
+                    var client = Stomp.over(new SockJS('/ws'));
+                    client.debug = null;
+                    client.connect({}, function() {
+                        retryDelay = 3000;
+                        client.subscribe(notifTopic, function(frame) {
+                            try {
+                                var d = JSON.parse(frame.body);
+                                showNotifToast(d.icon || '🔔', d.message || '', d.link || '/');
+                                // Fire a DOM event so other scripts can react
+                                document.dispatchEvent(new CustomEvent('manasNotification', { detail: d }));
+                            } catch(e){ console.error('[NotifWS]', e); }
+                        });
+                    }, function(){
+                        setTimeout(connectUserWS, retryDelay);
+                        retryDelay = Math.min(retryDelay * 2, 30000);
+                    });
+                }
+
+                if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', connectUserWS); }
+                else { connectUserWS(); }
+
+                // Request browser notification permission on first click
+                document.addEventListener('click', function(){
+                    if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
+                }, {once: true});
+            })();
+        </script>
+    </th:block>
 </head>
 </html>

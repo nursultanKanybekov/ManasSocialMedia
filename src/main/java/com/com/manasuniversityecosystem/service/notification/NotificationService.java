@@ -25,8 +25,8 @@ import java.util.UUID;
 public class NotificationService {
 
     private final NotificationRepository notifRepo;
-    private final UserRepository userRepo;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository         userRepo;
+    private final SimpMessagingTemplate  messagingTemplate;
 
     // ── Read ──────────────────────────────────────────────────
 
@@ -62,7 +62,7 @@ public class NotificationService {
         notifRepo.deleteReadForUser(userId);
     }
 
-    // ── Internal save — re-fetches by ID to avoid detached-entity FK issues ──
+    // ── Core: save to DB + push via WebSocket ─────────────────
 
     @Transactional
     protected void saveNotification(UUID recipientId, UUID actorId,
@@ -81,30 +81,49 @@ public class NotificationService {
                 .isRead(false)
                 .build();
         notifRepo.save(n);
-        log.debug("Notification [{}] → {}: {}", type, recipient.getEmail(), message);
+
+        // Real-time push to recipient's personal channel
+        pushToUser(recipientId, icon != null ? icon : "🔔", message, link, type.name());
     }
 
-    // ── Domain helpers — all accept IDs + strings, run @Async ─
+    /** Push real-time notification to a specific user via WebSocket */
+    private void pushToUser(UUID userId, String icon, String message, String link, String type) {
+        try {
+            Map<String, String> payload = Map.of(
+                    "icon",    icon    != null ? icon    : "🔔",
+                    "message", message != null ? message : "",
+                    "link",    link    != null ? link    : "/",
+                    "type",    type    != null ? type    : "GENERAL"
+            );
+            messagingTemplate.convertAndSend("/topic/user." + userId, payload);
+            log.debug("WS push → /topic/user.{}: {}", userId, message);
+        } catch (Exception e) {
+            log.warn("WS push failed for user {}: {}", userId, e.getMessage());
+        }
+    }
+
+    // ── Domain notification helpers ───────────────────────────
 
     @Async
     @Transactional
     public void notifyRegistration(UUID newUserId, String fullName, String role) {
         String msg = "New registration: " + fullName + " (" + role + ")";
+
+        // Save + push to every admin and secretary
         userRepo.findByRole(UserRole.ADMIN).forEach(admin ->
                 saveNotification(admin.getId(), newUserId, NotifType.ACCOUNT_REGISTERED, msg, "/secretary", "👤")
         );
         userRepo.findByRole(UserRole.SECRETARY).forEach(sec ->
                 saveNotification(sec.getId(), newUserId, NotifType.ACCOUNT_REGISTERED, msg, "/secretary", "👤")
         );
-        // Real-time WebSocket push to all secretaries on /topic/secretary.newUser
-        Map<String, String> wsPayload = Map.of(
-                "fullName", fullName,
-                "role", role,
-                "message", msg,
-                "link", "/secretary"
+        userRepo.findByRole(UserRole.SUPER_ADMIN).forEach(sa ->
+                saveNotification(sa.getId(), newUserId, NotifType.ACCOUNT_REGISTERED, msg, "/secretary", "👤")
         );
-        messagingTemplate.convertAndSend("/topic/secretary.newUser", wsPayload);
-        log.info("WebSocket push → /topic/secretary.newUser: {}", fullName);
+
+        // Also broadcast on shared secretary topic (for queue badge update)
+        messagingTemplate.convertAndSend("/topic/secretary.newUser", Map.of(
+                "fullName", fullName, "role", role, "message", msg, "link", "/secretary"
+        ));
     }
 
     @Async
@@ -143,7 +162,7 @@ public class NotificationService {
                                  UUID jobId, String jobTitle, String applicantName) {
         saveNotification(employerId, applicantId, NotifType.JOB_APPLIED,
                 applicantName + " applied for: " + jobTitle,
-                "/career/jobs/" + jobId, "💼");
+                "/career/jobs/" + jobId + "/applicants", "💼");
     }
 
     @Async
@@ -162,10 +181,14 @@ public class NotificationService {
     @Async
     @Transactional
     public void notifyNewJob(UUID posterId, UUID jobId, String jobTitle) {
-        userRepo.findByRole(UserRole.STUDENT).forEach(student ->
-                saveNotification(student.getId(), posterId, NotifType.JOB_POSTED,
-                        "New job posted: " + jobTitle,
-                        "/career/jobs/" + jobId, "💼")
+        // Push to all students + mezuns
+        userRepo.findByRole(UserRole.STUDENT).forEach(u ->
+                saveNotification(u.getId(), posterId, NotifType.JOB_POSTED,
+                        "New job posted: " + jobTitle, "/career/jobs/" + jobId, "💼")
+        );
+        userRepo.findByRole(UserRole.MEZUN).forEach(u ->
+                saveNotification(u.getId(), posterId, NotifType.JOB_POSTED,
+                        "New job posted: " + jobTitle, "/career/jobs/" + jobId, "💼")
         );
     }
 
