@@ -41,4 +41,5 @@ EXPOSE 8081
 
 ENTRYPOINT ["java", \
   "-Djava.security.egd=file:/dev/./urandom", \
+  "-Dserver.port=${PORT:-8081}", \
   "-jar", "app.jar"]
