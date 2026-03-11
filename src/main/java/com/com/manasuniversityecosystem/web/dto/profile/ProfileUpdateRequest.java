@@ -15,4 +15,6 @@ public class ProfileUpdateRequest {
     private Map<String, String> socialLinks;
     private Boolean canMentor;
     private String mentorJobTitle;
+    private String currentJobTitle;
+    private String currentCompany;
 }

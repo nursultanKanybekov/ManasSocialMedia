@@ -37,8 +37,10 @@ public class ProfileService {
         if (req.getHeadline() != null)  profile.setHeadline(req.getHeadline());
         if (req.getSkills() != null)    profile.setSkills(req.getSkills());
         if (req.getSocialLinks() != null) profile.setSocialLinks(req.getSocialLinks());
-        if (req.getCanMentor() != null)  profile.setCanMentor(req.getCanMentor());
-        if (req.getMentorJobTitle() != null) profile.setMentorJobTitle(req.getMentorJobTitle());
+        if (req.getCanMentor() != null)      profile.setCanMentor(req.getCanMentor());
+        if (req.getMentorJobTitle() != null)  profile.setMentorJobTitle(req.getMentorJobTitle());
+        if (req.getCurrentJobTitle() != null) profile.setCurrentJobTitle(req.getCurrentJobTitle());
+        if (req.getCurrentCompany() != null)  profile.setCurrentCompany(req.getCurrentCompany());
 
         // Also update user full name if provided
         if (req.getFullName() != null && !req.getFullName().isBlank()) {

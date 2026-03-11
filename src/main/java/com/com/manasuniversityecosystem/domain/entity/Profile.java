@@ -85,6 +85,14 @@ public class Profile {
     @Column(length = 300)
     private String mentorJobTitle;
 
+    /** Current job title (e.g. "Backend Developer") */
+    @Column(length = 200)
+    private String currentJobTitle;
+
+    /** Current employer (e.g. "Google") */
+    @Column(length = 200)
+    private String currentCompany;
+
     @Column(nullable = false)
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();

@@ -10,11 +10,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -24,6 +26,7 @@ public class NotificationService {
 
     private final NotificationRepository notifRepo;
     private final UserRepository userRepo;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // ── Read ──────────────────────────────────────────────────
 
@@ -93,6 +96,15 @@ public class NotificationService {
         userRepo.findByRole(UserRole.SECRETARY).forEach(sec ->
                 saveNotification(sec.getId(), newUserId, NotifType.ACCOUNT_REGISTERED, msg, "/secretary", "👤")
         );
+        // Real-time WebSocket push to all secretaries on /topic/secretary.newUser
+        Map<String, String> wsPayload = Map.of(
+                "fullName", fullName,
+                "role", role,
+                "message", msg,
+                "link", "/secretary"
+        );
+        messagingTemplate.convertAndSend("/topic/secretary.newUser", wsPayload);
+        log.info("WebSocket push → /topic/secretary.newUser: {}", fullName);
     }
 
     @Async
