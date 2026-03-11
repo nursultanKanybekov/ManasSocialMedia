@@ -4,6 +4,8 @@ package com.com.manasuniversityecosystem.web.controller;
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.domain.entity.Profile;
 import com.com.manasuniversityecosystem.repository.FacultyRepository;
+import com.com.manasuniversityecosystem.service.career.JobService;
+import com.com.manasuniversityecosystem.repository.career.JobApplicationRepository;
 import com.com.manasuniversityecosystem.repository.gamification.UserBadgeRepository;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.service.ProfileService;
@@ -43,6 +45,8 @@ public class ProfileController {
     private final ResumeExportService resumeService;
     private final UserBadgeRepository userBadgeRepo;
     private final FacultyRepository facultyRepo;
+    private final JobService jobService;
+    private final JobApplicationRepository jobApplicationRepo;
 
     // ── GET /profile/{id}  — view any user's profile ─────────
     @GetMapping("/{id}")
@@ -53,12 +57,25 @@ public class ProfileController {
         AppUser profileUser = userService.getById(id);
         Profile profile     = profileService.getByUserId(id);
 
+        // CV visible to: self, or employer/admin who has a job this user applied to
+        boolean isOwn = principal.getId().equals(id);
+        boolean viewerIsEmployer = false;
+        try {
+            com.com.manasuniversityecosystem.domain.entity.AppUser viewer = userService.getById(principal.getId());
+            viewerIsEmployer = viewer.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.EMPLOYER
+                    || viewer.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.ADMIN
+                    || viewer.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.SUPER_ADMIN;
+        } catch (Exception ignored) {}
+        boolean canViewCv = isOwn || (viewerIsEmployer &&
+                jobApplicationRepo.existsByApplicantIdAndJobPosterId(id, principal.getId()));
+
         model.addAttribute("profileUser",  profileUser);
         model.addAttribute("profile",      profile);
         model.addAttribute("userBadges",   userBadgeRepo.findByUserIdWithBadge(id));
         model.addAttribute("postCount",    postService.countUserPosts(id));
         model.addAttribute("recentPosts",  postService.getUserPosts(id, 0, 12).getContent());
-        model.addAttribute("isOwn",        principal.getId().equals(id));
+        model.addAttribute("isOwn",        isOwn);
+        model.addAttribute("canViewCv",    canViewCv);
         model.addAttribute("lang",         lang);
         return "profile/view";
     }

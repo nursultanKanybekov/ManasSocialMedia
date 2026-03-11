@@ -45,10 +45,11 @@ public class CareerController {
 
     // GET /career/jobs
     @GetMapping("/jobs")
-    public String jobsPage(@RequestParam(defaultValue = "0")  int    page,
-                           @RequestParam(defaultValue = "10") int    size,
-                           @RequestParam(required = false)    String type,
-                           @RequestParam(defaultValue = "en") String lang,
+    public String jobsPage(@RequestParam(defaultValue = "0")       int    page,
+                           @RequestParam(defaultValue = "10")      int    size,
+                           @RequestParam(required = false)         String type,
+                           @RequestParam(defaultValue = "newest")  String sort,
+                           @RequestParam(defaultValue = "en")      String lang,
                            @AuthenticationPrincipal UserDetailsImpl principal,
                            Model model) {
         JobType jobType = null;
@@ -58,12 +59,12 @@ public class CareerController {
         }
 
         Page<JobListing> jobs = jobType != null
-                ? jobService.getActiveJobsByType(jobType, page, size)
-                : jobService.getActiveJobs(page, size);
+                ? jobService.getActiveJobsByType(jobType, page, size, sort)
+                : jobService.getActiveJobs(page, size, sort);
 
-        model.addAttribute("jobs",      jobs);
-        model.addAttribute("jobTypes",  JobType.values());
-        model.addAttribute("lang",      lang);
+        model.addAttribute("jobs",          jobs);
+        model.addAttribute("jobTypes",      JobType.values());
+        model.addAttribute("lang",          lang);
         model.addAttribute("currentUserId", principal.getId());
         return "career/jobs";
     }
@@ -114,17 +115,16 @@ public class CareerController {
     public String applyForJob(@PathVariable UUID id,
                               @RequestParam(required = false) String coverLetter,
                               @AuthenticationPrincipal UserDetailsImpl principal,
-                              Model model) {
+                              RedirectAttributes redirectAttributes) {
         AppUser user = userService.getById(principal.getId());
-        model.addAttribute("jobId",   id);
-        model.addAttribute("applied", false);
         try {
             jobService.apply(user, id, coverLetter);
-            model.addAttribute("applied", true);
+            redirectAttributes.addFlashAttribute("toastSuccess",
+                    "\u2705 Application sent! The employer has been notified.");
         } catch (IllegalStateException e) {
-            model.addAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute("toastError", e.getMessage());
         }
-        return "career/fragments/apply-btn :: applyBtn";
+        return "redirect:/career/jobs";
     }
 
     // POST /career/jobs/{id}/close
@@ -154,6 +154,27 @@ public class CareerController {
         return "career/my-applications";
     }
 
+    // GET /career/jobs/{id}/applicants — employer sees all applicants for their job
+    @GetMapping("/jobs/{id}/applicants")
+    public String viewApplicants(@PathVariable UUID id,
+                                 @AuthenticationPrincipal UserDetailsImpl principal,
+                                 Model model) {
+        AppUser employer = userService.getById(principal.getId());
+        com.com.manasuniversityecosystem.domain.entity.career.JobListing job = jobService.getById(id);
+        // Only poster, admin, or secretary can view
+        boolean isOwner = job.getPostedBy().getId().equals(principal.getId());
+        boolean isAdmin  = employer.getRole().name().equals("ADMIN") || employer.getRole().name().equals("SUPER_ADMIN");
+        if (!isOwner && !isAdmin) return "redirect:/career/jobs/" + id;
+        model.addAttribute("job",          job);
+        // Use job poster for authorization check in service, or bypass via repo directly for admin
+        java.util.List<com.com.manasuniversityecosystem.domain.entity.career.JobApplication> apps =
+                isOwner ? jobService.getApplicationsForJob(id, employer)
+                        : jobService.getApplicationsForJob(id, job.getPostedBy());
+        model.addAttribute("applications", apps);
+        model.addAttribute("lang",         "en");
+        return "career/applicants";
+    }
+
     // POST /career/applications/{id}/status
     @PostMapping("/applications/{id}/status")
     @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN')")
@@ -165,9 +186,10 @@ public class CareerController {
         AppUser employer = userService.getById(principal.getId());
         JobApplication.ApplicationStatus s =
                 JobApplication.ApplicationStatus.valueOf(status.toUpperCase());
-        jobService.updateApplicationStatus(id, employer, s);
+        com.com.manasuniversityecosystem.domain.entity.career.JobApplication updated =
+                jobService.updateApplicationStatus(id, employer, s);
         redirectAttributes.addFlashAttribute("successMsg", "career.application.updated");
-        return "redirect:/career/jobs";
+        return "redirect:/career/jobs/" + updated.getJob().getId() + "/applicants";
     }
 
     // ─────────────────────────── MENTORSHIP ──────────────────

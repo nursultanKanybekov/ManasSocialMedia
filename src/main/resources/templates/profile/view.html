@@ -69,7 +69,7 @@
                                         th:text="#{profile.request_mentorship}">Mentorship</button>
                                 <div id="mentorship-status"></div>
                             </div>
-                            <button onclick="openCvModal()" class="pv-btn pv-btn-outline">&#11015; CV</button>
+                            <button th:if="${canViewCv}" onclick="openCvModal()" class="pv-btn pv-btn-outline">&#11015; CV</button>
                         </th:block>
                     </div>
                 </div>
@@ -202,6 +202,40 @@
                             <span th:text="${entry.key}">platform</span>
                             <span style="margin-left:auto;opacity:.4;font-size:11px;">&#8599;</span>
                         </a>
+                    </div>
+                </div>
+
+                <!-- Employer: Job Listings with applicant counts -->
+                <div class="pv-card" th:if="${employerJobs != null and !#lists.isEmpty(employerJobs)}">
+                    <div class="pv-card-title">&#128084; Job Listings</div>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <div th:each="job : ${employerJobs}"
+                             style="background:#f7f8fc;border:1.5px solid #e2e5f0;border-radius:12px;padding:12px 14px;">
+                            <!-- Job title + type -->
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
+                                <a th:href="@{/career/jobs/{id}(id=${job.id})}"
+                                   style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;text-decoration:none;line-height:1.3;"
+                                   th:text="${job.getLocalizedTitle(lang)}">Job Title</a>
+                                <span th:if="${job.isActive}"
+                                      style="background:#dcfce7;color:#166534;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;font-family:Montserrat,sans-serif;flex-shrink:0;">ACTIVE</span>
+                                <span th:unless="${job.isActive}"
+                                      style="background:#f1f5f9;color:#94a3b8;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;font-family:Montserrat,sans-serif;flex-shrink:0;">CLOSED</span>
+                            </div>
+                            <!-- Meta -->
+                            <div style="font-size:11px;color:#8a91a8;margin-bottom:10px;">
+                                <span th:if="${job.location}">&#128205; <span th:text="${job.location}">Loc</span> &nbsp;</span>
+                                <span th:text="${job.jobType}" style="background:#eef1fb;color:#1b2a6b;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;">TYPE</span>
+                            </div>
+                            <!-- View Applicants button — only visible to owner or admin -->
+                            <a th:href="@{/career/jobs/{id}/applicants(id=${job.id})}"
+                               style="display:flex;align-items:center;justify-content:space-between;
+                      background:#1b2a6b;color:#fff;padding:8px 12px;border-radius:8px;
+                      text-decoration:none;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;">
+                                <span>&#128100; View Applicants</span>
+                                <span style="background:rgba(255,255,255,0.2);border-radius:20px;padding:1px 9px;font-size:12px;"
+                                      th:text="${#lists.size(job.applications)}">0</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
 

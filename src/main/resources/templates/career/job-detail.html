@@ -5,51 +5,62 @@
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
 
-        <div class="page-header">
-            <a th:href="@{/career/jobs}" class="btn btn-outline">← Back to Jobs</a>
+    <div class="page-header">
+        <a th:href="@{/career/jobs}" class="btn btn-outline">← Back to Jobs</a>
+    </div>
+
+    <div class="form-card">
+        <div class="job-detail-header">
+            <h2 th:text="${job.getLocalizedTitle(lang)}">Job Title</h2>
+            <span class="job-type-badge" th:text="${job.jobType}">FULL_TIME</span>
         </div>
 
-        <div class="form-card">
-            <div class="job-detail-header">
-                <h2 th:text="${job.getLocalizedTitle(lang)}">Job Title</h2>
-                <span class="job-type-badge" th:text="${job.jobType}">FULL_TIME</span>
-            </div>
+        <div class="job-meta-row">
+            <span th:if="${job.location}">📍 <span th:text="${job.location}">Location</span></span>
+            <span th:if="${job.salaryRange}">💰 <span th:text="${job.salaryRange}">Salary</span></span>
+            <span th:if="${job.deadline}">⏰ Deadline: <span th:text="${#temporals.format(job.deadline, 'dd MMM yyyy')}">Date</span></span>
+            <span>👤 Posted by:
+                  <a th:href="@{/profile/{id}(id=${job.postedBy.id})}"
+                     th:text="${job.postedBy.fullName}"
+                     style="color:#1b2a6b;font-weight:700;text-decoration:none;">Employer</a>
+                </span>
+        </div>
 
-            <div class="job-meta-row">
-                <span th:if="${job.location}">📍 <span th:text="${job.location}">Location</span></span>
-                <span th:if="${job.salaryRange}">💰 <span th:text="${job.salaryRange}">Salary</span></span>
-                <span th:if="${job.deadline}">⏰ Deadline: <span th:text="${#temporals.format(job.deadline, 'dd MMM yyyy')}">Date</span></span>
-                <span>👤 Posted by: <span th:text="${job.postedBy.fullName}">Employer</span></span>
-            </div>
+        <div class="job-description">
+            <h4>Description</h4>
+            <p th:text="${job.getLocalizedDescription(lang)}">Description text</p>
+        </div>
 
-            <div class="job-description">
-                <h4>Description</h4>
-                <p th:text="${job.getLocalizedDescription(lang)}">Description text</p>
-            </div>
-
-            <div class="job-actions" th:if="${job.isActive}">
-                <div id="apply-btn-area"
-                     th:replace="~{career/fragments/apply-btn :: applyBtn}">
-                </div>
-            </div>
-
-            <div th:if="${!job.isActive}" class="alert alert-info">
-                This job listing is no longer active.
-            </div>
-
-            <div sec:authorize="hasAnyRole('EMPLOYER','ADMIN')" class="admin-actions" style="margin-top:1rem;">
-                <form th:action="@{/career/jobs/{id}/close(id=${job.id})}" method="post" style="display:inline">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                    <button type="submit" class="btn btn-outline"
-                            onclick="return confirm('Close this job listing?')">Close Job</button>
-                </form>
+        <div class="job-actions" th:if="${job.isActive}">
+            <div id="apply-btn-area"
+                 th:replace="~{career/fragments/apply-btn :: applyBtn}">
             </div>
         </div>
 
-    </main>
+        <div th:if="${!job.isActive}" class="alert alert-info">
+            This job listing is no longer active.
+        </div>
+
+        <div sec:authorize="hasAnyRole('EMPLOYER','ADMIN','SUPER_ADMIN')" class="admin-actions" style="margin-top:1rem;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <!-- Applicants count + link -->
+            <a th:href="@{/career/jobs/{id}/applicants(id=${job.id})}"
+               style="background:#1b2a6b;color:#fff;padding:9px 18px;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:7px;">
+                &#128100; View Applicants
+                <span style="background:rgba(255,255,255,0.2);border-radius:20px;padding:1px 8px;font-size:12px;"
+                      th:text="${#lists.size(job.applications)}">0</span>
+            </a>
+            <form th:action="@{/career/jobs/{id}/close(id=${job.id})}" method="post" style="display:inline">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="btn btn-outline"
+                        onclick="return confirm('Close this job listing?')">Close Job</button>
+            </form>
+        </div>
+    </div>
+
+</main>
 </div>
 <div th:replace="~{fragments/footer :: footer}"></div>
 </body>

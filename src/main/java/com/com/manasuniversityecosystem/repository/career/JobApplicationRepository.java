@@ -29,4 +29,11 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     long countByJobId(UUID jobId);
 
     long countByApplicantId(UUID applicantId);
+
+    /** True if applicantId has applied to any job posted by posterId */
+    @Query("SELECT COUNT(a) > 0 FROM JobApplication a " +
+            "WHERE a.applicant.id = :applicantId AND a.job.postedBy.id = :posterId")
+    boolean existsByApplicantIdAndJobPosterId(
+            @Param("applicantId") UUID applicantId,
+            @Param("posterId")    UUID posterId);
 }

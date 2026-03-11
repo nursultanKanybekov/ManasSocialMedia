@@ -4,67 +4,128 @@
 <head th:replace="~{fragments/header :: head(#{page.career})}"></head>
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
 
-<!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
+    <!-- Toast notifications -->
+    <div th:if="${toastSuccess}" id="toast-msg"
+         style="position:fixed;top:80px;right:24px;z-index:9999;background:#16a34a;color:#fff;
+              padding:14px 22px;border-radius:12px;font-family:Montserrat,sans-serif;font-weight:600;
+              font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.18);display:flex;align-items:center;gap:10px;max-width:380px;">
+        <span th:text="${toastSuccess}">Success</span>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;margin-left:8px;">&#x2715;</button>
+    </div>
+    <div th:if="${toastError}" id="toast-err"
+         style="position:fixed;top:80px;right:24px;z-index:9999;background:#dc2626;color:#fff;
+              padding:14px 22px;border-radius:12px;font-family:Montserrat,sans-serif;font-weight:600;
+              font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.18);display:flex;align-items:center;gap:10px;max-width:380px;">
+        <span th:text="${toastError}">Error</span>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;margin-left:8px;">&#x2715;</button>
+    </div>
 
-        <div class="page-header">
-            <h2 th:text="#{career.jobs.title}">Job Board</h2>
-            <div sec:authorize="hasAnyRole('EMPLOYER','ADMIN','MEZUN')">
-                <a th:href="@{/career/jobs/new}" class="btn btn-primary" th:text="#{career.post_job}">Post a Job</a>
-            </div>
+    <div class="page-header">
+        <h2 th:text="#{career.jobs.title}">Job Board</h2>
+        <div sec:authorize="hasAnyRole('EMPLOYER','ADMIN','MEZUN')">
+            <a th:href="@{/career/jobs/new}" class="btn btn-primary" th:text="#{career.post_job}">Post a Job</a>
         </div>
+    </div>
 
-        <!-- Filters -->
-        <div class="filter-bar">
-            <a th:href="@{/career/jobs}" class="filter-btn"
+    <!-- ── Filters + Sort bar ──────────────────────────────────── -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px;">
+
+        <!-- Type filters -->
+        <div class="filter-bar" style="margin:0;flex:1;flex-wrap:wrap;">
+            <a th:href="@{/career/jobs(sort=${param.sort != null ? param.sort[0] : 'newest'})}"
+               class="filter-btn"
                th:classappend="${param.type == null} ? 'active'"
                th:text="#{career.filter.all}">All</a>
             <a th:each="t : ${jobTypes}"
-               th:href="@{/career/jobs(type=${t.name()})}"
+               th:href="@{/career/jobs(type=${t.name()}, sort=${param.sort != null ? param.sort[0] : 'newest'})}"
                class="filter-btn"
                th:classappend="${param.type != null and param.type[0] == t.name()} ? 'active'"
                th:text="${t.name()}">Type</a>
         </div>
 
-        <!-- Job Cards -->
-        <div class="jobs-grid" th:if="${!jobs.content.isEmpty()}">
-            <div th:each="job : ${jobs.content}" class="job-card">
-                <div class="job-card-header">
-                    <h3><a th:href="@{/career/jobs/{id}(id=${job.id})}"
-                           th:text="${job.getLocalizedTitle(lang)}">Job Title</a></h3>
-                    <span class="job-type-badge" th:text="${job.jobType}">FULL_TIME</span>
-                </div>
-                <div class="job-card-meta">
-                    <span th:if="${job.location}">📍 <span th:text="${job.location}">Location</span></span>
-                    <span th:if="${job.salaryRange}">💰 <span th:text="${job.salaryRange}">Salary</span></span>
-                    <span th:if="${job.deadline}">⏰ <span th:text="${#temporals.format(job.deadline, 'dd MMM yyyy')}">Deadline</span></span>
-                </div>
-                <p class="job-desc"
-                   th:text="${#strings.abbreviate(job.getLocalizedDescription(lang), 150)}">Description</p>
-                <div class="job-card-footer">
-                    <a th:href="@{/career/jobs/{id}(id=${job.id})}" class="btn btn-sm btn-primary"
-                       th:text="#{career.view_job}">View Details</a>
-                </div>
+        <!-- Sort dropdown -->
+        <div style="display:flex;align-items:center;gap:8px;font-family:Montserrat,sans-serif;font-size:13px;">
+            <span style="color:#8a91a8;font-weight:600;">Sort:</span>
+            <select onchange="applySort(this.value)"
+                    style="padding:7px 12px;border:1.5px solid #e2e5f0;border-radius:8px;font-family:Montserrat,sans-serif;font-size:12px;color:#1b2a6b;background:#fff;cursor:pointer;">
+                <option value="newest"   th:selected="${param.sort == null or param.sort[0] == 'newest'}">Newest First</option>
+                <option value="oldest"   th:selected="${param.sort != null and param.sort[0] == 'oldest'}">Oldest First</option>
+                <option value="deadline" th:selected="${param.sort != null and param.sort[0] == 'deadline'}">Deadline Soonest</option>
+                <option value="salary"   th:selected="${param.sort != null and param.sort[0] == 'salary'}">Salary</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- ── Job Cards ────────────────────────────────────────────── -->
+    <div class="jobs-grid" th:if="${!jobs.content.isEmpty()}">
+        <div th:each="job : ${jobs.content}" class="job-card">
+            <div class="job-card-header">
+                <h3><a th:href="@{/career/jobs/{id}(id=${job.id})}"
+                       th:text="${job.getLocalizedTitle(lang)}">Job Title</a></h3>
+                <span class="job-type-badge" th:text="${job.jobType}">FULL_TIME</span>
+            </div>
+            <div class="job-card-meta">
+                <span th:if="${job.location}">&#128205; <span th:text="${job.location}">Location</span></span>
+                <span th:if="${job.salaryRange}">&#128176; <span th:text="${job.salaryRange}">Salary</span></span>
+                <span th:if="${job.deadline}">&#9200; <span th:text="${#temporals.format(job.deadline, 'dd MMM yyyy')}">Deadline</span></span>
+            </div>
+
+            <!-- Posted by (clickable) -->
+            <div style="margin:6px 0 8px;font-size:12px;color:#8a91a8;font-family:Montserrat,sans-serif;">
+                &#128100; Posted by:
+                <a th:href="@{/profile/{id}(id=${job.postedBy.id})}"
+                   th:text="${job.postedBy.fullName}"
+                   style="color:#1b2a6b;font-weight:700;text-decoration:none;">
+                    Employer
+                </a>
+                <span style="color:#cbd5e1;margin:0 4px;">&#183;</span>
+                <span th:text="${#temporals.format(job.createdAt, 'dd MMM yyyy')}" style="color:#b0b8cc;">Date</span>
+            </div>
+
+            <p class="job-desc"
+               th:text="${#strings.abbreviate(job.getLocalizedDescription(lang), 130)}">Description</p>
+            <div class="job-card-footer">
+                <a th:href="@{/career/jobs/{id}(id=${job.id})}" class="btn btn-sm btn-primary"
+                   th:text="#{career.view_job}">View Details</a>
             </div>
         </div>
+    </div>
 
-        <div th:if="${jobs.content.isEmpty()}" class="empty-state">
-            <p th:text="#{career.no_jobs}">No active job listings found.</p>
-        </div>
+    <div th:if="${jobs.content.isEmpty()}" class="empty-state">
+        <p th:text="#{career.no_jobs}">No active job listings found.</p>
+    </div>
 
-        <!-- Pagination -->
-        <div class="pagination" th:if="${jobs.totalPages > 1}">
-            <a th:if="${!jobs.first}" th:href="@{/career/jobs(page=${jobs.number - 1})}"
-               class="btn btn-outline" th:text="#{common.prev}">Previous</a>
-            <span th:text="${jobs.number + 1} + ' / ' + ${jobs.totalPages}">1 / 5</span>
-            <a th:if="${!jobs.last}" th:href="@{/career/jobs(page=${jobs.number + 1})}"
-               class="btn btn-outline" th:text="#{common.next}">Next</a>
-        </div>
+    <!-- Pagination -->
+    <div class="pagination" th:if="${jobs.totalPages > 1}">
+        <a th:if="${!jobs.first}"
+           th:href="@{/career/jobs(page=${jobs.number - 1}, type=${param.type}, sort=${param.sort})}"
+           class="btn btn-outline" th:text="#{common.prev}">Previous</a>
+        <span th:text="${jobs.number + 1} + ' / ' + ${jobs.totalPages}">1 / 5</span>
+        <a th:if="${!jobs.last}"
+           th:href="@{/career/jobs(page=${jobs.number + 1}, type=${param.type}, sort=${param.sort})}"
+           class="btn btn-outline" th:text="#{common.next}">Next</a>
+    </div>
 
-    </main>
-</div>
+</main>
 <div th:replace="~{fragments/footer :: footer}"></div>
+
+<script th:inline="javascript">
+    function applySort(value) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('sort', value);
+        url.searchParams.set('page', '0');
+        window.location.href = url.toString();
+    }
+</script>
+<script>
+    // Auto-dismiss toast after 4 seconds
+    setTimeout(function(){
+        document.getElementById("toast-msg")?.remove();
+        document.getElementById("toast-err")?.remove();
+    }, 4000);
+</script>
 </body>
 </html>

@@ -21,11 +21,35 @@ public interface JobRepository extends JpaRepository<JobListing, UUID> {
     Page<JobListing> findActiveJobs(Pageable pageable);
 
     @Query("SELECT j FROM JobListing j JOIN FETCH j.postedBy " +
+            "WHERE j.isActive = true ORDER BY j.createdAt ASC")
+    Page<JobListing> findActiveJobsOldest(Pageable pageable);
+
+    @Query("SELECT j FROM JobListing j JOIN FETCH j.postedBy " +
+            "WHERE j.isActive = true AND j.deadline IS NOT NULL ORDER BY j.deadline ASC")
+    Page<JobListing> findActiveJobsByDeadline(Pageable pageable);
+
+    @Query("SELECT j FROM JobListing j JOIN FETCH j.postedBy " +
+            "WHERE j.isActive = true ORDER BY j.salaryRange ASC NULLS LAST")
+    Page<JobListing> findActiveJobsBySalary(Pageable pageable);
+
+    @Query("SELECT j FROM JobListing j JOIN FETCH j.postedBy " +
             "WHERE j.isActive = true AND j.jobType = :type " +
             "ORDER BY j.createdAt DESC")
     Page<JobListing> findActiveJobsByType(
             @Param("type") JobType type,
             Pageable pageable);
+
+    @Query("SELECT j FROM JobListing j JOIN FETCH j.postedBy " +
+            "WHERE j.isActive = true AND j.jobType = :type ORDER BY j.createdAt ASC")
+    Page<JobListing> findActiveJobsByTypeOldest(@Param("type") JobType type, Pageable pageable);
+
+    @Query("SELECT j FROM JobListing j JOIN FETCH j.postedBy " +
+            "WHERE j.isActive = true AND j.jobType = :type AND j.deadline IS NOT NULL ORDER BY j.deadline ASC")
+    Page<JobListing> findActiveJobsByTypeDeadline(@Param("type") JobType type, Pageable pageable);
+
+    @Query("SELECT j FROM JobListing j JOIN FETCH j.postedBy " +
+            "WHERE j.isActive = true AND j.jobType = :type ORDER BY j.salaryRange ASC NULLS LAST")
+    Page<JobListing> findActiveJobsByTypeSalary(@Param("type") JobType type, Pageable pageable);
 
     List<JobListing> findByPostedByIdOrderByCreatedAtDesc(UUID postedById);
 

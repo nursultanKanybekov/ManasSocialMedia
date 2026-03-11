@@ -55,12 +55,33 @@ public class JobService {
 
     @Transactional(readOnly = true)
     public Page<JobListing> getActiveJobs(int page, int size) {
-        return jobRepo.findActiveJobs(PageRequest.of(page, size));
+        return getActiveJobs(page, size, "newest");
+    }
+
+    public Page<JobListing> getActiveJobs(int page, int size, String sort) {
+        var p = PageRequest.of(page, size);
+        return switch (sort == null ? "newest" : sort) {
+            case "oldest"   -> jobRepo.findActiveJobsOldest(p);
+            case "deadline" -> jobRepo.findActiveJobsByDeadline(p);
+            case "salary"   -> jobRepo.findActiveJobsBySalary(p);
+            default         -> jobRepo.findActiveJobs(p);
+        };
     }
 
     @Transactional(readOnly = true)
     public Page<JobListing> getActiveJobsByType(JobType type, int page, int size) {
-        return jobRepo.findActiveJobsByType(type, PageRequest.of(page, size));
+        return getActiveJobsByType(type, page, size, "newest");
+    }
+
+    @Transactional(readOnly = true)
+    public Page<JobListing> getActiveJobsByType(JobType type, int page, int size, String sort) {
+        var p = PageRequest.of(page, size);
+        return switch (sort == null ? "newest" : sort) {
+            case "oldest"   -> jobRepo.findActiveJobsByTypeOldest(type, p);
+            case "deadline" -> jobRepo.findActiveJobsByTypeDeadline(type, p);
+            case "salary"   -> jobRepo.findActiveJobsByTypeSalary(type, p);
+            default         -> jobRepo.findActiveJobsByType(type, p);
+        };
     }
 
     @Transactional(readOnly = true)
