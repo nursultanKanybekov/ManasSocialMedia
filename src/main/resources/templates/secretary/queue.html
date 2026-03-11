@@ -42,11 +42,20 @@
         <span class="role-badge" th:text="${val.user.role}">STUDENT</span>
         <span th:text="${val.user.email}">email</span>
         <span th:if="${val.user.faculty}" th:text="${val.user.faculty.name}">Faculty</span>
-        <span th:text="#{secretary.student_id} + ': ' + ${val.user.studentIdNumber}">ID: 123</span>
+        <span th:if="${val.user.role.name() != 'EMPLOYER'}"
+              th:text="#{secretary.student_id} + ': ' + ${val.user.studentIdNumber}">ID: 123</span>
         <span th:if="${val.user.graduationYear}"
               th:text="#{secretary.grad_year} + ': ' + ${val.user.graduationYear}">Year: 2020</span>
-        <span class="submitted-at"
-              th:text="#{secretary.submitted} + ': ' + ${#temporals.format(val.submittedAt, 'dd MMM yyyy HH:mm')}">Submitted</span>
+        <!-- Employer fields -->
+        <span th:if="${val.user.role.name() == 'EMPLOYER' and val.user.companyName != null}"
+              style="font-weight:600;color:#1b2a6b;"
+              th:text="'🏢 ' + ${val.user.companyName}">Company</span>
+        <a th:if="${val.user.role.name() == 'EMPLOYER' and val.user.companyDocumentUrl != null}"
+           th:href="${val.user.companyDocumentUrl}" target="_blank"
+           style="color:#7c3aed;font-size:12px;font-weight:700;">📄 View Employment Proof</a>
+        <span th:if="${val.user.role.name() == 'EMPLOYER' and val.user.companyDocumentUrl == null}"
+              style="color:#f59e0b;font-size:11px;">⚠ No document uploaded</span>
+        th:text="#{secretary.submitted} + ': ' + ${#temporals.format(val.submittedAt, 'dd MMM yyyy HH:mm')}">Submitted</span>
       </div>
       <div class="validation-actions">
         <form th:action="@{/secretary/approve/{id}(id=${val.id})}" method="post" style="display:inline">

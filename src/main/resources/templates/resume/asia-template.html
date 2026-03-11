@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; color: #1a1a1a; background:#fff; padding: 30px 36px; }
+    .header-table { width:100%; border-bottom: 3px solid #b91c1c; padding-bottom: 16px; margin-bottom: 18px; }
+    .header-left  { vertical-align:top; }
+    .header-right { vertical-align:top; text-align:right; width:110px; }
+    .photo-frame { width:95px; height:115px; border:1.5px solid #ccc; overflow:hidden; background:#f0f0f0; }
+    .photo-frame img { width:95px; height:115px; object-fit:cover; }
+    .photo-placeholder { width:95px; height:115px; background:#e8eaf6; display:table-cell;
+      vertical-align:middle; text-align:center; font-size:28pt; font-weight:bold; color:#aaa; }
+    .resume-title { font-size:18pt; font-weight:bold; color:#b91c1c; text-transform:uppercase;
+      letter-spacing:2px; margin-bottom:8px; }
+    .name { font-size: 20pt; font-weight: bold; color: #1a1a1a; margin-bottom: 4px; }
+    .headline { font-size: 11pt; color: #b91c1c; margin-bottom: 10px; }
+    .personal-table { width:100%; font-size:9.5pt; margin-top:6px; }
+    .personal-table td { padding:2px 4px; color:#333; }
+    .personal-label { font-weight:bold; color:#555; width:120px; }
+    .section-title { font-size:11pt; font-weight:bold; color:#b91c1c; text-transform:uppercase;
+      letter-spacing:1px; background:#fef2f2; padding: 4px 10px;
+      border-left:4px solid #b91c1c; margin:18px 0 10px; }
+    .entry { margin-bottom: 12px; }
+    .entry-head-table { width:100%; }
+    .entry-title { font-size:11pt; font-weight:bold; color:#1a1a1a; }
+    .entry-org   { font-size:10pt; color:#b91c1c; font-style:italic; }
+    .entry-dates { font-size:9.5pt; color:#888; text-align:right; white-space:nowrap; }
+    .entry-loc   { font-size:9.5pt; color:#666; }
+    .entry-desc  { font-size:10pt; color:#333; line-height:1.5; margin-top:4px; }
+    .skill-tag   { display:inline-block; background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5;
+      padding:2px 8px; border-radius:2px; font-size:9.5pt; margin:2px 3px 0 0; }
+    .lang-table  { width:100%; font-size:10pt; border-collapse:collapse; }
+    .lang-table td { padding:3px 6px; border:1px solid #f0d0d0; }
+    .lang-table th { padding:4px 6px; background:#fef2f2; color:#b91c1c; font-size:9pt;
+      font-weight:bold; border:1px solid #f0d0d0; text-align:left; }
+    .cert-item   { margin-bottom:5px; font-size:10pt; }
+    .page-note   { font-size:8pt; color:#aaa; text-align:center; margin-top:24px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<table class="header-table">
+  <tr>
+    <td class="header-left">
+      <div class="resume-title">Curriculum Vitae</div>
+      <div class="name" th:text="${user.fullName}">Full Name</div>
+      <div class="headline" th:if="${profile.headline}" th:text="${profile.headline}">Headline</div>
+      <table class="personal-table">
+        <tr th:if="${user.email}">
+          <td class="personal-label">Email:</td>
+          <td th:text="${user.email}">email</td>
+        </tr>
+        <tr th:if="${profile.phone != null and !profile.phone.isEmpty()}">
+          <td class="personal-label">Phone:</td>
+          <td th:text="${profile.phone}">phone</td>
+        </tr>
+        <tr th:if="${profile.location != null and !profile.location.isEmpty()}">
+          <td class="personal-label">Address:</td>
+          <td th:text="${profile.location}">location</td>
+        </tr>
+        <tr th:if="${profile.dateOfBirth != null and !profile.dateOfBirth.isEmpty()}">
+          <td class="personal-label">Date of Birth:</td>
+          <td th:text="${profile.dateOfBirth}">DOB</td>
+        </tr>
+        <tr th:if="${profile.nationality != null and !profile.nationality.isEmpty()}">
+          <td class="personal-label">Nationality:</td>
+          <td th:text="${profile.nationality}">nationality</td>
+        </tr>
+        <tr th:if="${profile.website != null and !profile.website.isEmpty()}">
+          <td class="personal-label">Website:</td>
+          <td th:text="${profile.website}">website</td>
+        </tr>
+        <tr th:if="${user.faculty != null}">
+          <td class="personal-label">Faculty:</td>
+          <td th:text="${user.faculty.name}">Faculty</td>
+        </tr>
+        <tr th:if="${user.graduationYear != null}">
+          <td class="personal-label">Graduation Year:</td>
+          <td th:text="${user.graduationYear}">Year</td>
+        </tr>
+        <tr th:each="entry : ${profile.socialLinks}">
+          <td class="personal-label" th:text="${#strings.capitalize(entry.key) + ':'}">Link:</td>
+          <td th:text="${entry.value}">url</td>
+        </tr>
+      </table>
+    </td>
+    <td class="header-right">
+      <div class="photo-frame">
+        <img th:if="${profile.avatarUrl != null}" th:src="${profile.avatarUrl}" alt="Photo"/>
+        <div class="photo-placeholder" th:if="${profile.avatarUrl == null}"
+             th:text="${#strings.substring(user.fullName,0,1)}">A</div>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- SUMMARY -->
+<div th:if="${profile.bio != null and !profile.bio.isEmpty()}">
+  <div class="section-title">Professional Summary</div>
+  <p style="font-size:10.5pt;color:#333;line-height:1.6;padding:0 4px;" th:text="${profile.bio}">Bio</p>
+</div>
+
+<!-- WORK EXPERIENCE -->
+<div th:if="${profile.workExperience != null and !profile.workExperience.isEmpty()}">
+  <div class="section-title">Work Experience</div>
+  <div th:each="job : ${profile.workExperience}" class="entry">
+    <table class="entry-head-table">
+      <tr>
+        <td>
+          <div class="entry-title" th:text="${job['title']}">Title</div>
+          <div class="entry-org" th:text="${job['company']}">Company</div>
+          <div class="entry-loc" th:if="${job['location'] != null and !job['location'].isEmpty()}" th:text="${job['location']}">Location</div>
+        </td>
+        <td class="entry-dates">
+          <span th:text="${job['startDate']}">Start</span>
+          <span th:if="${job['current'] == 'true'}"> &#8212; Present</span>
+          <span th:if="${job['current'] != 'true' and job['endDate'] != null}"> &#8212; <span th:text="${job['endDate']}">End</span></span>
+        </td>
+      </tr>
+    </table>
+    <div class="entry-desc" th:if="${job['description'] != null}" th:text="${job['description']}">Desc</div>
+  </div>
+</div>
+
+<!-- EDUCATION -->
+<div th:if="${profile.educationList != null and !profile.educationList.isEmpty()}">
+  <div class="section-title">Education</div>
+  <div th:each="edu : ${profile.educationList}" class="entry">
+    <table class="entry-head-table">
+      <tr>
+        <td>
+          <div class="entry-title">
+            <span th:text="${edu['degree']}">Degree</span>
+            <span th:if="${edu['field'] != null and !edu['field'].isEmpty()}"> in <span th:text="${edu['field']}">Field</span></span>
+          </div>
+          <div class="entry-org" th:text="${edu['institution']}">Institution</div>
+          <div th:if="${edu['gpa'] != null and !edu['gpa'].isEmpty()}" style="font-size:9.5pt;color:#666;">GPA: <span th:text="${edu['gpa']}">GPA</span></div>
+        </td>
+        <td class="entry-dates">
+          <span th:text="${edu['startDate']}">Start</span>
+          <span th:if="${edu['endDate']}"> &#8212; <span th:text="${edu['endDate']}">End</span></span>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- SKILLS -->
+<div th:if="${profile.skills != null and !profile.skills.isEmpty()}">
+  <div class="section-title">Skills</div>
+  <div style="padding:4px 4px 8px;">
+    <span th:each="s : ${profile.skills}" class="skill-tag" th:text="${s}">Skill</span>
+  </div>
+</div>
+
+<!-- LANGUAGES -->
+<div th:if="${profile.languages != null and !profile.languages.isEmpty()}">
+  <div class="section-title">Language Proficiency</div>
+  <table class="lang-table">
+    <tr><th>Language</th><th>Level</th></tr>
+    <tr th:each="lang : ${profile.languages}">
+      <td style="font-weight:bold;" th:text="${lang['language']}">Language</td>
+      <td th:text="${lang['level']}">Level</td>
+    </tr>
+  </table>
+</div>
+
+<!-- CERTIFICATIONS -->
+<div th:if="${profile.certifications != null and !profile.certifications.isEmpty()}">
+  <div class="section-title">Certifications &amp; Awards</div>
+  <div th:each="cert : ${profile.certifications}" class="cert-item">
+    &#9670; <strong th:text="${cert['name']}">Name</strong>
+    <span th:if="${cert['issuer'] != null}"> &#8212; <span th:text="${cert['issuer']}">Issuer</span></span>
+    <span th:if="${cert['year'] != null}" style="color:#888;"> (<span th:text="${cert['year']}">Year</span>)</span>
+  </div>
+</div>
+
+<div class="page-note">Generated by ManasMezun Platform</div>
+
+</body>
+</html>

@@ -36,8 +36,7 @@
                     <div th:if="${isOwn}">
                         <a th:href="@{/profile/me/edit}" class="btn btn-secondary"
                            th:text="#{profile.edit}">Edit Profile</a>
-                        <a th:href="@{/profile/resume/{id}(id=${profileUser.id})}"
-                           class="btn btn-outline" th:text="#{profile.download_resume}">Download CV</a>
+                        <button onclick="openCvModal()" class="btn btn-outline">&#11015; Download CV (PDF)</button>
                     </div>
                     <!-- Other user's profile -->
                     <div th:if="${!isOwn}">
@@ -57,8 +56,7 @@
                                     th:text="#{profile.request_mentorship}">Request Mentorship</button>
                             <div id="mentorship-status"></div>
                         </div>
-                        <a th:href="@{/profile/resume/{id}(id=${profileUser.id})}"
-                           class="btn btn-outline" th:text="#{profile.download_resume}">Download CV</a>
+                        <button onclick="openCvModal()" class="btn btn-outline">&#11015; Download CV (PDF)</button>
                     </div>
                 </div>
             </div>
@@ -191,5 +189,76 @@
 </main>
 </div>
 <div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- ── CV Download Modal ──────────────────────────────────────── -->
+<div id="cvModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(10,20,60,0.55);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:18px;padding:32px;max-width:520px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);position:relative;">
+        <!-- Close -->
+        <button onclick="closeCvModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#8a91a8;">&#x2715;</button>
+        <!-- Title -->
+        <div style="font-family:Montserrat,sans-serif;font-size:17px;font-weight:800;color:#1b2a6b;margin-bottom:6px;">&#128196; Download CV / Resume</div>
+        <p style="font-size:13px;color:#64748b;margin-bottom:22px;">Choose a resume standard to generate a professional PDF.</p>
+        <!-- Standards -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;">
+            <label class="cv-std-card selected" id="cvcard-US">
+                <input type="radio" name="cvStandard" value="US" checked style="display:none"/>
+                <div style="font-size:26px;margin-bottom:4px;">&#127482;&#127480;</div>
+                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;">US Standard</div>
+                <div style="font-size:10px;color:#8a91a8;margin-top:3px;line-height:1.3;">Clean, no photo. ATS-friendly.</div>
+            </label>
+            <label class="cv-std-card" id="cvcard-EU">
+                <input type="radio" name="cvStandard" value="EU" style="display:none"/>
+                <div style="font-size:26px;margin-bottom:4px;">&#127466;&#127482;</div>
+                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;">European</div>
+                <div style="font-size:10px;color:#8a91a8;margin-top:3px;line-height:1.3;">Two-column with photo.</div>
+            </label>
+            <label class="cv-std-card" id="cvcard-ASIA">
+                <input type="radio" name="cvStandard" value="ASIA" style="display:none"/>
+                <div style="font-size:26px;margin-bottom:4px;">&#127760;</div>
+                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;">Asian</div>
+                <div style="font-size:10px;color:#8a91a8;margin-top:3px;line-height:1.3;">Formal with DOB &amp; photo.</div>
+            </label>
+        </div>
+        <!-- Download button -->
+        <a id="cvDownloadBtn" href="#"
+           th:href="@{/profile/resume/{id}(id=${profileUser.id}, standard='US', lang='en')}"
+           style="display:block;background:#1b2a6b;color:#fff;text-align:center;padding:13px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;text-decoration:none;"
+           onclick="closeCvModal()">
+            &#11015; Download PDF
+        </a>
+        <p style="font-size:11px;color:#94a3b8;text-align:center;margin-top:10px;">
+            Your profile data is used to build the resume automatically.
+        </p>
+    </div>
+</div>
+
+<style>
+    .cv-std-card{border:2px solid #e2e5f0;border-radius:10px;padding:12px;cursor:pointer;display:block;text-align:center;transition:border-color .2s,background .2s;}
+    .cv-std-card:hover{border-color:#1b2a6b;background:#f7f8fc;}
+    .cv-std-card.selected{border-color:#1b2a6b;background:#eef1fb;}
+</style>
+
+<script th:inline="javascript">
+    const cvUserId = /*[[${profileUser.id}]]*/ "";
+    function openCvModal(){
+        const m=document.getElementById("cvModal");
+        m.style.display="flex";
+    }
+    function closeCvModal(){
+        document.getElementById("cvModal").style.display="none";
+    }
+    // Close on backdrop click
+    document.getElementById("cvModal").addEventListener("click",function(e){
+        if(e.target===this) closeCvModal();
+    });
+    document.querySelectorAll("input[name=cvStandard]").forEach(r=>{
+        r.addEventListener("change",function(){
+            document.querySelectorAll(".cv-std-card").forEach(c=>c.classList.remove("selected"));
+            this.closest(".cv-std-card").classList.add("selected");
+            document.getElementById("cvDownloadBtn").href=
+                "/profile/resume/"+cvUserId+"?standard="+this.value+"&lang=en";
+        });
+    });
+</script>
 </body>
 </html>

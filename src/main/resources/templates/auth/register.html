@@ -14,7 +14,7 @@
 
         <div th:if="${errorMsg}" class="alert alert-error" th:text="${errorMsg}"></div>
 
-        <form th:action="@{/auth/register}" method="post"
+        <form th:action="@{/auth/register}" method="post" enctype="multipart/form-data"
               th:object="${registerRequest}" class="auth-form">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
@@ -50,13 +50,17 @@
                         <input type="radio" th:field="*{role}" value="MEZUN"/>
                         <span th:text="#{role.mezun}">Alumni (Mezun)</span>
                     </label>
+                    <label class="role-option">
+                        <input type="radio" th:field="*{role}" value="EMPLOYER"/>
+                        <span>Employer</span>
+                    </label>
                 </div>
                 <div th:if="${#fields.hasErrors('role')}" class="field-error"
                      th:errors="*{role}"></div>
             </div>
 
             <!-- Faculty -->
-            <div class="form-group">
+            <div class="form-group" id="facultyGroup">
                 <label for="facultyId" th:text="#{auth.field.faculty}">Faculty</label>
                 <select id="facultyId" th:field="*{facultyId}" class="form-control" required>
                     <option value="" th:text="#{auth.field.select_faculty}">Select faculty...</option>
@@ -68,14 +72,29 @@
                      th:errors="*{facultyId}"></div>
             </div>
 
-            <!-- Student ID -->
-            <div class="form-group">
-                <label for="studentIdNumber" th:text="#{auth.field.student_id}">Student ID OR INN</label>
+            <!-- Student ID (hidden for EMPLOYER) -->
+            <div class="form-group" id="studentIdGroup">
+                <label for="studentIdNumber" th:text="#{auth.field.student_id}">Student ID</label>
                 <input type="text" id="studentIdNumber" th:field="*{studentIdNumber}"
-                       class="form-control" required
+                       class="form-control"
                        th:placeholder="#{auth.field.student_id_placeholder}"/>
-                <div th:if="${#fields.hasErrors('studentIdNumber')}" class="field-error"
-                     th:errors="*{studentIdNumber}"></div>
+            </div>
+
+            <!-- Faculty (hidden for EMPLOYER) -->
+            <!-- (moved below — see facultyGroup id added in JS) -->
+
+            <!-- Employer fields (hidden unless EMPLOYER selected) -->
+            <div class="form-group" id="companyNameGroup" style="display:none">
+                <label for="companyName">Company / Organization Name</label>
+                <input type="text" id="companyName" th:field="*{companyName}"
+                       class="form-control" placeholder="e.g. Google LLC, Manas Tech"/>
+            </div>
+
+            <div class="form-group" id="companyDocGroup" style="display:none">
+                <label for="companyDocument">Proof of Employment <span style="color:#94a3b8;font-size:12px;">(business card, contract, letter — image or PDF)</span></label>
+                <input type="file" id="companyDocument" name="companyDocument"
+                       class="form-control" accept="image/*,.pdf"/>
+                <small style="color:#94a3b8;font-size:11px;">Max 5MB. This will be reviewed by the secretary.</small>
             </div>
 
             <!-- Graduation Year (Mezun only) -->
@@ -134,13 +153,19 @@
 </div>
 
 <script>
-    // Show graduation year field only for MEZUN
-    document.querySelectorAll('input[name="role"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            document.getElementById('graduationYearGroup').style.display =
-                this.value === 'MEZUN' ? 'block' : 'none';
-        });
-    });
+    // Dynamic field switching based on role
+    function updateRoleFields() {
+        const role = document.querySelector('input[name="role"]:checked')?.value;
+        const isEmployer = role === 'EMPLOYER';
+        const isMezun = role === 'MEZUN';
+        document.getElementById('studentIdGroup').style.display    = isEmployer ? 'none' : 'block';
+        document.getElementById('facultyGroup').style.display      = isEmployer ? 'none' : 'block';
+        document.getElementById('graduationYearGroup').style.display = isMezun   ? 'block' : 'none';
+        document.getElementById('companyNameGroup').style.display  = isEmployer ? 'block' : 'none';
+        document.getElementById('companyDocGroup').style.display   = isEmployer ? 'block' : 'none';
+    }
+    document.querySelectorAll('input[name="role"]').forEach(r => r.addEventListener('change', updateRoleFields));
+    updateRoleFields();
 
     function togglePwd(inputId, eyeId) {
         const input = document.getElementById(inputId);

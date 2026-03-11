@@ -126,7 +126,7 @@ public class AdminController {
     // POST /admin/import-mezuns  — process uploaded Excel
     @PostMapping("/import-mezuns")
     public String importMezuns(@RequestParam("file") MultipartFile file,
-                                RedirectAttributes ra) {
+                               RedirectAttributes ra) {
         if (file.isEmpty()) {
             ra.addFlashAttribute("errorMsg", "Please select an Excel file.");
             return "redirect:/admin/import-mezuns";
@@ -135,7 +135,7 @@ public class AdminController {
             ExcelImportService.ImportResult result = excelImportService.importMezuns(file);
             ra.addFlashAttribute("importResult", result);
             ra.addFlashAttribute("successMsg",
-                "Import complete: " + result.imported() + " imported, " + result.skipped() + " skipped.");
+                    "Import complete: " + result.imported() + " imported, " + result.skipped() + " skipped.");
         } catch (Exception e) {
             ra.addFlashAttribute("errorMsg", "Failed to process file: " + e.getMessage());
         }
@@ -172,10 +172,10 @@ public class AdminController {
     // POST /admin/news/new  — create university news
     @PostMapping("/news/new")
     public String createNews(@RequestParam String title,
-                              @RequestParam String content,
-                              @RequestParam(defaultValue = "en") String lang,
-                              @org.springframework.security.core.annotation.AuthenticationPrincipal com.com.manasuniversityecosystem.security.UserDetailsImpl principal,
-                              RedirectAttributes ra) {
+                             @RequestParam String content,
+                             @RequestParam(defaultValue = "en") String lang,
+                             @org.springframework.security.core.annotation.AuthenticationPrincipal com.com.manasuniversityecosystem.security.UserDetailsImpl principal,
+                             RedirectAttributes ra) {
         AppUser admin = userService.getById(principal.getId());
         CreatePostRequest req = new CreatePostRequest();
         req.setContent((title.isBlank() ? "" : "**" + title + "**\n\n") + content);
@@ -184,6 +184,44 @@ public class AdminController {
         postService.createPost(admin, req);
         ra.addFlashAttribute("successMsg", "admin.news.created");
         return "redirect:/admin/news";
+    }
+
+    // GET /admin/create-secretary  — form to create a secretary account
+    @GetMapping("/create-secretary")
+    public String createSecretaryForm(Model model) {
+        return "admin/create-secretary";
+    }
+
+    // POST /admin/create-secretary
+    @PostMapping("/create-secretary")
+    public String createSecretary(@RequestParam String fullName,
+                                  @RequestParam String email,
+                                  @RequestParam String password,
+                                  RedirectAttributes ra) {
+        try {
+            if (userService.getAllByRole(com.com.manasuniversityecosystem.domain.enums.UserRole.SECRETARY)
+                    .stream().anyMatch(u -> u.getEmail().equals(email))) {
+                ra.addFlashAttribute("errorMsg", "Email already registered.");
+                return "redirect:/admin/create-secretary";
+            }
+            com.com.manasuniversityecosystem.domain.entity.AppUser sec =
+                    com.com.manasuniversityecosystem.domain.entity.AppUser.builder()
+                            .fullName(fullName.trim())
+                            .email(email.trim())
+                            .passwordHash(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password))
+                            .role(com.com.manasuniversityecosystem.domain.enums.UserRole.SECRETARY)
+                            .status(com.com.manasuniversityecosystem.domain.enums.UserStatus.ACTIVE)
+                            .build();
+            com.com.manasuniversityecosystem.domain.entity.Profile profile =
+                    com.com.manasuniversityecosystem.domain.entity.Profile.builder()
+                            .user(sec).totalPoints(0).build();
+            sec.setProfile(profile);
+            userRepo.save(sec);
+            ra.addFlashAttribute("successMsg", "Secretary account created: " + email);
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/admin/create-secretary";
     }
 
     // POST /admin/news/{id}/delete  — delete a news post

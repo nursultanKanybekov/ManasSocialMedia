@@ -52,15 +52,23 @@ public class UserService {
         if (!req.getPassword().equals(req.getConfirmPassword())) {
             throw new IllegalArgumentException("Passwords do not match.");
         }
-        if (req.getRole() != UserRole.STUDENT && req.getRole() != UserRole.MEZUN) {
+        if (req.getRole() != UserRole.STUDENT && req.getRole() != UserRole.MEZUN
+                && req.getRole() != UserRole.EMPLOYER) {
             throw new IllegalArgumentException("Invalid self-registration role.");
         }
         if (req.getRole() == UserRole.MEZUN && req.getGraduationYear() == null) {
             throw new IllegalArgumentException("MEZUN must provide graduation year.");
         }
+        if (req.getRole() == UserRole.EMPLOYER
+                && (req.getCompanyName() == null || req.getCompanyName().isBlank())) {
+            throw new IllegalArgumentException("Employer must provide company name.");
+        }
 
-        Faculty faculty = facultyRepo.findById(req.getFacultyId())
-                .orElseThrow(() -> new IllegalArgumentException("Faculty not found."));
+        Faculty faculty = null;
+        if (req.getRole() != UserRole.EMPLOYER && req.getFacultyId() != null) {
+            faculty = facultyRepo.findById(req.getFacultyId())
+                    .orElseThrow(() -> new IllegalArgumentException("Faculty not found."));
+        }
 
         AppUser user = AppUser.builder()
                 .fullName(req.getFullName())
@@ -69,8 +77,9 @@ public class UserService {
                 .role(req.getRole())
                 .status(UserStatus.PENDING)
                 .faculty(faculty)
-                .studentIdNumber(req.getStudentIdNumber())
+                .studentIdNumber(req.getRole() != UserRole.EMPLOYER ? req.getStudentIdNumber() : null)
                 .graduationYear(req.getGraduationYear())
+                .companyName(req.getCompanyName())
                 .build();
 
         Profile profile = Profile.builder()

@@ -71,6 +71,23 @@ public class CloudinaryService {
         return url;
     }
 
+    /**
+     * Uploads any file (image or PDF) as a raw resource.
+     * Used for employment proof documents.
+     */
+    @SuppressWarnings("unchecked")
+    public String uploadDocument(MultipartFile file, String folder) throws IOException {
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("File is empty.");
+        Map<String, Object> options = new HashMap<>();
+        options.put("folder",        folder);
+        options.put("resource_type", "auto");  // handles images + PDFs
+        Map<String, Object> result = (Map<String, Object>)
+                cloudinary.uploader().upload(file.getBytes(), options);
+        String url = (String) result.get("secure_url");
+        log.info("Cloudinary doc upload OK — folder={} url={}", folder, url);
+        return url;
+    }
+
     /** Soft-deletes an asset from Cloudinary (ignores errors). */
     public void deleteImage(String publicId) {
         try {

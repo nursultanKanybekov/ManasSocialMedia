@@ -3,11 +3,13 @@ package com.com.manasuniversityecosystem.web.controller;
 
 import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.service.AuthService;
+import com.com.manasuniversityecosystem.service.CloudinaryService;
 import com.com.manasuniversityecosystem.service.UserService;
 import com.com.manasuniversityecosystem.web.dto.auth.JwtResponse;
 import com.com.manasuniversityecosystem.web.dto.auth.LoginRequest;
 import com.com.manasuniversityecosystem.web.dto.auth.RegisterRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,7 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
     private final FacultyRepository facultyRepo;
+    private final CloudinaryService cloudinaryService;
 
     // ── GET /auth/login ──────────────────────────────────────
     @GetMapping("/login")

@@ -7,127 +7,209 @@
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
 <main class="main-content">
-  <div class="edit-page">
+  <div class="edit-page" style="max-width:860px;">
 
-    <h1 class="edit-page-title">✏️ <span th:text="#{profile.edit}">Edit Profile</span></h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px;">
+      <h1 class="edit-page-title" style="margin:0;">&#9999;&#65039; <span th:text="#{profile.edit}">Edit Profile</span></h1>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <a href="#sec-personal" class="ep-nav-pill">Personal</a>
+        <a href="#sec-work"     class="ep-nav-pill">Experience</a>
+        <a href="#sec-edu"      class="ep-nav-pill">Education</a>
+        <a href="#sec-skills"   class="ep-nav-pill">Skills</a>
+        <a href="#sec-langs"    class="ep-nav-pill">Languages</a>
+        <a href="#sec-certs"    class="ep-nav-pill">Certifications</a>
+      </div>
+    </div>
 
-    <!-- Alerts -->
-    <div th:if="${successMsg}" class="ep-alert ep-alert-success">
-      ✅ <span th:text="#{${successMsg}}">Saved.</span>
-    </div>
-    <div th:if="${errorMsg}" class="ep-alert ep-alert-error">
-      ⚠️ <span th:text="${errorMsg}">Error.</span>
-    </div>
+    <div th:if="${successMsg}" class="ep-alert ep-alert-success">&#9989; <span th:text="#{${successMsg}}">Saved.</span></div>
+    <div th:if="${errorMsg}"   class="ep-alert ep-alert-error">&#9888;&#65039; <span th:text="${errorMsg}">Error.</span></div>
 
     <!-- Avatar Hero -->
     <div class="ep-avatar-hero">
       <div class="ep-avatar-wrap" onclick="document.getElementById('avatarFile').click()">
         <img th:src="${profile.avatarUrl != null ? profile.avatarUrl : '/images/default-avatar.svg'}"
              class="ep-avatar-img" id="avatarPreview" alt="avatar"/>
-        <div class="ep-avatar-overlay">📷</div>
+        <div class="ep-avatar-overlay">&#128247;</div>
       </div>
       <div class="ep-avatar-info">
         <div class="ep-avatar-name" th:text="${user.fullName}">Name</div>
         <div class="ep-avatar-sub" th:text="${user.email}">email</div>
-        <label for="avatarFile" class="ep-avatar-btn">
-          📷 <span th:text="#{profile.change_avatar}">Change Photo</span>
-        </label>
-        <input type="file" id="avatarFile" name="avatar" accept="image/*"
-               style="display:none" onchange="uploadAvatar(this)"/>
+        <label for="avatarFile" class="ep-avatar-btn">&#128247; <span th:text="#{profile.change_avatar}">Change Photo</span></label>
+        <input type="file" id="avatarFile" name="avatar" accept="image/*" style="display:none" onchange="uploadAvatar(this)"/>
       </div>
     </div>
 
-    <!-- Profile Info -->
-    <form th:action="@{/profile/me/edit}" method="post" th:object="${profileUpdateRequest}">
+    <form id="mainForm" th:action="@{/profile/me/edit}" method="post" th:object="${profileUpdateRequest}" onsubmit="serializeJsonFields()">
       <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <input type="hidden" id="workExperienceJson"  name="workExperienceJson"  value="[]"/>
+      <input type="hidden" id="educationJson"        name="educationJson"        value="[]"/>
+      <input type="hidden" id="languagesJson"        name="languagesJson"        value="[]"/>
+      <input type="hidden" id="certificationsJson"   name="certificationsJson"   value="[]"/>
 
-      <div class="ep-card">
-        <div class="ep-card-title">👤 Personal Information</div>
+
+
+      <!-- 2. PERSONAL INFO -->
+      <div id="sec-personal" class="ep-card">
+        <div class="ep-card-title">&#128100; Personal Information</div>
         <div class="ep-form-grid two-col">
-
           <div class="ep-form-group">
             <label class="ep-label" th:text="#{profile.full_name}">Full Name</label>
             <input type="text" class="ep-input" th:field="*{fullName}" th:value="${user.fullName}"/>
           </div>
-
           <div class="ep-form-group">
             <label class="ep-label" th:text="#{profile.headline}">Headline</label>
-            <input type="text" class="ep-input" th:field="*{headline}"
-                   th:value="${profile.headline}"
-                   th:placeholder="#{profile.headline_placeholder}"/>
+            <input type="text" class="ep-input" th:field="*{headline}" th:value="${profile.headline}" th:placeholder="#{profile.headline_placeholder}"/>
           </div>
-
           <div class="ep-form-group">
             <label class="ep-label">Current Job Title</label>
-            <input type="text" class="ep-input" th:field="*{currentJobTitle}"
-                   th:value="${profile.currentJobTitle}"
-                   placeholder="e.g. Backend Developer"/>
+            <input type="text" class="ep-input" th:field="*{currentJobTitle}" th:value="${profile.currentJobTitle}" placeholder="e.g. Backend Developer"/>
           </div>
-
           <div class="ep-form-group">
-            <label class="ep-label">Current Company / Organization</label>
-            <input type="text" class="ep-input" th:field="*{currentCompany}"
-                   th:value="${profile.currentCompany}"
-                   placeholder="e.g. Google, Freelance"/>
+            <label class="ep-label">Current Company</label>
+            <input type="text" class="ep-input" th:field="*{currentCompany}" th:value="${profile.currentCompany}" placeholder="e.g. Google"/>
           </div>
-
-          <div class="ep-form-group" style="grid-column: 1 / -1;">
+          <div class="ep-form-group">
+            <label class="ep-label">&#128222; Phone</label>
+            <input type="tel" class="ep-input" th:field="*{phone}" th:value="${profile.phone}" placeholder="+996 700 123 456"/>
+          </div>
+          <div class="ep-form-group">
+            <label class="ep-label">&#128205; Location</label>
+            <input type="text" class="ep-input" th:field="*{location}" th:value="${profile.location}" placeholder="Bishkek, Kyrgyzstan"/>
+          </div>
+          <div class="ep-form-group">
+            <label class="ep-label">&#127760; Website / Portfolio</label>
+            <input type="url" class="ep-input" th:field="*{website}" th:value="${profile.website}" placeholder="https://yourportfolio.com"/>
+          </div>
+          <div class="ep-form-group">
+            <label class="ep-label">&#127874; Date of Birth <small style="color:#94a3b8;">(for CV)</small></label>
+            <input type="date" class="ep-input" th:field="*{dateOfBirth}" th:value="${profile.dateOfBirth}"/>
+          </div>
+          <div class="ep-form-group">
+            <label class="ep-label">Nationality <small style="color:#94a3b8;">(for CV)</small></label>
+            <input type="text" class="ep-input" th:field="*{nationality}" th:value="${profile.nationality}" placeholder="e.g. Kyrgyz"/>
+          </div>
+          <div class="ep-form-group" style="grid-column:1/-1;">
             <label class="ep-label" th:text="#{profile.about}">About</label>
-            <textarea class="ep-textarea" th:field="*{bio}" rows="4"
-                      th:placeholder="#{profile.bio_placeholder}"
-                      th:text="${profile.bio}"></textarea>
+            <textarea class="ep-textarea" th:field="*{bio}" rows="4" th:placeholder="#{profile.bio_placeholder}" th:text="${profile.bio}"></textarea>
           </div>
-
-          <div class="ep-form-group" style="grid-column: 1 / -1;">
-            <label class="ep-label" th:text="#{profile.skills}">Skills</label>
-            <input type="text" class="ep-input" name="skillsInput"
-                   th:value="${#strings.listJoin(profile.skills, ', ')}"
-                   th:placeholder="#{profile.skills_placeholder}"/>
-            <span class="ep-hint" th:text="#{profile.skills_hint}">Separate with commas</span>
+          <div class="ep-form-group" style="grid-column:1/-1;">
+            <label class="ep-label">&#128279; Social Links</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div><label style="font-size:11px;color:#8a91a8;display:block;margin-bottom:4px;">LinkedIn</label>
+                <input type="url" class="ep-input" id="social_linkedin"
+                       th:value="${profile.socialLinks != null and profile.socialLinks['linkedin'] != null ? profile.socialLinks['linkedin'] : ''}" placeholder="https://linkedin.com/in/..."/></div>
+              <div><label style="font-size:11px;color:#8a91a8;display:block;margin-bottom:4px;">GitHub</label>
+                <input type="url" class="ep-input" id="social_github"
+                       th:value="${profile.socialLinks != null and profile.socialLinks['github'] != null ? profile.socialLinks['github'] : ''}" placeholder="https://github.com/..."/></div>
+              <div><label style="font-size:11px;color:#8a91a8;display:block;margin-bottom:4px;">Telegram</label>
+                <input type="text" class="ep-input" id="social_telegram"
+                       th:value="${profile.socialLinks != null and profile.socialLinks['telegram'] != null ? profile.socialLinks['telegram'] : ''}" placeholder="@username"/></div>
+              <div><label style="font-size:11px;color:#8a91a8;display:block;margin-bottom:4px;">Other</label>
+                <input type="url" class="ep-input" id="social_other"
+                       th:value="${profile.socialLinks != null and profile.socialLinks['other'] != null ? profile.socialLinks['other'] : ''}" placeholder="https://..."/></div>
+            </div>
           </div>
+        </div>
+      </div>
 
+      <!-- 3. WORK EXPERIENCE -->
+      <div id="sec-work" class="ep-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="ep-card-title" style="margin:0;">&#128188; Work Experience</div>
+          <button type="button" class="ep-add-btn" onclick="addEntry('work')">+ Add Position</button>
         </div>
-        <div class="ep-actions" style="margin-top:20px;">
-          <button type="submit" class="ep-btn-save">
-            💾 <span th:text="#{profile.save}">Save Changes</span>
-          </button>
-          <a th:href="@{/mezun/{id}(id=${user.id})}" class="ep-btn-cancel"
-             th:text="#{common.cancel}">Cancel</a>
+        <div id="work-entries"></div>
+        <p id="work-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;">No work experience yet. Click "+ Add Position" to start.</p>
+      </div>
+
+      <!-- 4. EDUCATION -->
+      <div id="sec-edu" class="ep-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="ep-card-title" style="margin:0;">&#127891; Education</div>
+          <button type="button" class="ep-add-btn" onclick="addEntry('edu')">+ Add Education</button>
         </div>
+        <div id="edu-entries"></div>
+        <p id="edu-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;">No education added yet.</p>
+      </div>
+
+      <!-- 5. SKILLS -->
+      <div id="sec-skills" class="ep-card">
+        <div class="ep-card-title">&#9889; Skills</div>
+        <div class="ep-form-group">
+          <label class="ep-label">Skills</label>
+          <input type="text" class="ep-input" id="skillsInput"
+                 th:value="${#strings.listJoin(profile.skills, ', ')}"
+                 placeholder="Java, Spring Boot, PostgreSQL, Docker..."/>
+          <span class="ep-hint">Separate with commas</span>
+        </div>
+        <div id="skill-tags-preview" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+
+      <!-- 6. LANGUAGES -->
+      <div id="sec-langs" class="ep-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="ep-card-title" style="margin:0;">&#127757; Languages</div>
+          <button type="button" class="ep-add-btn" onclick="addEntry('lang')">+ Add Language</button>
+        </div>
+        <div id="lang-entries"></div>
+        <p id="lang-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;">No languages added yet.</p>
+      </div>
+
+      <!-- 7. CERTIFICATIONS -->
+      <div id="sec-certs" class="ep-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="ep-card-title" style="margin:0;">&#127885; Certifications</div>
+          <button type="button" class="ep-add-btn" onclick="addEntry('cert')">+ Add Certification</button>
+        </div>
+        <div id="cert-entries"></div>
+        <p id="cert-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;">No certifications added yet.</p>
+      </div>
+
+      <!-- SAVE -->
+      <div class="ep-card" style="display:flex;gap:12px;align-items:center;">
+        <button type="submit" class="ep-btn-save" style="flex:1;">&#128190; Save All Changes</button>
+        <a th:href="@{/profile/{id}(id=${user.id})}" class="ep-btn-cancel">Cancel</a>
       </div>
     </form>
 
-    <!-- Mentorship (MEZUN only) -->
-    <div sec:authorize="hasRole('MEZUN')" class="ep-card">
-      <div class="ep-card-title">🤝 Mentorship Settings</div>
-      <form th:action="@{/profile/me/edit}" method="post" th:object="${profileUpdateRequest}">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-        <div class="ep-mentor-toggle">
-          <label class="ep-toggle-switch">
-            <input type="checkbox" id="canMentor" name="canMentor" value="true"
-                   th:checked="${profile.canMentor}"/>
-            <span class="ep-toggle-slider"></span>
-          </label>
-          <div class="ep-toggle-text">
-            <strong>Be a Mentor</strong>
-            <span>Allow students to find and contact you as a mentor</span>
-          </div>
-        </div>
-        <div class="ep-form-group">
-          <label class="ep-label">Job Title / Field (shown in mentor directory)</label>
-          <input type="text" class="ep-input" name="mentorJobTitle"
-                 th:value="${profile.mentorJobTitle}"
-                 placeholder="e.g. Senior Software Engineer at Google"/>
-        </div>
-        <div class="ep-actions" style="margin-top:16px;">
-          <button type="submit" class="ep-btn-save">💾 Save Mentorship</button>
-        </div>
-      </form>
-    </div>
 
-    <!-- Change Password -->
+    <!-- MENTORSHIP
+
+    <!-- MENTORSHIP (MEZUN only) -->
+    <th:block sec:authorize="hasRole('MEZUN')">
+      <div class="ep-card">
+        <div class="ep-card-title">&#129309; Mentorship Settings</div>
+        <form th:action="@{/profile/me/edit}" method="post" th:object="${profileUpdateRequest}">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <input type="hidden" name="workExperienceJson" value="[]"/>
+          <input type="hidden" name="educationJson"      value="[]"/>
+          <input type="hidden" name="languagesJson"      value="[]"/>
+          <input type="hidden" name="certificationsJson" value="[]"/>
+          <div class="ep-mentor-toggle">
+            <label class="ep-toggle-switch">
+              <input type="checkbox" name="canMentor" value="true" th:checked="${profile.canMentor}"/>
+              <span class="ep-toggle-slider"></span>
+            </label>
+            <div class="ep-toggle-text">
+              <strong>Be a Mentor</strong>
+              <span>Allow students to find and contact you</span>
+            </div>
+          </div>
+          <div class="ep-form-group">
+            <label class="ep-label">Job Title (shown in mentor directory)</label>
+            <input type="text" class="ep-input" name="mentorJobTitle" th:value="${profile.mentorJobTitle}"
+                   placeholder="e.g. Senior Software Engineer at Google"/>
+          </div>
+          <div class="ep-actions" style="margin-top:16px;">
+            <button type="submit" class="ep-btn-save">&#128190; Save Mentorship</button>
+          </div>
+        </form>
+      </div>
+    </th:block>
+
+    <!-- CHANGE PASSWORD -->
     <div class="ep-card">
-      <div class="ep-card-title">🔒 <span th:text="#{profile.change_password}">Change Password</span></div>
+      <div class="ep-card-title">&#128274; <span th:text="#{profile.change_password}">Change Password</span></div>
       <form th:action="@{/profile/me/password}" method="post">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
         <div class="ep-form-grid">
@@ -140,14 +222,12 @@
             <input type="password" name="newPassword" class="ep-input" required minlength="8"/>
           </div>
           <div class="ep-form-group">
-            <label class="ep-label" th:text="#{profile.confirm_password}">Confirm New Password</label>
+            <label class="ep-label" th:text="#{profile.confirm_password}">Confirm Password</label>
             <input type="password" name="confirmPassword" class="ep-input" required/>
           </div>
         </div>
         <div class="ep-actions" style="margin-top:20px;">
-          <button type="submit" class="ep-btn-save">
-            🔑 <span th:text="#{profile.update_password}">Update Password</span>
-          </button>
+          <button type="submit" class="ep-btn-save">&#128273; <span th:text="#{profile.update_password}">Update Password</span></button>
         </div>
       </form>
     </div>
@@ -156,5 +236,172 @@
 </main>
 
 <div th:replace="~{fragments/footer :: footer}"></div>
+
+<style>
+  .ep-nav-pill{background:#f0f2f8;color:#1b2a6b;font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;text-decoration:none;font-family:Montserrat,sans-serif;transition:background .2s;}
+  .ep-nav-pill:hover{background:#dde2f4;}
+  .ep-add-btn{background:#1b2a6b;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+  .ep-add-btn:hover{background:#2d4a9e;}
+  .entry-card{background:#f7f8fc;border:1.5px solid #e2e5f0;border-radius:10px;padding:16px;margin-bottom:12px;position:relative;}
+  .entry-card-title{font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;margin-bottom:12px;}
+  .entry-remove-btn{position:absolute;top:12px;right:12px;background:rgba(220,38,38,0.1);color:#dc2626;border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;}
+  .entry-remove-btn:hover{background:rgba(220,38,38,0.2);}
+  .entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .entry-grid .full{grid-column:1/-1;}
+  .entry-field label{display:block;font-size:11px;color:#8a91a8;font-weight:600;margin-bottom:4px;font-family:Montserrat,sans-serif;}
+  .entry-field input,.entry-field select,.entry-field textarea{width:100%;padding:8px 10px;border:1.5px solid #e2e5f0;border-radius:7px;font-family:Montserrat,sans-serif;font-size:12px;color:#1b2a6b;background:#fff;box-sizing:border-box;}
+  .entry-field input:focus,.entry-field select:focus,.entry-field textarea:focus{outline:none;border-color:#1b2a6b;}
+</style>
+
+<script th:inline="javascript">
+  const existingWork  = /*[[${profile.workExperience}]]*/  [];
+  const existingEdu   = /*[[${profile.educationList}]]*/   [];
+  const existingLangs = /*[[${profile.languages}]]*/       [];
+  const existingCerts = /*[[${profile.certifications}]]*/ [];
+  const userId        = /*[[${user.id}]]*/ "";
+
+  const state = { work:[], edu:[], lang:[], cert:[] };
+
+  function initEntries() {
+    (existingWork  ||[]).forEach(d=>addEntry("work",d));
+    (existingEdu   ||[]).forEach(d=>addEntry("edu",d));
+    (existingLangs ||[]).forEach(d=>addEntry("lang",d));
+    (existingCerts ||[]).forEach(d=>addEntry("cert",d));
+    initSkillTags();
+  }
+
+  function addEntry(type, data) {
+    data = data||{};
+    const id = Date.now() + Math.random();
+    const item = {id, data:{...data}};
+    state[type].push(item);
+    renderEntry(type, item);
+    updateEmpty(type);
+  }
+  function removeEntry(type, id) {
+    state[type] = state[type].filter(e=>e.id!=id);
+    document.getElementById("entry-"+type+"-"+id)?.remove();
+    updateEmpty(type);
+  }
+  function updateEmpty(type) {
+    const map={work:"work-empty",edu:"edu-empty",lang:"lang-empty",cert:"cert-empty"};
+    const el=document.getElementById(map[type]);
+    if(el) el.style.display=state[type].length===0?"block":"none";
+  }
+  function esc(v){return (v||"").toString().replace(/"/g,"&quot;").replace(/</g,"&lt;");}
+
+  function renderEntry(type, item) {
+    const d=item.data;
+    const container=document.getElementById(type+"-entries");
+    const div=document.createElement("div");
+    div.id="entry-"+type+"-"+item.id;
+    div.className="entry-card";
+    if(type==="work"){
+      div.innerHTML=`<div class="entry-card-title">Work Position</div>
+<button type="button" class="entry-remove-btn" onclick="removeEntry('work',${item.id})">x</button>
+<div class="entry-grid">
+<div class="entry-field"><label>Job Title</label><input data-k="title" value="${esc(d.title)}" placeholder="e.g. Software Engineer"/></div>
+<div class="entry-field"><label>Company</label><input data-k="company" value="${esc(d.company)}" placeholder="e.g. Google"/></div>
+<div class="entry-field"><label>Location</label><input data-k="location" value="${esc(d.location)}" placeholder="Bishkek / Remote"/></div>
+<div class="entry-field"><label>Start Date</label><input type="month" data-k="startDate" value="${esc(d.startDate)}"/></div>
+<div class="entry-field"><label>End Date</label><input type="month" data-k="endDate" value="${esc(d.endDate)}" id="endDate_${item.id}"/></div>
+<div class="entry-field"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" data-k="current" ${d.current==="true"?"checked":""} onchange="toggleCurrent(this,${item.id})"> Currently working here</label></div>
+<div class="entry-field full"><label>Description</label><textarea data-k="description" rows="3" placeholder="Responsibilities and achievements...">${esc(d.description)}</textarea></div>
+</div>`;
+      if(d.current==="true"){const ed=div.querySelector("#endDate_"+item.id);if(ed){ed.value="";ed.disabled=true;}}
+    } else if(type==="edu"){
+      div.innerHTML=`<div class="entry-card-title">Education Entry</div>
+<button type="button" class="entry-remove-btn" onclick="removeEntry('edu',${item.id})">x</button>
+<div class="entry-grid">
+<div class="entry-field"><label>Degree</label><input data-k="degree" value="${esc(d.degree)}" placeholder="e.g. Bachelor of Science"/></div>
+<div class="entry-field"><label>Institution</label><input data-k="institution" value="${esc(d.institution)}" placeholder="e.g. Manas University"/></div>
+<div class="entry-field"><label>Field of Study</label><input data-k="field" value="${esc(d.field)}" placeholder="e.g. Computer Science"/></div>
+<div class="entry-field"><label>GPA</label><input data-k="gpa" value="${esc(d.gpa)}" placeholder="e.g. 3.8/4.0"/></div>
+<div class="entry-field"><label>Start Date</label><input type="month" data-k="startDate" value="${esc(d.startDate)}"/></div>
+<div class="entry-field"><label>End Date</label><input type="month" data-k="endDate" value="${esc(d.endDate)}"/></div>
+</div>`;
+    } else if(type==="lang"){
+      const levels=["Native","C2 - Mastery","C1 - Advanced","B2 - Upper Intermediate","B1 - Intermediate","A2 - Elementary","A1 - Beginner"];
+      div.innerHTML=`<div class="entry-card-title">Language</div>
+<button type="button" class="entry-remove-btn" onclick="removeEntry('lang',${item.id})">x</button>
+<div class="entry-grid">
+<div class="entry-field"><label>Language</label><input data-k="language" value="${esc(d.language)}" placeholder="e.g. English"/></div>
+<div class="entry-field"><label>Proficiency Level</label><select data-k="level">${levels.map(l=>`<option ${d.level===l?"selected":""}>${l}</option>`).join("")}</select></div>
+</div>`;
+    } else if(type==="cert"){
+      div.innerHTML=`<div class="entry-card-title">Certification</div>
+<button type="button" class="entry-remove-btn" onclick="removeEntry('cert',${item.id})">x</button>
+<div class="entry-grid">
+<div class="entry-field"><label>Certificate Name</label><input data-k="name" value="${esc(d.name)}" placeholder="e.g. AWS Certified Developer"/></div>
+<div class="entry-field"><label>Issuing Organization</label><input data-k="issuer" value="${esc(d.issuer)}" placeholder="e.g. Amazon Web Services"/></div>
+<div class="entry-field"><label>Year</label><input data-k="year" value="${esc(d.year)}" placeholder="e.g. 2023"/></div>
+<div class="entry-field"><label>Certificate URL</label><input data-k="url" value="${esc(d.url)}" placeholder="https://..."/></div>
+</div>`;
+    }
+    container.appendChild(div);
+  }
+
+  function toggleCurrent(cb, id) {
+    const ed=document.querySelector("#endDate_"+id);
+    if(ed){ed.disabled=cb.checked;if(cb.checked)ed.value="";}
+  }
+
+  function serializeJsonFields() {
+    const fieldMap={work:"workExperienceJson",edu:"educationJson",lang:"languagesJson",cert:"certificationsJson"};
+    ["work","edu","lang","cert"].forEach(type=>{
+      const arr=state[type].map(item=>{
+        const card=document.getElementById("entry-"+type+"-"+item.id);
+        if(!card)return null;
+        const obj={};
+        card.querySelectorAll("[data-k]").forEach(el=>{
+          const k=el.getAttribute("data-k");
+          obj[k]=el.type==="checkbox"?(el.checked?"true":"false"):(el.value||"");
+        });
+        return obj;
+      }).filter(Boolean);
+      document.getElementById(fieldMap[type]).value=JSON.stringify(arr);
+    });
+    const links={};
+    ["linkedin","github","telegram","other"].forEach(k=>{
+      const v=document.getElementById("social_"+k)?.value?.trim();
+      if(v)links[k]=v;
+    });
+    Object.entries(links).forEach(([k,v])=>{
+      const inp=document.createElement("input");
+      inp.type="hidden";inp.name="socialLinks["+k+"]";inp.value=v;
+      document.getElementById("mainForm").appendChild(inp);
+    });
+    const skillVal=document.getElementById("skillsInput")?.value||"";
+    skillVal.split(",").map(s=>s.trim()).filter(Boolean).forEach(s=>{
+      const inp=document.createElement("input");
+      inp.type="hidden";inp.name="skills";inp.value=s;
+      document.getElementById("mainForm").appendChild(inp);
+    });
+  }
+
+  function initSkillTags() {
+    const input=document.getElementById("skillsInput");
+    if(!input)return;
+    function render(){
+      const c=document.getElementById("skill-tags-preview");c.innerHTML="";
+      input.value.split(",").map(s=>s.trim()).filter(Boolean).forEach(s=>{
+        const tag=document.createElement("span");tag.textContent=s;
+        tag.style.cssText="background:#eef1fb;color:#1b2a6b;border:1.5px solid #cdd6f0;padding:3px 10px;border-radius:20px;font-size:12px;font-family:Montserrat,sans-serif;";
+        c.appendChild(tag);
+      });
+    }
+    input.addEventListener("input",render);render();
+  }
+
+  function uploadAvatar(input){
+    if(!input.files||!input.files[0])return;
+    document.getElementById("avatarPreview").src=URL.createObjectURL(input.files[0]);
+    const fd=new FormData();fd.append("avatar",input.files[0]);
+    const csrf=document.querySelector("[name=_csrf]")?.value||"";
+    fetch("/profile/me/avatar",{method:"POST",headers:{"X-CSRF-TOKEN":csrf},body:fd}).catch(console.error);
+  }
+
+  document.addEventListener("DOMContentLoaded", initEntries);
+</script>
 </body>
 </html>

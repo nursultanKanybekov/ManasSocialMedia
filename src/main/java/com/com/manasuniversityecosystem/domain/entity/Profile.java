@@ -93,6 +93,47 @@ public class Profile {
     @Column(length = 200)
     private String currentCompany;
 
+    // ── Resume / CV fields ──────────────────────────────────────
+
+    @Column(length = 30)
+    private String phone;
+
+    @Column(length = 200)
+    private String location; // "City, Country"
+
+    @Column(length = 300)
+    private String website;
+
+    @Column(length = 20)
+    private String dateOfBirth; // "YYYY-MM-DD"
+
+    @Column(length = 100)
+    private String nationality;
+
+    /** [{title, company, location, startDate, endDate, current, description}] */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<Map<String, String>> workExperience = new ArrayList<>();
+
+    /** [{degree, institution, field, startDate, endDate, gpa}] */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<Map<String, String>> educationList = new ArrayList<>();
+
+    /** [{language, level}]  level = Native/C2/C1/B2/B1/A2/A1 */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<Map<String, String>> languages = new ArrayList<>();
+
+    /** [{name, issuer, year, url}] */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<Map<String, String>> certifications = new ArrayList<>();
+
     @Column(nullable = false)
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();

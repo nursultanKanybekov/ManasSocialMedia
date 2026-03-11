@@ -3,6 +3,7 @@ package com.com.manasuniversityecosystem.web.controller;
 
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.domain.entity.Profile;
+import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.repository.gamification.UserBadgeRepository;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.service.ProfileService;
@@ -41,6 +42,7 @@ public class ProfileController {
     private final PostService postService;
     private final ResumeExportService resumeService;
     private final UserBadgeRepository userBadgeRepo;
+    private final FacultyRepository facultyRepo;
 
     // ── GET /profile/{id}  — view any user's profile ─────────
     @GetMapping("/{id}")
@@ -67,9 +69,27 @@ public class ProfileController {
         AppUser user    = userService.getById(principal.getId());
         Profile profile = profileService.getByUserId(principal.getId());
 
+        // Pre-populate DTO so th:field bindings show existing values
+        com.com.manasuniversityecosystem.web.dto.profile.ProfileUpdateRequest prefilled =
+                new com.com.manasuniversityecosystem.web.dto.profile.ProfileUpdateRequest();
+        prefilled.setFullName(user.getFullName());
+        prefilled.setEmail(user.getEmail());
+        prefilled.setGraduationYear(user.getGraduationYear());
+        if (user.getFaculty() != null) prefilled.setFacultyId(user.getFaculty().getId());
+        prefilled.setBio(profile.getBio());
+        prefilled.setHeadline(profile.getHeadline());
+        prefilled.setCurrentJobTitle(profile.getCurrentJobTitle());
+        prefilled.setCurrentCompany(profile.getCurrentCompany());
+        prefilled.setPhone(profile.getPhone());
+        prefilled.setLocation(profile.getLocation());
+        prefilled.setWebsite(profile.getWebsite());
+        prefilled.setDateOfBirth(profile.getDateOfBirth());
+        prefilled.setNationality(profile.getNationality());
+
         model.addAttribute("user",                  user);
         model.addAttribute("profile",               profile);
-        model.addAttribute("profileUpdateRequest",  new ProfileUpdateRequest());
+        model.addAttribute("faculties",             facultyRepo.findAllByOrderByNameAsc());
+        model.addAttribute("profileUpdateRequest",  prefilled);
         return "profile/edit";
     }
 
@@ -123,11 +143,12 @@ public class ProfileController {
     @GetMapping("/resume/{id}")
     public ResponseEntity<byte[]> downloadResume(
             @PathVariable UUID id,
-            @RequestParam(defaultValue = "en") String lang) {
+            @RequestParam(defaultValue = "en") String lang,
+            @RequestParam(defaultValue = "US") String standard) {
         AppUser user = userService.getById(id);
-        byte[] pdf   = resumeService.generateResumePdf(user, lang);
+        byte[] pdf   = resumeService.generateResumePdf(user, lang, standard);
 
-        String filename = "resume_" + user.getFullName().replace(" ", "_") + ".pdf";
+        String filename = "resume_" + user.getFullName().replace(" ", "_") + "_" + standard + ".pdf";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.APPLICATION_PDF)

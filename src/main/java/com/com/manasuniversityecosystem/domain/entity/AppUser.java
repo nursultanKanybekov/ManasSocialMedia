@@ -55,6 +55,14 @@ public class AppUser {
     @Column(length = 100)
     private String studentIdNumber;
 
+    /** EMPLOYER fields */
+    @Column(length = 200)
+    private String companyName;
+
+    /** URL of the uploaded employment proof document (image/pdf stored on Cloudinary) */
+    @Column(length = 500)
+    private String companyDocumentUrl;
+
     @Column(nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -28,11 +28,13 @@ public class RegisterRequest {
     @NotNull(message = "{validation.role.required}")
     private UserRole role;
 
-    @NotBlank(message = "{validation.studentid.required}")
+    // Optional — only for STUDENT / MEZUN
     private String studentIdNumber;
 
     private Integer graduationYear;
 
-    @NotNull(message = "{validation.faculty.required}")
     private UUID facultyId;
+
+    // Optional — only for EMPLOYER
+    private String companyName;
 }

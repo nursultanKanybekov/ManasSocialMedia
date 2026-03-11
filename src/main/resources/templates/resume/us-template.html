@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #1a1a1a; background: #fff; padding: 36px 44px; }
+        .name { font-size: 26pt; font-weight: bold; color: #0f2167; letter-spacing: 0.5px; }
+        .headline { font-size: 12pt; color: #444; margin-top: 3px; }
+        .contact-bar { margin-top: 8px; font-size: 9.5pt; color: #555; }
+        .contact-bar span { margin-right: 14px; }
+        .divider { border: none; border-top: 2.5px solid #0f2167; margin: 16px 0 12px; }
+        .section-title { font-size: 11pt; font-weight: bold; color: #0f2167; text-transform: uppercase;
+            letter-spacing: 1.2px; border-bottom: 1px solid #cdd6f0; padding-bottom: 3px; margin-bottom: 10px; margin-top: 20px; }
+        .entry { margin-bottom: 12px; }
+        .entry-header { display: table; width: 100%; }
+        .entry-left  { display: table-cell; font-weight: bold; font-size: 11pt; color: #1a1a1a; }
+        .entry-right { display: table-cell; text-align: right; font-size: 9.5pt; color: #666; white-space: nowrap; }
+        .entry-sub   { font-size: 10pt; color: #0f2167; font-style: italic; margin: 1px 0 4px; }
+        .entry-desc  { font-size: 10pt; color: #333; line-height: 1.5; }
+        .skills-wrap { }
+        .skill-tag   { display: inline-block; background: #eef1fb; color: #0f2167; border: 1px solid #cdd6f0;
+            padding: 2px 9px; border-radius: 3px; font-size: 9.5pt; margin: 2px 3px 2px 0; }
+        .lang-row    { display: table; width: 100%; margin-bottom: 4px; }
+        .lang-name   { display: table-cell; font-size: 10pt; font-weight: bold; width: 40%; }
+        .lang-level  { display: table-cell; font-size: 10pt; color: #555; }
+        .cert-item   { margin-bottom: 6px; font-size: 10pt; }
+        .cert-name   { font-weight: bold; }
+        .cert-meta   { color: #666; font-size: 9.5pt; }
+        .summary-text { font-size: 10.5pt; color: #333; line-height: 1.6; }
+        .no-photo-note { font-size: 8pt; color: #aaa; text-align: right; }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="name" th:text="${user.fullName}">Full Name</div>
+<div class="headline" th:if="${profile.headline}" th:text="${profile.headline}">Headline</div>
+<div class="contact-bar">
+    <span th:if="${user.email}">&#9993; <span th:text="${user.email}">email</span></span>
+    <span th:if="${profile.phone}">&#128222; <span th:text="${profile.phone}">phone</span></span>
+    <span th:if="${profile.location}">&#128205; <span th:text="${profile.location}">location</span></span>
+    <span th:if="${profile.website}">&#127760; <span th:text="${profile.website}">website</span></span>
+    <span th:if="${profile.socialLinks != null and profile.socialLinks['linkedin'] != null}">in <span th:text="${profile.socialLinks['linkedin']}">linkedin</span></span>
+</div>
+<hr class="divider"/>
+
+<!-- SUMMARY -->
+<div th:if="${profile.bio != null and !profile.bio.isEmpty()}">
+    <div class="section-title">Professional Summary</div>
+    <p class="summary-text" th:text="${profile.bio}">Bio</p>
+</div>
+
+<!-- WORK EXPERIENCE -->
+<div th:if="${profile.workExperience != null and !profile.workExperience.isEmpty()}">
+    <div class="section-title">Work Experience</div>
+    <div th:each="job : ${profile.workExperience}" class="entry">
+        <div class="entry-header">
+            <div class="entry-left" th:text="${job['title']}">Title</div>
+            <div class="entry-right">
+                <span th:text="${job['startDate']}">Start</span>
+                <span th:if="${job['current'] == 'true'}"> &#8212; Present</span>
+                <span th:if="${job['current'] != 'true' and job['endDate'] != null}"> &#8212; <span th:text="${job['endDate']}">End</span></span>
+            </div>
+        </div>
+        <div class="entry-sub">
+            <span th:text="${job['company']}">Company</span>
+            <span th:if="${job['location'] != null and !job['location'].isEmpty()}">, <span th:text="${job['location']}">Loc</span></span>
+        </div>
+        <div class="entry-desc" th:if="${job['description'] != null}" th:text="${job['description']}">Description</div>
+    </div>
+</div>
+
+<!-- EDUCATION -->
+<div th:if="${profile.educationList != null and !profile.educationList.isEmpty()}">
+    <div class="section-title">Education</div>
+    <div th:each="edu : ${profile.educationList}" class="entry">
+        <div class="entry-header">
+            <div class="entry-left" th:text="${edu['institution']}">Institution</div>
+            <div class="entry-right">
+                <span th:text="${edu['startDate']}">Start</span>
+                <span th:if="${edu['endDate']}"> &#8212; <span th:text="${edu['endDate']}">End</span></span>
+            </div>
+        </div>
+        <div class="entry-sub">
+            <span th:text="${edu['degree']}">Degree</span>
+            <span th:if="${edu['field'] != null and !edu['field'].isEmpty()}">, <span th:text="${edu['field']}">Field</span></span>
+            <span th:if="${edu['gpa'] != null and !edu['gpa'].isEmpty()}"> &#8212; GPA: <span th:text="${edu['gpa']}">GPA</span></span>
+        </div>
+    </div>
+</div>
+
+<!-- SKILLS -->
+<div th:if="${profile.skills != null and !profile.skills.isEmpty()}">
+    <div class="section-title">Skills</div>
+    <div class="skills-wrap">
+        <span th:each="s : ${profile.skills}" class="skill-tag" th:text="${s}">Skill</span>
+    </div>
+</div>
+
+<!-- LANGUAGES -->
+<div th:if="${profile.languages != null and !profile.languages.isEmpty()}">
+    <div class="section-title">Languages</div>
+    <div th:each="lang : ${profile.languages}" class="lang-row">
+        <div class="lang-name" th:text="${lang['language']}">Language</div>
+        <div class="lang-level" th:text="${lang['level']}">Level</div>
+    </div>
+</div>
+
+<!-- CERTIFICATIONS -->
+<div th:if="${profile.certifications != null and !profile.certifications.isEmpty()}">
+    <div class="section-title">Certifications</div>
+    <div th:each="cert : ${profile.certifications}" class="cert-item">
+        <span class="cert-name" th:text="${cert['name']}">Cert Name</span>
+        <span class="cert-meta">
+      <span th:if="${cert['issuer'] != null}"> &#8212; <span th:text="${cert['issuer']}">Issuer</span></span>
+      <span th:if="${cert['year'] != null}"> (<span th:text="${cert['year']}">Year</span>)</span>
+    </span>
+    </div>
+</div>
+
+</body>
+</html>
