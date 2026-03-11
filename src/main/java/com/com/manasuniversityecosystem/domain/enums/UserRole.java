@@ -5,5 +5,6 @@ public enum UserRole {
     MEZUN,
     EMPLOYER,
     ADMIN,
-    SECRETARY
+    SECRETARY,
+    SUPER_ADMIN
 }

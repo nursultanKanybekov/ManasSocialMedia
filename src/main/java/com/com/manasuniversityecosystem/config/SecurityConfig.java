@@ -42,8 +42,9 @@ public class SecurityConfig {
                                 "/fonts/**","/favicon.ico","/error","/uploads/**",
                                 "/.well-known/**").permitAll()
                         .requestMatchers("/ws/**").authenticated()
-                        .requestMatchers("/secretary/**").hasAnyRole("SECRETARY","ADMIN")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/super-admin/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/secretary/**").hasAnyRole("SECRETARY","ADMIN","SUPER_ADMIN")
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN","SUPER_ADMIN")
                         .requestMatchers("/career/jobs/new","/career/jobs/*/edit",
                                 "/career/jobs/*/delete").hasAnyRole("EMPLOYER","ADMIN","MEZUN")
                         .requestMatchers("/career/mentorship/respond/**").hasAnyRole("MEZUN","ADMIN")

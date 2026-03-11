@@ -29,7 +29,15 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
         userRepository.findByEmail(username).ifPresent(user ->
                 gamificationService.awardPoints(user, PointReason.LOGIN, null)
         );
-        setDefaultTargetUrl("/main");
+
+        boolean isSuperAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+
+        if (isSuperAdmin) {
+            setDefaultTargetUrl("/super-admin");
+        } else {
+            setDefaultTargetUrl("/main");
+        }
         super.onAuthenticationSuccess(request, response, authentication);
     }
 }

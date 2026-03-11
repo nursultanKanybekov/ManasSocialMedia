@@ -45,13 +45,13 @@ public class DataInitializer implements CommandLineRunner {
     private void createFaculties() {
         if (facultyRepository.count() > 0) return;
         List<Faculty> faculties = List.of(
-            Faculty.builder().name("Faculty of Engineering & Technology").code("ENG").build(),
-            Faculty.builder().name("Faculty of Economics & Management").code("ECO").build(),
-            Faculty.builder().name("Faculty of Law").code("LAW").build(),
-            Faculty.builder().name("Faculty of Medicine").code("MED").build(),
-            Faculty.builder().name("Faculty of International Relations").code("IR").build(),
-            Faculty.builder().name("Faculty of Arts & Humanities").code("ART").build(),
-            Faculty.builder().name("Administration").code("ADMIN").build()
+                Faculty.builder().name("Faculty of Engineering & Technology").code("ENG").build(),
+                Faculty.builder().name("Faculty of Economics & Management").code("ECO").build(),
+                Faculty.builder().name("Faculty of Law").code("LAW").build(),
+                Faculty.builder().name("Faculty of Medicine").code("MED").build(),
+                Faculty.builder().name("Faculty of International Relations").code("IR").build(),
+                Faculty.builder().name("Faculty of Arts & Humanities").code("ART").build(),
+                Faculty.builder().name("Administration").code("ADMIN").build()
         );
         facultyRepository.saveAll(faculties);
         log.info("✅ Created {} faculties", faculties.size());
@@ -64,6 +64,22 @@ public class DataInitializer implements CommandLineRunner {
                 .orElse(facultyRepository.findAll().get(0));
         Faculty ecoFaculty = facultyRepository.findByCode("ECO")
                 .orElse(facultyRepository.findAll().get(0));
+
+        // Super Admin
+        if (!userRepository.existsByEmail("superadmin@manas.edu")) {
+            Profile profile = Profile.builder().totalPoints(0).build();
+            AppUser superAdmin = AppUser.builder()
+                    .fullName("Super Admin")
+                    .email("superadmin@manas.edu")
+                    .passwordHash(passwordEncoder.encode("superadmin123"))
+                    .role(UserRole.SUPER_ADMIN)
+                    .status(UserStatus.ACTIVE)
+                    .faculty(adminFaculty)
+                    .build();
+            superAdmin.setProfile(profile);
+            userRepository.save(superAdmin);
+            log.info("✅ SuperAdmin: superadmin@manas.edu / superadmin123");
+        }
 
         // Admin
         if (!userRepository.existsByEmail("admin@manas.edu")) {

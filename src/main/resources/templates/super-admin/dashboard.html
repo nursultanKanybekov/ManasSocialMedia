@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Super Admin | Manas Ecosystem</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <style>
+        body { background: #0f172a; min-height: 100vh; font-family: 'Open Sans', sans-serif; color: #e2e8f0; }
+        .sa-layout { display: flex; min-height: 100vh; }
+
+        /* Sidebar */
+        .sa-sidebar { width: 260px; background: #1e293b; padding: 28px 20px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid #334155; }
+        .sa-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #334155; }
+        .sa-brand-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #7c3aed, #4f46e5); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; color: white; font-family: 'Montserrat', sans-serif; }
+        .sa-brand-text { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 15px; color: white; line-height: 1.2; }
+        .sa-brand-text span { display: block; font-size: 11px; font-weight: 500; color: #94a3b8; }
+        .sa-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; color: #94a3b8; font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; }
+        .sa-nav-item:hover, .sa-nav-item.active { background: #334155; color: white; }
+        .sa-nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+        .sa-nav-section { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.08em; padding: 14px 14px 4px; }
+        .sa-logout { margin-top: auto; }
+
+        /* Main */
+        .sa-main { flex: 1; padding: 32px; overflow-y: auto; }
+        .sa-page-title { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 24px; color: white; margin-bottom: 6px; }
+        .sa-page-sub { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+
+        /* Stats */
+        .sa-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .sa-stat { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 20px; }
+        .sa-stat-value { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 32px; color: white; }
+        .sa-stat-label { font-size: 12px; color: #64748b; font-weight: 600; margin-top: 4px; }
+        .sa-stat.purple .sa-stat-value { color: #a78bfa; }
+        .sa-stat.blue .sa-stat-value { color: #60a5fa; }
+
+        /* Cards */
+        .sa-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+        .sa-card-title { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 16px; color: white; margin-bottom: 4px; }
+        .sa-card-sub { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+
+        /* Alerts */
+        .sa-alert { padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+        .sa-alert.success { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; }
+        .sa-alert.error   { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.3);  color: #f87171; }
+
+        /* Form elements */
+        .sa-form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+        .sa-form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+        .sa-form-group label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+        .sa-input { background: #0f172a; border: 1.5px solid #334155; border-radius: 8px; padding: 9px 13px; color: white; font-size: 13px; outline: none; transition: border-color 0.2s; }
+        .sa-input:focus { border-color: #7c3aed; }
+        .sa-btn { padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; font-family: 'Montserrat', sans-serif; transition: all 0.2s; white-space: nowrap; }
+        .sa-btn-purple { background: #7c3aed; color: white; }
+        .sa-btn-purple:hover { background: #6d28d9; }
+        .sa-btn-red { background: #dc2626; color: white; }
+        .sa-btn-red:hover { background: #b91c1c; }
+        .sa-btn-outline { background: transparent; border: 1.5px solid #334155; color: #94a3b8; }
+        .sa-btn-outline:hover { border-color: #ef4444; color: #f87171; }
+        .sa-btn-sm { padding: 5px 12px; font-size: 11px; }
+
+        /* Faculty table */
+        .sa-table { width: 100%; border-collapse: collapse; }
+        .sa-table th { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; border-bottom: 1px solid #334155; text-align: left; }
+        .sa-table td { padding: 12px; border-bottom: 1px solid #1e293b; font-size: 13px; color: #cbd5e1; }
+        .sa-table tr:last-child td { border-bottom: none; }
+        .sa-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(124,58,237,0.2); color: #a78bfa; }
+
+        /* Danger zone */
+        .sa-danger-zone { border: 1.5px solid rgba(239,68,68,0.3); border-radius: 16px; padding: 24px; background: rgba(239,68,68,0.05); }
+        .sa-danger-title { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 15px; color: #f87171; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .sa-danger-sub { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+        .sa-confirm-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .sa-confirm-input { flex: 1; min-width: 200px; }
+
+        /* Modal overlay */
+        .sa-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+        .sa-modal-bg.open { display: flex; }
+        .sa-modal { background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 32px; max-width: 440px; width: 90%; }
+        .sa-modal-title { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 18px; color: #f87171; margin-bottom: 10px; }
+        .sa-modal-text { font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+        .sa-modal-text strong { color: #fbbf24; }
+        .sa-modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+        @media (max-width: 768px) {
+            .sa-sidebar { display: none; }
+            .sa-main { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="sa-layout">
+
+    <!-- Sidebar -->
+    <aside class="sa-sidebar">
+        <div class="sa-brand">
+            <div class="sa-brand-icon">S</div>
+            <div class="sa-brand-text">Super Admin<span>Full Control Panel</span></div>
+        </div>
+
+        <a href="/super-admin" class="sa-nav-item active"><span class="icon">🏠</span> Dashboard</a>
+
+        <div class="sa-nav-section">Management</div>
+        <a href="/admin" class="sa-nav-item"><span class="icon">👥</span> Manage Users</a>
+        <a href="/admin/news" class="sa-nav-item"><span class="icon">📰</span> News</a>
+
+        <div class="sa-nav-section">Account</div>
+        <form th:action="@{/auth/logout}" method="post" class="sa-logout">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="sa-nav-item"><span class="icon">🚪</span> Sign Out</button>
+        </form>
+    </aside>
+
+    <!-- Main -->
+    <main class="sa-main">
+        <div class="sa-page-title">Super Admin Dashboard</div>
+        <div class="sa-page-sub">Full system control — manage faculties, users, and database</div>
+
+        <!-- Alerts -->
+        <div th:if="${successMsg}" class="sa-alert success" th:text="${successMsg}"></div>
+        <div th:if="${errorMsg}"   class="sa-alert error"   th:text="${errorMsg}"></div>
+
+        <!-- Stats -->
+        <div class="sa-stats">
+            <div class="sa-stat purple">
+                <div class="sa-stat-value" th:text="${totalUsers}">0</div>
+                <div class="sa-stat-label">Total Users</div>
+            </div>
+            <div class="sa-stat blue">
+                <div class="sa-stat-value" th:text="${totalFaculties}">0</div>
+                <div class="sa-stat-label">Faculties</div>
+            </div>
+        </div>
+
+        <!-- Faculty Management -->
+        <div class="sa-card">
+            <div class="sa-card-title">📚 Faculty Management</div>
+            <div class="sa-card-sub">Faculties added here will appear in the registration form for students and alumni.</div>
+
+            <!-- Add Faculty Form -->
+            <form th:action="@{/super-admin/faculties/add}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div class="sa-form-row" style="margin-bottom: 24px;">
+                    <div class="sa-form-group">
+                        <label>Faculty Name</label>
+                        <input type="text" name="name" class="sa-input" placeholder="e.g. Faculty of Engineering" required/>
+                    </div>
+                    <div class="sa-form-group" style="max-width: 130px;">
+                        <label>Short Code</label>
+                        <input type="text" name="code" class="sa-input" placeholder="e.g. ENG" maxlength="20" required/>
+                    </div>
+                    <button type="submit" class="sa-btn sa-btn-purple">+ Add Faculty</button>
+                </div>
+            </form>
+
+            <!-- Faculty Table -->
+            <div th:if="${#lists.isEmpty(faculties)}" style="color:#64748b; font-size:13px; text-align:center; padding: 20px;">
+                No faculties yet. Add one above.
+            </div>
+            <table class="sa-table" th:unless="${#lists.isEmpty(faculties)}">
+                <thead>
+                    <tr>
+                        <th>Faculty Name</th>
+                        <th>Code</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="f : ${faculties}">
+                        <td th:text="${f.name}">Faculty Name</td>
+                        <td><span class="sa-badge" th:text="${f.code}">CODE</span></td>
+                        <td>
+                            <form th:action="@{/super-admin/faculties/{id}/delete(id=${f.id})}" method="post"
+                                  onsubmit="return confirm('Delete this faculty? This cannot be undone.')">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="sa-btn sa-btn-outline sa-btn-sm">🗑 Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="sa-danger-zone">
+            <div class="sa-danger-title">⚠️ Danger Zone</div>
+            <div class="sa-danger-sub">These actions are irreversible. All data will be permanently erased.</div>
+
+            <div style="margin-bottom: 12px;">
+                <strong style="color: #f87171; font-size: 14px;">Drop All Tables</strong>
+                <p style="font-size: 12px; color: #64748b; margin: 4px 0 12px;">
+                    Clears ALL data from the database — users, posts, faculties, everything.
+                    The system will reinitialize default data on next startup.
+                    Type <strong style="color: #fbbf24;">DROP ALL TABLES</strong> to confirm.
+                </p>
+                <form th:action="@{/super-admin/database/drop-all}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <div class="sa-confirm-group">
+                        <input type="text" name="confirmText" class="sa-input sa-confirm-input"
+                               placeholder='Type: DROP ALL TABLES'/>
+                        <button type="submit" class="sa-btn sa-btn-red"
+                                onclick="return confirm('⚠️ ARE YOU SURE? This will erase ALL data permanently!')">
+                            🗑 Drop All Tables
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+</div>
+</body>
+</html>

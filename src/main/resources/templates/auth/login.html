@@ -72,9 +72,16 @@
 
             <div class="form-group">
                 <label for="password" th:text="#{auth.field.password}">Password</label>
-                <input type="password" id="password" name="password" class="form-control"
-                       required autocomplete="current-password"
-                       th:placeholder="#{auth.field.password_placeholder}"/>
+                <div style="position:relative;">
+                    <input type="password" id="password" name="password" class="form-control"
+                           required autocomplete="current-password"
+                           style="padding-right: 42px;"
+                           th:placeholder="#{auth.field.password_placeholder}"/>
+                    <button type="button" onclick="togglePwd('password','eyeLogin')"
+                            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;color:#94a3b8;font-size:16px;">
+                        <span id="eyeLogin">👁</span>
+                    </button>
+                </div>
             </div>
 
             <button type="submit" class="btn btn-danger btn-full" th:text="#{auth.login.submit}">Sign In</button>
@@ -94,5 +101,18 @@
         <a th:href="@{/auth/login(lang='en')}">EN</a>
     </div>
 </div>
+<script>
+    function togglePwd(inputId, eyeId) {
+        const input = document.getElementById(inputId);
+        const eye = document.getElementById(eyeId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            eye.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            eye.textContent = '👁';
+        }
+    }
+</script>
 </body>
 </html>

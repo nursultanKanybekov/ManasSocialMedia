@@ -88,9 +88,16 @@
             <!-- Password -->
             <div class="form-group">
                 <label for="regPassword" th:text="#{auth.field.password}">Password</label>
-                <input type="password" id="regPassword" th:field="*{password}"
-                       class="form-control" th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
-                       required minlength="8"/>
+                <div style="position:relative;">
+                    <input type="password" id="regPassword" th:field="*{password}"
+                           class="form-control" th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
+                           style="padding-right: 42px;"
+                           required minlength="8"/>
+                    <button type="button" onclick="togglePwd('regPassword','eyeReg')"
+                            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;color:#94a3b8;font-size:16px;">
+                        <span id="eyeReg">👁</span>
+                    </button>
+                </div>
                 <div th:if="${#fields.hasErrors('password')}" class="field-error"
                      th:errors="*{password}"></div>
             </div>
@@ -98,8 +105,16 @@
             <!-- Confirm Password -->
             <div class="form-group">
                 <label for="confirmPassword" th:text="#{auth.field.confirm_password}">Confirm Password</label>
-                <input type="password" id="confirmPassword" th:field="*{confirmPassword}"
-                       class="form-control" required/>
+                <div style="position:relative;">
+                    <input type="password" id="confirmPassword" th:field="*{confirmPassword}"
+                           class="form-control"
+                           style="padding-right: 42px;"
+                           required/>
+                    <button type="button" onclick="togglePwd('confirmPassword','eyeConfirm')"
+                            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;color:#94a3b8;font-size:16px;">
+                        <span id="eyeConfirm">👁</span>
+                    </button>
+                </div>
                 <div th:if="${#fields.hasErrors('confirmPassword')}" class="field-error"
                      th:errors="*{confirmPassword}"></div>
             </div>
@@ -126,6 +141,18 @@
                 this.value === 'MEZUN' ? 'block' : 'none';
         });
     });
+
+    function togglePwd(inputId, eyeId) {
+        const input = document.getElementById(inputId);
+        const eye = document.getElementById(eyeId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            eye.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            eye.textContent = '👁';
+        }
+    }
 </script>
 </body>
 </html>
