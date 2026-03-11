@@ -51,12 +51,16 @@ public class ChatController {
         chatService.markRoomAsRead(user, id);
         long unread = chatService.getUnreadCount(id, principal.getId());
 
-        model.addAttribute("currentUser", user);
-        model.addAttribute("roomId",      id);
-        model.addAttribute("history",     history);
-        model.addAttribute("unread",      unread);
-        model.addAttribute("rooms",       chatService.getUserRooms(principal.getId()));
-        model.addAttribute("includeChat", true);
+        ChatRoom currentRoom = chatService.getRoomWithParticipants(id);
+
+        model.addAttribute("currentUser",  user);
+        model.addAttribute("currentRoom",  currentRoom);
+        model.addAttribute("roomId",       id);
+        model.addAttribute("history",      history);
+        model.addAttribute("unread",       unread);
+        model.addAttribute("rooms",        chatService.getUserRooms(principal.getId()));
+        model.addAttribute("members",      currentRoom != null ? currentRoom.getParticipants() : java.util.List.of());
+        model.addAttribute("includeChat",  true);
         return "chat/chat";
     }
 

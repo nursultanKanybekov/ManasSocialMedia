@@ -222,6 +222,13 @@ public class ChatService {
         messagingTemplate.convertAndSend("/topic/chat." + msg.getRoom().getId(), dto);
     }
 
+    // ── PUBLIC room fetch ─────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public ChatRoom getRoomWithParticipants(UUID roomId) {
+        return roomRepo.findByIdWithParticipants(roomId).orElse(null);
+    }
+
     // ── HELPERS ──────────────────────────────────────────────
 
     private ChatRoom findRoomWithParticipants(UUID roomId) {

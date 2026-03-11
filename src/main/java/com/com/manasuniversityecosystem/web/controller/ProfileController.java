@@ -55,7 +55,7 @@ public class ProfileController {
         model.addAttribute("profile",      profile);
         model.addAttribute("userBadges",   userBadgeRepo.findByUserIdWithBadge(id));
         model.addAttribute("postCount",    postService.countUserPosts(id));
-        model.addAttribute("recentPosts",  postService.getUserPosts(id, 0, 5).getContent());
+        model.addAttribute("recentPosts",  postService.getUserPosts(id, 0, 12).getContent());
         model.addAttribute("isOwn",        principal.getId().equals(id));
         model.addAttribute("lang",         lang);
         return "profile/view";

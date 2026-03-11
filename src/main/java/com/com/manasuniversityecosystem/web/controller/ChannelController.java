@@ -50,8 +50,8 @@ public class ChannelController {
 
     @PostMapping("/new")
     public String createChannel(@RequestParam String name,
-                                 @RequestParam(required = false) String description,
-                                 @AuthenticationPrincipal UserDetailsImpl principal) {
+                                @RequestParam(required = false) String description,
+                                @AuthenticationPrincipal UserDetailsImpl principal) {
         AppUser creator = userService.getById(principal.getId());
         ChatRoom channel = ChatRoom.builder()
                 .name(name.trim())
@@ -81,12 +81,13 @@ public class ChannelController {
         model.addAttribute("isMember", isMember);
         model.addAttribute("isOwner", isOwner);
         model.addAttribute("memberCount", room.getParticipants().size());
+        model.addAttribute("members", room.getParticipants());
         return "channels/view";
     }
 
     @PostMapping("/{roomId}/join")
     public String joinChannel(@PathVariable UUID roomId,
-                               @AuthenticationPrincipal UserDetailsImpl principal) {
+                              @AuthenticationPrincipal UserDetailsImpl principal) {
         AppUser user = userService.getById(principal.getId());
         chatService.joinRoom(user, roomId);
         return "redirect:/channels/" + roomId;
@@ -94,7 +95,7 @@ public class ChannelController {
 
     @PostMapping("/{roomId}/leave")
     public String leaveChannel(@PathVariable UUID roomId,
-                                @AuthenticationPrincipal UserDetailsImpl principal) {
+                               @AuthenticationPrincipal UserDetailsImpl principal) {
         AppUser user = userService.getById(principal.getId());
         chatService.leaveRoom(user, roomId);
         return "redirect:/channels";
@@ -103,8 +104,8 @@ public class ChannelController {
     @PostMapping("/{roomId}/send")
     @ResponseBody
     public ResponseEntity<?> sendMessage(@PathVariable UUID roomId,
-                                          @RequestBody Map<String, String> body,
-                                          @AuthenticationPrincipal UserDetailsImpl principal) {
+                                         @RequestBody Map<String, String> body,
+                                         @AuthenticationPrincipal UserDetailsImpl principal) {
         AppUser user = userService.getById(principal.getId());
         chatService.sendMessage(user, roomId, body.get("content"), "TEXT");
         return ResponseEntity.ok(Map.of("ok", true));
