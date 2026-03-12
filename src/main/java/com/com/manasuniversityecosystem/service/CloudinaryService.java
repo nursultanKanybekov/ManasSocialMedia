@@ -88,6 +88,23 @@ public class CloudinaryService {
         return url;
     }
 
+    /**
+     * Uploads an audio file (webm/ogg/mp3) to Cloudinary.
+     * Cloudinary requires resource_type=video for audio files.
+     */
+    @SuppressWarnings("unchecked")
+    public String uploadAudio(MultipartFile file, String folder) throws IOException {
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("File is empty.");
+        Map<String, Object> options = new HashMap<>();
+        options.put("folder",        folder);
+        options.put("resource_type", "video"); // Cloudinary uses "video" for audio too
+        Map<String, Object> result = (Map<String, Object>)
+                cloudinary.uploader().upload(file.getBytes(), options);
+        String url = (String) result.get("secure_url");
+        log.info("Cloudinary audio upload OK — folder={} url={}", folder, url);
+        return url;
+    }
+
     /** Soft-deletes an asset from Cloudinary (ignores errors). */
     public void deleteImage(String publicId) {
         try {

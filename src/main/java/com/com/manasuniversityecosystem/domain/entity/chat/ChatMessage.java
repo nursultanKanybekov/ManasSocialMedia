@@ -86,6 +86,6 @@ public class ChatMessage {
     }
 
     public enum MessageType {
-        TEXT, FILE, IMAGE, SYSTEM
+        TEXT, FILE, IMAGE, VOICE, SYSTEM
     }
 }

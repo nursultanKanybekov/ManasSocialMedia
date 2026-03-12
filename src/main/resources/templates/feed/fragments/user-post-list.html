@@ -92,6 +92,11 @@
               onclick="toggleComments(this.dataset.postId)">
         💬 <span th:id="'ccount-' + ${post.id}" th:text="${post.commentsCount}">0</span>
       </button>
+      <button class="post-action-btn"
+              th:attr="data-post-id=${post.id}, data-post-author=${post.author.fullName}, data-post-content=${post.getLocalizedContent('en')}"
+              onclick="openShareModal(this.dataset.postId, this.dataset.postAuthor, this.dataset.postContent)">
+        🔗 Share
+      </button>
     </div>
 
     <div th:id="'comments-' + ${post.id}" class="comments-section" style="display:none;"></div>

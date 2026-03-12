@@ -7,6 +7,7 @@ import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.repository.UserRepository;
 import com.com.manasuniversityecosystem.domain.enums.UserStatus;
 import com.com.manasuniversityecosystem.service.UserService;
+import com.com.manasuniversityecosystem.service.CloudinaryService;
 import com.com.manasuniversityecosystem.service.chat.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class ChatController {
     private final ChatService chatService;
     private final UserService userService;
     private final UserRepository userRepo;
+    private final CloudinaryService cloudinaryService;
 
     // GET /chat  — chat lobby with all rooms
     @GetMapping
@@ -131,6 +133,29 @@ public class ChatController {
         return "chat/faculty-group";
     }
 
+    // POST /chat/upload — upload image/file/voice, return URL
+    @PostMapping("/upload")
+    @ResponseBody
+    public ResponseEntity<java.util.Map<String,String>> uploadChatFile(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "type", defaultValue = "FILE") String type,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        try {
+            String url;
+            if ("IMAGE".equalsIgnoreCase(type)) {
+                url = cloudinaryService.uploadImage(file, "chat/images", null);
+            } else if ("VOICE".equalsIgnoreCase(type)) {
+                url = cloudinaryService.uploadAudio(file, "chat/voice");
+            } else {
+                url = cloudinaryService.uploadDocument(file, "chat/files");
+            }
+            return ResponseEntity.ok(java.util.Map.of("url", url));
+        } catch (Exception e) {
+            log.error("Chat file upload failed: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
     // DELETE /chat/message/{id}
     @DeleteMapping("/message/{id}")
     @ResponseBody
@@ -151,6 +176,40 @@ public class ChatController {
         AppUser user = userService.getById(principal.getId());
         chatService.togglePin(id, user);
         return ResponseEntity.ok().build();
+    }
+
+    // GET /chat/rooms  — returns user's rooms as JSON (for share modal)
+    @GetMapping("/rooms")
+    @ResponseBody
+    public ResponseEntity<List<java.util.Map<String,Object>>> getRoomsJson(
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        List<ChatRoom> rooms = chatService.getUserRooms(principal.getId());
+        List<java.util.Map<String,Object>> result = rooms.stream().map(r -> {
+            java.util.Map<String,Object> m = new HashMap<>();
+            m.put("id",       r.getId());
+            m.put("name",     chatService.getRoomDisplayName(r, principal.getId()));
+            m.put("roomType", r.getRoomType().name());
+            return m;
+        }).toList();
+        return ResponseEntity.ok(result);
+    }
+
+    // POST /chat/share  — send a post share message to a room
+    @PostMapping("/share")
+    @ResponseBody
+    public ResponseEntity<Void> shareToRoom(
+            @RequestBody java.util.Map<String,String> body,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        try {
+            UUID roomId = UUID.fromString(body.get("roomId"));
+            String content = body.get("content");
+            AppUser user = userService.getById(principal.getId());
+            chatService.sendMessage(user, roomId, content, "TEXT", null, null);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Share failed: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // ── helpers ───────────────────────────────────────────────
