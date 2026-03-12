@@ -256,6 +256,13 @@
     /* ── No room placeholder ────────────────────────────────────── */
     .no-room { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column;
         gap:12px; color:#8a91a8; background:#f8f9ff; }
+    .no-room-open-btn { display:none; margin-top:8px; padding:11px 28px;
+        background:linear-gradient(135deg,#1b2a6b,#2d4a9e); color:#fff;
+        border:none; border-radius:12px; font-family:Montserrat,sans-serif;
+        font-weight:700; font-size:14px; cursor:pointer;
+        box-shadow:0 4px 14px rgba(27,42,107,.3); transition:.15s; }
+    .no-room-open-btn:hover { transform:scale(1.04); }
+    @media (max-width: 768px) { .no-room-open-btn { display:block; } }
 </style>
 
 <main class="main-content" style="padding:0;">
@@ -491,6 +498,9 @@
             <div style="font-size:56px;">💬</div>
             <h3 style="font-family:Montserrat,sans-serif;font-weight:700;color:#1b2a6b;">Select a conversation</h3>
             <p style="font-size:14px;">Choose a chat room from the left panel to start messaging</p>
+            <button onclick="openRoomsSidebar()" class="no-room-open-btn">
+                ☰ Open Chats
+            </button>
         </div>
     </div>
 </main>
