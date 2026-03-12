@@ -61,6 +61,8 @@ public class HomeController {
         model.addAttribute("currentUserId", principal.getId());
         model.addAttribute("isAdmin", principal.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN")));
+        model.addAttribute("canPin", principal.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals("ROLE_STUDENT")));
         return "feed/feed";
     }
 

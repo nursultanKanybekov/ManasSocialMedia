@@ -299,7 +299,17 @@
         <aside class="chat-rooms">
             <div class="chat-rooms-header">
                 <h3 th:text="#{chat.messages}">Messages</h3>
-                <button class="rooms-close-btn" onclick="closeRoomsSidebar()">✕</button>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <button onclick="openNewMsgModal()" title="Search users"
+                            style="background:rgba(255,255,255,0.18);border:none;color:#fff;border-radius:8px;
+                                   width:32px;height:32px;cursor:pointer;display:flex;
+                                   align-items:center;justify-content:center;transition:background .15s;"
+                            onmouseover="this.style.background='rgba(255,255,255,0.32)'"
+                            onmouseout="this.style.background='rgba(255,255,255,0.18)'">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </button>
+                    <button class="rooms-close-btn" onclick="closeRoomsSidebar()">✕</button>
+                </div>
             </div>
 
             <!-- Quick links -->
@@ -1335,6 +1345,303 @@
         document.body.appendChild(m);
     }
     /*]]>*/
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NEW MESSAGE — User Search Modal
+     ═══════════════════════════════════════════════════════════ -->
+<div id="new-msg-modal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);
+            z-index:9800;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:20px;width:440px;max-width:96vw;
+                max-height:82vh;display:flex;flex-direction:column;
+                box-shadow:0 28px 80px rgba(0,0,0,.22);overflow:hidden;animation:ctxIn .18s;">
+
+        <!-- header -->
+        <div style="background:linear-gradient(135deg,#1b2a6b,#2d4a9e);padding:20px 20px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                <span style="font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;color:#fff;">
+                    ✏️ New Message
+                </span>
+                <button onclick="closeNewMsgModal()"
+                        style="background:rgba(255,255,255,0.18);border:none;color:#fff;border-radius:8px;
+                               padding:5px 11px;cursor:pointer;font-size:17px;line-height:1;transition:.15s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.32)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.18)'">✕</button>
+            </div>
+            <!-- search input -->
+            <div style="position:relative;">
+                <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);
+                            pointer-events:none;opacity:.55;" width="16" height="16"
+                     fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input id="nm-search-input" type="text"
+                       placeholder="Search by name or email…"
+                       autocomplete="off"
+                       oninput="nmDebounce(this.value)"
+                       style="width:100%;padding:11px 14px 11px 38px;border:none;border-radius:10px;
+                              font-family:Montserrat,sans-serif;font-size:13px;outline:none;
+                              background:rgba(255,255,255,0.95);box-sizing:border-box;"/>
+            </div>
+        </div>
+
+        <!-- results -->
+        <div id="nm-results" style="flex:1;overflow-y:auto;padding:8px;">
+            <div class="nm-hint">Type at least 2 characters to search…</div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SHARE TO CHAT Modal  (used from post-card "Share" button)
+     ═══════════════════════════════════════════════════════════ -->
+<div id="share-chat-modal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);
+            z-index:9800;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:20px;width:440px;max-width:96vw;
+                box-shadow:0 28px 80px rgba(0,0,0,.22);overflow:hidden;animation:ctxIn .18s;">
+
+        <!-- header -->
+        <div style="background:linear-gradient(135deg,#1b2a6b,#2d4a9e);padding:18px 20px 14px;
+                    display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#fff;">
+                ↗️ Share to Chat
+            </span>
+            <button onclick="closeShareChatModal()"
+                    style="background:rgba(255,255,255,0.18);border:none;color:#fff;border-radius:8px;
+                           padding:5px 11px;cursor:pointer;font-size:17px;line-height:1;transition:.15s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.32)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.18)'">✕</button>
+        </div>
+
+        <!-- post preview -->
+        <div style="padding:12px 20px;border-bottom:1px solid #f0f2f8;">
+            <div style="background:#f8f9ff;border-radius:10px;padding:10px 14px;
+                        border-left:3px solid #1b2a6b;">
+                <div id="share-preview" style="font-size:13px;color:#444;line-height:1.5;
+                     max-height:64px;overflow:hidden;"></div>
+            </div>
+        </div>
+
+        <!-- room list -->
+        <div id="share-rooms" style="max-height:290px;overflow-y:auto;padding:8px;">
+            <div class="nm-hint">Loading chats…</div>
+        </div>
+
+        <!-- optional extra message -->
+        <div style="padding:10px 16px 14px;border-top:1.5px solid #f0f2f8;display:flex;gap:8px;">
+            <input id="share-extra-msg" type="text" placeholder="Add a message (optional)…"
+                   style="flex:1;padding:9px 13px;border:1.5px solid #e0e3ef;border-radius:10px;
+                          font-family:Montserrat,sans-serif;font-size:13px;outline:none;transition:.2s;"
+                   onfocus="this.style.borderColor='#1b2a6b'"
+                   onblur="this.style.borderColor='#e0e3ef'"/>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nm-hint { padding:28px 20px;text-align:center;color:#8a91a8;
+        font-size:13px;font-family:Montserrat,sans-serif; }
+    .nm-user-row { display:flex;align-items:center;gap:12px;padding:10px 14px;
+        border-radius:12px;cursor:pointer;transition:background .14s; }
+    .nm-user-row:hover { background:#f0f2f8; }
+    .nm-avatar { width:44px;height:44px;border-radius:50%;object-fit:cover;
+        border:2px solid #e8eaf6;flex-shrink:0; }
+    .nm-avatar-init { width:44px;height:44px;border-radius:50%;flex-shrink:0;
+        background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:#fff;
+        display:flex;align-items:center;justify-content:center;
+        font-weight:700;font-size:18px;font-family:Montserrat,sans-serif; }
+    .nm-name { font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;
+        color:#1b2a6b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .nm-sub  { display:flex;align-items:center;gap:6px;margin-top:2px; }
+    .nm-role { padding:2px 8px;border-radius:20px;font-size:10px;
+        font-family:Montserrat,sans-serif;font-weight:700;color:#555; }
+    .nm-email { font-size:11px;color:#8a91a8;overflow:hidden;text-overflow:ellipsis; }
+    .nm-cta  { margin-left:auto;flex-shrink:0;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+        color:#fff;padding:5px 13px;border-radius:8px;font-size:11px;
+        font-family:Montserrat,sans-serif;font-weight:700; }
+    .share-room-row { display:flex;align-items:center;gap:12px;padding:10px 14px;
+        border-radius:12px;cursor:pointer;transition:background .14s; }
+    .share-room-row:hover { background:#f0f2f8; }
+    .share-room-icon { width:42px;height:42px;border-radius:50%;flex-shrink:0;
+        background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:#fff;
+        display:flex;align-items:center;justify-content:center;font-size:19px; }
+    .share-room-name { font-family:Montserrat,sans-serif;font-weight:700;
+        font-size:13px;color:#1b2a6b;flex:1;min-width:0;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .share-room-type { font-size:11px;color:#8a91a8; }
+    .share-send-cta  { flex-shrink:0;background:#f0f2f8;padding:4px 11px;
+        border-radius:8px;font-size:11px;font-family:Montserrat,sans-serif;
+        font-weight:700;color:#1b2a6b; }
+</style>
+
+<script>
+    /* ── CSRF helpers (same tokens already available in parent script) ── */
+    function _getCsrf() {
+        const token  = document.querySelector('meta[name="_csrf"]')?.content  || (typeof CSRF_TOKEN  !== 'undefined' ? CSRF_TOKEN  : '');
+        const header = document.querySelector('meta[name="_csrf_header"]')?.content || (typeof CSRF_HEADER !== 'undefined' ? CSRF_HEADER : 'X-CSRF-TOKEN');
+        return { token, header };
+    }
+    function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    /* ═══════════════════════════════════════════════════
+       NEW MESSAGE  —  User Search
+       ═══════════════════════════════════════════════════ */
+    let _nmTimer = null;
+    const ROLE_COLORS = { STUDENT:'#e8f4fd', TEACHER:'#e8f5e9', MEZUN:'#fff3e0',
+        ADMIN:'#fce4ec', SUPERADMIN:'#f3e5f5', SECRETARY:'#e0f7fa' };
+
+    function openNewMsgModal() {
+        document.getElementById('new-msg-modal').style.display = 'flex';
+        document.getElementById('nm-search-input').value = '';
+        document.getElementById('nm-results').innerHTML = '<div class="nm-hint">Type at least 2 characters to search…</div>';
+        setTimeout(() => document.getElementById('nm-search-input').focus(), 60);
+    }
+
+    function closeNewMsgModal() {
+        document.getElementById('new-msg-modal').style.display = 'none';
+    }
+
+    function nmDebounce(val) {
+        clearTimeout(_nmTimer);
+        const res = document.getElementById('nm-results');
+        if (val.trim().length < 2) {
+            res.innerHTML = '<div class="nm-hint">Type at least 2 characters to search…</div>';
+            return;
+        }
+        res.innerHTML = '<div class="nm-hint">Searching…</div>';
+        _nmTimer = setTimeout(() => nmSearch(val.trim()), 300);
+    }
+
+    async function nmSearch(q) {
+        const res = document.getElementById('nm-results');
+        try {
+            const c = _getCsrf();
+            const r = await fetch('/chat/users/search?q=' + encodeURIComponent(q),
+                { headers: c.token ? { [c.header]: c.token } : {} });
+            const users = await r.json();
+            if (!users.length) {
+                res.innerHTML = '<div class="nm-hint">No users found for "' + _esc(q) + '"</div>';
+                return;
+            }
+            res.innerHTML = users.map(u => {
+                const init = (u.fullName || '?').charAt(0).toUpperCase();
+                const avatarHtml = u.avatarUrl
+                    ? `<img src="${_esc(u.avatarUrl)}" class="nm-avatar" alt="av"/>`
+                    : `<div class="nm-avatar-init">${_esc(init)}</div>`;
+                const roleColor = ROLE_COLORS[u.role] || '#f0f2f8';
+                return `<div class="nm-user-row" onclick="nmOpenDM('${_esc(u.id)}')">
+                ${avatarHtml}
+                <div style="flex:1;min-width:0;">
+                    <div class="nm-name">${_esc(u.fullName)}</div>
+                    <div class="nm-sub">
+                        <span class="nm-role" style="background:${roleColor};">${_esc(u.role)}</span>
+                        <span class="nm-email">${_esc(u.email)}</span>
+                    </div>
+                </div>
+                <span class="nm-cta">Message</span>
+            </div>`;
+            }).join('');
+        } catch(e) {
+            res.innerHTML = '<div class="nm-hint" style="color:#e74c3c;">Error — please try again</div>';
+        }
+    }
+
+    function nmOpenDM(userId) {
+        closeNewMsgModal();
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/chat/direct/' + userId;
+        const c = _getCsrf();
+        if (c.token) {
+            const h = document.createElement('input');
+            h.type = 'hidden'; h.name = '_csrf'; h.value = c.token;
+            form.appendChild(h);
+        }
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // close on backdrop click
+    document.getElementById('new-msg-modal').addEventListener('click', function(e){
+        if (e.target === this) closeNewMsgModal();
+    });
+
+    /* ═══════════════════════════════════════════════════
+       SHARE TO CHAT
+       ═══════════════════════════════════════════════════ */
+    let _shareText = '';
+
+    window.openShareChatModal = async function(content) {
+        _shareText = content || '';
+        const prev = document.getElementById('share-preview');
+        prev.textContent = _shareText.length > 130 ? _shareText.substring(0, 130) + '…' : _shareText;
+        document.getElementById('share-extra-msg').value = '';
+        document.getElementById('share-chat-modal').style.display = 'flex';
+
+        const list = document.getElementById('share-rooms');
+        list.innerHTML = '<div class="nm-hint">Loading chats…</div>';
+        try {
+            const c = _getCsrf();
+            const r = await fetch('/chat/rooms', { headers: c.token ? { [c.header]: c.token } : {} });
+            const rooms = await r.json();
+            if (!rooms.length) {
+                list.innerHTML = '<div class="nm-hint">You have no chat rooms yet.</div>';
+                return;
+            }
+            const typeEmoji = { DIRECT:'👤', FACULTY:'🏫', GLOBAL:'🌍', GROUP:'👥' };
+            list.innerHTML = rooms.map(rm => {
+                const emoji = typeEmoji[rm.roomType] || '💬';
+                return `<div class="share-room-row" onclick="doShareToRoom('${_esc(rm.id)}')">
+                <div class="share-room-icon">${emoji}</div>
+                <div style="flex:1;min-width:0;">
+                    <div class="share-room-name">${_esc(rm.name)}</div>
+                    <div class="share-room-type">${_esc(rm.roomType)}</div>
+                </div>
+                <span class="share-send-cta">Send</span>
+            </div>`;
+            }).join('');
+        } catch(e) {
+            list.innerHTML = '<div class="nm-hint" style="color:#e74c3c;">Failed to load rooms</div>';
+        }
+    };
+
+    function closeShareChatModal() {
+        document.getElementById('share-chat-modal').style.display = 'none';
+        _shareText = '';
+    }
+
+    async function doShareToRoom(roomId) {
+        const extra = document.getElementById('share-extra-msg').value.trim();
+        const content = extra ? extra + '\n\n' + _shareText : _shareText;
+        closeShareChatModal();
+        const c = _getCsrf();
+        const headers = { 'Content-Type': 'application/json' };
+        if (c.token) headers[c.header] = c.token;
+        try {
+            const r = await fetch('/chat/share', {
+                method: 'POST', headers,
+                body: JSON.stringify({ roomId, content })
+            });
+            _popToast(r.ok ? '✅ Shared to chat!' : '❌ Share failed');
+        } catch(e) { _popToast('❌ Share failed'); }
+    }
+
+    document.getElementById('share-chat-modal').addEventListener('click', function(e){
+        if (e.target === this) closeShareChatModal();
+    });
+
+    function _popToast(msg) {
+        const t = document.createElement('div');
+        t.style.cssText = 'position:fixed;bottom:76px;left:50%;transform:translateX(-50%);' +
+            'background:rgba(27,42,107,.93);color:#fff;padding:9px 22px;border-radius:30px;' +
+            'font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;z-index:9999;' +
+            'box-shadow:0 6px 20px rgba(0,0,0,.26);animation:ctxIn .18s;pointer-events:none;';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2000);
+    }
 </script>
 </body>
 </html>

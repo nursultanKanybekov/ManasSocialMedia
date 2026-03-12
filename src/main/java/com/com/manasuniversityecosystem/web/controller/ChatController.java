@@ -212,6 +212,31 @@ public class ChatController {
         }
     }
 
+    // GET /chat/users/search?q=...  — search any user by name or email (for new DM)
+    @GetMapping("/users/search")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> searchUsers(
+            @RequestParam(value = "q", defaultValue = "") String query,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        if (query.trim().length() < 2) {
+            return ResponseEntity.ok(List.of());
+        }
+        String likeQ = "%" + query.trim().toLowerCase() + "%";
+        List<AppUser> users = userRepo.searchByNameOrEmail(likeQ, principal.getId());
+        List<Map<String, Object>> result = users.stream().map(u -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id",       u.getId());
+            m.put("fullName", u.getFullName());
+            m.put("role",     u.getRole().name());
+            m.put("email",    u.getEmail());
+            String avatar = (u.getProfile() != null && u.getProfile().getAvatarUrl() != null)
+                    ? u.getProfile().getAvatarUrl() : null;
+            m.put("avatarUrl", avatar);
+            return m;
+        }).toList();
+        return ResponseEntity.ok(result);
+    }
+
     // ── helpers ───────────────────────────────────────────────
 
     private Map<UUID, String> buildRoomNames(List<ChatRoom> rooms, UUID userId) {

@@ -53,6 +53,8 @@ public class FeedController {
         model.addAttribute("currentUserId", principal.getId());
         model.addAttribute("isAdmin", principal.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN")));
+        model.addAttribute("canPin", principal.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals("ROLE_STUDENT")));
         model.addAttribute("likedPostIds",
                 posts.getContent().stream()
                         .filter(p -> postService.isLikedByUser(p.getId(), principal.getId()))
@@ -123,6 +125,8 @@ public class FeedController {
         model.addAttribute("currentUserId", principal.getId());
         model.addAttribute("isAdmin", principal.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN")));
+        model.addAttribute("canPin", principal.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals("ROLE_STUDENT")));
         model.addAttribute("likedPostIds",  java.util.List.of());
         return "feed/fragments/post-card :: postCard";
     }
@@ -187,6 +191,19 @@ public class FeedController {
         AppUser user = userService.getById(principal.getId());
         postService.deleteComment(id, user);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/post/{id}/pin")
+    @ResponseBody
+    public ResponseEntity<java.util.Map<String,Object>> togglePinPost(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        boolean notStudent = principal.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals("ROLE_STUDENT"));
+        if (!notStudent) return ResponseEntity.status(403).build();
+        postService.pinPost(id);
+        boolean pinned = postService.getById(id).getIsPinned();
+        return ResponseEntity.ok(java.util.Map.of("pinned", pinned));
     }
 
     private String resolveLang(String acceptLang) {

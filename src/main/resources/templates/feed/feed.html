@@ -35,14 +35,49 @@
     /* ─── LAYOUT ─── */
     .fd-layout {
         display: grid;
-        grid-template-columns: 264px 1fr 260px;
+        grid-template-columns: 264px 1fr;
         gap: 22px;
-        max-width: 1210px;
+        max-width: 960px;
         margin: 0 auto;
         align-items: start;
     }
-    @media(max-width:1110px){ .fd-layout{ grid-template-columns:220px 1fr } .fd-right{ display:none } }
-    @media(max-width:768px){  .fd-layout{ grid-template-columns:1fr }        .fd-left{ display:none } }
+    /* ─── DESKTOP: left sidebar scrollable within viewport ─── */
+    .fd-left { max-height: calc(100vh - 100px); overflow-y: auto; scrollbar-width: none; }
+    .fd-left::-webkit-scrollbar { display: none; }
+
+    /* ─── TABLET (≤900px): shrink left column ─── */
+    @media(max-width:900px){
+        .fd-layout { grid-template-columns: 200px 1fr; }
+    }
+
+    /* ─── MOBILE (≤768px): single scrollable column ─── */
+    @media(max-width:768px){
+        .fd-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        /* 1 — profile + top-this-week first */
+        .fd-left {
+            display: flex;
+            position: static;
+            max-height: none;
+            overflow-y: visible;
+            order: 1;
+        }
+        /* 2 — creator box + posts below left sidebar */
+        .fd-layout > div { order: 2; }
+
+        /* Creator box sticks at top once reached while posts scroll */
+        .fd-creator-wrap {
+            position: sticky;
+            top: 60px;
+            z-index: 90;
+            background: #eef2f7;
+            padding-bottom: 6px;
+            margin-bottom: 4px;
+        }
+    }
 
     /* ─── GLASS CARD ─── */
     .glass-card {
@@ -368,18 +403,7 @@
     }
     .fd-comment-send:hover { transform: scale(1.1); box-shadow: 0 6px 18px rgba(99,102,241,0.45); }
 
-    /* ─── RIGHT SIDEBAR ─── */
-    .fd-right { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 16px; }
-    .fd-widget-body { padding: 14px 16px; }
-    .fd-widget-link {
-        display: block; text-align: center; padding: 10px;
-        margin: 4px 16px 16px; border-radius: 12px;
-        border: 1.5px solid rgba(99,102,241,0.2);
-        color: #6366f1; font-size: 12px; font-weight: 700;
-        font-family: 'Sora', sans-serif; text-decoration: none;
-        transition: all .18s; background: rgba(99,102,241,0.06);
-    }
-    .fd-widget-link:hover { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.4); box-shadow: 0 4px 14px rgba(99,102,241,0.15); }
+
 
     /* ─── EMPTY ─── */
     .fd-empty { text-align: center; padding: 70px 20px; color: #cbd5e1; }
@@ -501,11 +525,19 @@
                                 <time class="fd-post-time" th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy · HH:mm')}">Date</time>
                             </div>
                         </div>
-                        <div th:if="${currentUserId != null and (post.author.id == currentUserId or isAdmin == true)}" style="position:relative;">
+                        <div th:if="${currentUserId != null and (post.author.id == currentUserId or isAdmin == true or canPin == true)}" style="position:relative;">
                             <button class="fd-menu-btn" th:data-post-id="${post.id}" onclick="togglePostMenu(this)">⋯</button>
                             <div class="fd-dropdown">
                                 <button th:if="${post.author.id == currentUserId}" th:data-post-id="${post.id}" onclick="startEditPost(this.dataset.postId)" class="fd-dd-btn">✏️ Edit post</button>
                                 <div th:if="${post.author.id == currentUserId}" class="fd-dd-divider"></div>
+                                <button th:if="${canPin == true}"
+                                        th:data-post-id="${post.id}"
+                                        th:data-pinned="${post.isPinned}"
+                                        onclick="togglePinPost(this)"
+                                        class="fd-dd-btn">
+                                    <span th:text="${post.isPinned} ? '📌 Unpin post' : '📌 Pin post'">📌 Pin post</span>
+                                </button>
+                                <div th:if="${canPin == true}" class="fd-dd-divider"></div>
                                 <button th:data-post-id="${post.id}" onclick="deletePostAction(this.dataset.postId)" class="fd-dd-btn danger">🗑 Delete post</button>
                             </div>
                         </div>
@@ -574,16 +606,7 @@
             </div>
         </div>
 
-        <!-- RIGHT -->
-        <aside class="fd-right">
-            <div class="glass-card">
-                <div class="fd-widget-title">💼 Open Jobs</div>
-                <div class="fd-widget-body" hx-get="/career/jobs/widget" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="load-more-trigger"><div class="fd-spinner"></div></div>
-                </div>
-                <a th:href="@{/career/jobs}" class="fd-widget-link">Browse All Jobs →</a>
-            </div>
-        </aside>
+
 
     </div>
 </main>
@@ -709,6 +732,41 @@
         const res = await fetch('/feed/post/' + id, {method: 'DELETE', headers});
         if (res.ok) { const card = document.getElementById('post-' + id); if (card) { card.style.cssText='opacity:0;transform:scale(0.97);transition:all 0.3s;'; setTimeout(()=>card.remove(),300); } }
     }
+    async function togglePinPost(btn) {
+        document.querySelectorAll('.fd-dropdown').forEach(d => d.style.display='none');
+        const id = btn.dataset.postId;
+        const headers = {'Content-Type':'application/json'}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+        try {
+            const res = await fetch('/feed/post/' + id + '/pin', {method:'POST', headers});
+            if (!res.ok) { showFeedToast('Pin failed ❌'); return; }
+            const data = await res.json();
+            const card = document.getElementById('post-' + id);
+            if (!card) return;
+            // Update pinned badge visibility
+            let badge = card.querySelector('.fd-pin-badge');
+            if (data.pinned) {
+                card.classList.add('post-pinned');
+                if (!badge) {
+                    badge = document.createElement('div');
+                    badge.className = 'fd-pin-badge';
+                    badge.textContent = '📌 Pinned';
+                    card.prepend(badge);
+                }
+                // Update button text
+                const span = btn.querySelector('span') || btn;
+                span.textContent = '📌 Unpin post';
+                btn.dataset.pinned = 'true';
+                showFeedToast('Post pinned! 📌');
+            } else {
+                card.classList.remove('post-pinned');
+                if (badge) badge.remove();
+                const span = btn.querySelector('span') || btn;
+                span.textContent = '📌 Pin post';
+                btn.dataset.pinned = 'false';
+                showFeedToast('Post unpinned');
+            }
+        } catch(e) { showFeedToast('Pin failed ❌'); }
+    }
     function openImageModal(src) {
         let m = document.getElementById('imgModal');
         if (!m) {
@@ -723,19 +781,48 @@
 
 <!-- ── Share Post Modal ──────────────────────────────────────── -->
 <div id="share-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:18px;width:380px;max-width:95vw;box-shadow:0 24px 72px rgba(0,0,0,.2);overflow:hidden;">
-        <div style="padding:18px 20px 14px;border-bottom:1.5px solid #f0f2f8;display:flex;justify-content:space-between;align-items:center;">
+    <div style="background:#fff;border-radius:18px;width:420px;max-width:95vw;box-shadow:0 24px 72px rgba(0,0,0,.2);overflow:hidden;display:flex;flex-direction:column;max-height:90vh;">
+
+        <!-- Header -->
+        <div style="padding:18px 20px 14px;border-bottom:1.5px solid #f0f2f8;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
             <span style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#1b2a6b;">🔗 Share Post</span>
             <button onclick="closeShareModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#aaa;">✕</button>
         </div>
-        <!-- Share to chat -->
-        <div style="padding:12px 16px 4px;">
-            <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;color:#8a91a8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Send in message</div>
-            <div id="share-rooms-list" style="max-height:220px;overflow-y:auto;"></div>
+
+        <!-- Search input -->
+        <div style="padding:12px 16px 8px;flex-shrink:0;">
+            <div style="position:relative;">
+                <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;"
+                     width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#8a91a8" stroke-width="2.2">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input id="share-user-search" type="text" placeholder="Search users by name or email…"
+                       autocomplete="off"
+                       oninput="shareUserDebounce(this.value)"
+                       style="width:100%;padding:9px 12px 9px 34px;border:1.5px solid #e0e3ef;border-radius:10px;
+                              font-family:Montserrat,sans-serif;font-size:13px;outline:none;
+                              box-sizing:border-box;transition:border-color .2s;"
+                       onfocus="this.style.borderColor='#1b2a6b'"
+                       onblur="this.style.borderColor='#e0e3ef'"/>
+            </div>
         </div>
+
+        <!-- User search results (shown when typing) -->
+        <div id="share-user-results" style="display:none;overflow-y:auto;padding:0 8px 6px;max-height:200px;"></div>
+
+        <!-- My Chats label + list -->
+        <div id="share-chats-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+            <div style="padding:4px 16px 6px;flex-shrink:0;">
+                <span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;
+                             color:#8a91a8;text-transform:uppercase;letter-spacing:.05em;">My Chats</span>
+            </div>
+            <div id="share-rooms-list" style="flex:1;overflow-y:auto;padding:0 8px 10px;max-height:220px;"></div>
+        </div>
+
         <!-- Copy link -->
-        <div style="padding:12px 16px;">
-            <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;color:#8a91a8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Or copy link</div>
+        <div style="padding:10px 16px 14px;border-top:1.5px solid #f0f2f8;flex-shrink:0;">
+            <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;color:#8a91a8;
+                        text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Or copy link</div>
             <div style="display:flex;gap:8px;">
                 <input id="share-link-input" type="text" readonly
                        style="flex:1;padding:9px 12px;border:1.5px solid #e0e3ef;border-radius:10px;font-size:13px;color:#555;outline:none;font-family:Open Sans,sans-serif;"/>
@@ -745,26 +832,59 @@
         </div>
     </div>
 </div>
+<style>
+    .share-hint { padding:22px 12px;text-align:center;color:#8a91a8;
+        font-size:13px;font-family:Montserrat,sans-serif; }
+    .share-user-row { display:flex;align-items:center;gap:11px;padding:9px 12px;
+        border-radius:10px;cursor:pointer;transition:background .13s; }
+    .share-user-row:hover { background:#f0f2f8; }
+    .su-avatar { width:40px;height:40px;border-radius:50%;object-fit:cover;
+        border:2px solid #e8eaf6;flex-shrink:0; }
+    .su-avatar-init { width:40px;height:40px;border-radius:50%;flex-shrink:0;
+        background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:#fff;
+        display:flex;align-items:center;justify-content:center;
+        font-weight:700;font-size:16px;font-family:Montserrat,sans-serif; }
+    .su-name  { font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;
+        color:#1b2a6b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .su-meta  { display:flex;align-items:center;gap:6px;margin-top:2px; }
+    .su-role  { padding:2px 7px;border-radius:20px;font-size:10px;
+        font-family:Montserrat,sans-serif;font-weight:700;color:#555; }
+    .su-email { font-size:11px;color:#8a91a8;overflow:hidden;text-overflow:ellipsis; }
+    .su-send  { margin-left:auto;flex-shrink:0;font-size:11px;font-family:Montserrat,sans-serif;
+        font-weight:700;color:#1b2a6b;background:#f0f2f8;padding:4px 10px;border-radius:8px; }
+    .share-room-row { display:flex;align-items:center;gap:10px;padding:9px 12px;
+        border-radius:10px;cursor:pointer;transition:background .13s; }
+    .share-room-row:hover { background:#f0f2f8; }
+</style>
 
 <script th:inline="javascript">
     /*<![CDATA[*/
-    // ── SHARE MODAL ───────────────────────────────────────────────
+    // ── SHARE MODAL ──────────────────────────────────────────────
     let _sharePostId = null, _shareAuthor = null, _shareContent = null;
     const SHARE_CSRF_TOKEN  = /*[[${_csrf != null ? _csrf.token : ''}]]*/ '';
     const SHARE_CSRF_HEADER = /*[[${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}]]*/ 'X-CSRF-TOKEN';
+
+    const ROLE_BG = { STUDENT:'#e8f4fd', TEACHER:'#e8f5e9', MEZUN:'#fff3e0',
+        ADMIN:'#fce4ec', SUPERADMIN:'#f3e5f5', SECRETARY:'#e0f7fa' };
 
     function openShareModal(postId, author, content) {
         _sharePostId  = postId;
         _shareAuthor  = author;
         _shareContent = content;
 
-        const link = window.location.origin + '/feed/post/' + postId;
-        document.getElementById('share-link-input').value = link;
+        document.getElementById('share-link-input').value = window.location.origin + '/feed/post/' + postId;
 
-        // Load user's rooms
+        // Reset search
+        document.getElementById('share-user-search').value = '';
+        document.getElementById('share-user-results').style.display = 'none';
+        document.getElementById('share-user-results').innerHTML = '';
+        document.getElementById('share-chats-section').style.display = 'flex';
+
         loadShareRooms();
         document.getElementById('share-modal').style.display = 'flex';
+        setTimeout(() => document.getElementById('share-user-search').focus(), 80);
     }
+
     function closeShareModal() {
         document.getElementById('share-modal').style.display = 'none';
     }
@@ -772,39 +892,119 @@
         if (e.target === this) closeShareModal();
     });
 
+    // ── USER SEARCH ───────────────────────────────────────────────
+    let _suTimer = null;
+
+    function shareUserDebounce(val) {
+        clearTimeout(_suTimer);
+        const res   = document.getElementById('share-user-results');
+        const chats = document.getElementById('share-chats-section');
+
+        if (val.trim().length < 2) {
+            res.style.display = 'none';
+            res.innerHTML = '';
+            chats.style.display = 'flex';
+            return;
+        }
+        // Show results area, hide rooms while searching
+        res.style.display = 'block';
+        res.innerHTML = '<div class="share-hint">Searching…</div>';
+        chats.style.display = 'none';
+        _suTimer = setTimeout(() => shareUserSearch(val.trim()), 300);
+    }
+
+    async function shareUserSearch(q) {
+        const res = document.getElementById('share-user-results');
+        try {
+            const r = await fetch('/chat/users/search?q=' + encodeURIComponent(q),
+                { headers: { [SHARE_CSRF_HEADER]: SHARE_CSRF_TOKEN } });
+            const users = await r.json();
+            if (!users.length) {
+                res.innerHTML = '<div class="share-hint">No users found for "' + escHtml(q) + '"</div>';
+                return;
+            }
+            res.innerHTML = users.map(u => {
+                const init  = (u.fullName || '?').charAt(0).toUpperCase();
+                const av    = u.avatarUrl
+                    ? `<img src="${escHtml(u.avatarUrl)}" class="su-avatar" alt="av"/>`
+                    : `<div class="su-avatar-init">${escHtml(init)}</div>`;
+                const roleBg = ROLE_BG[u.role] || '#f0f2f8';
+                return `<div class="share-user-row" onclick="shareToUser('${escHtml(String(u.id))}')">
+                    ${av}
+                    <div style="flex:1;min-width:0;">
+                        <div class="su-name">${escHtml(u.fullName)}</div>
+                        <div class="su-meta">
+                            <span class="su-role" style="background:${roleBg};">${escHtml(u.role)}</span>
+                            <span class="su-email">${escHtml(u.email)}</span>
+                        </div>
+                    </div>
+                    <span class="su-send">Send</span>
+                </div>`;
+            }).join('');
+        } catch(e) {
+            res.innerHTML = '<div class="share-hint" style="color:#e74c3c;">Error — please try again</div>';
+        }
+    }
+
+    async function shareToUser(userId) {
+        closeShareModal();
+        const postUrl = window.location.origin + '/feed/post/' + _sharePostId;
+        const preview = _shareContent ? _shareContent.substring(0, 100) + (_shareContent.length > 100 ? '…' : '') : '';
+        const message = '🔗 Shared post by ' + _shareAuthor + ':\n' + preview + '\n' + postUrl;
+        try {
+            const dmRes = await fetch('/chat/direct/' + userId, {
+                method: 'POST',
+                headers: { [SHARE_CSRF_HEADER]: SHARE_CSRF_TOKEN }
+            });
+            const roomUrl = dmRes.url;
+            const match = roomUrl.match(/\/chat\/room\/([a-f0-9-]+)/i);
+            if (match) {
+                const roomId = match[1];
+                await fetch('/chat/share', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', [SHARE_CSRF_HEADER]: SHARE_CSRF_TOKEN },
+                    body: JSON.stringify({ roomId, content: message })
+                });
+                showFeedToast('Shared! Opening chat… 🔗');
+                setTimeout(() => window.location.href = '/chat/room/' + roomId, 700);
+            } else {
+                showFeedToast('Share failed ❌');
+            }
+        } catch(e) { showFeedToast('Share failed ❌'); }
+    }
+
+    // ── ROOMS LIST ─────────────────────────────────────────────────
     async function loadShareRooms() {
         const list = document.getElementById('share-rooms-list');
-        list.innerHTML = '<div style="padding:12px;text-align:center;color:#aaa;font-size:13px;">Loading...</div>';
+        list.innerHTML = '<div class="share-hint">Loading…</div>';
         try {
             const res = await fetch('/chat/rooms', { headers: { [SHARE_CSRF_HEADER]: SHARE_CSRF_TOKEN } });
             const rooms = await res.json();
             if (!rooms.length) {
-                list.innerHTML = '<div style="padding:12px;text-align:center;color:#aaa;font-size:13px;">No chats yet</div>';
+                list.innerHTML = '<div class="share-hint">No chats yet</div>';
                 return;
             }
-            list.innerHTML = '';
-            rooms.forEach(room => {
+            list.innerHTML = rooms.map(room => {
                 const emoji = room.roomType === 'DIRECT' ? '👤' : (room.roomType === 'FACULTY' ? '🏫' : (room.roomType === 'GLOBAL' ? '🌍' : '👥'));
-                const div = document.createElement('div');
-                div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s;';
-                div.innerHTML = `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${emoji}</div>
-                <div style="font-family:Montserrat,sans-serif;font-weight:600;font-size:13px;color:#1b2a6b;">${escHtml(room.name || 'Chat')}</div>`;
-                div.onmouseover = () => div.style.background = '#f0f2f8';
-                div.onmouseout  = () => div.style.background = '';
-                div.onclick     = () => shareToRoom(room.id);
-                list.appendChild(div);
-            });
+                return `<div class="share-room-row" onclick="shareToRoom('${escHtml(String(room.id))}')">
+                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+                                color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${emoji}</div>
+                    <div style="font-family:Montserrat,sans-serif;font-weight:600;font-size:13px;color:#1b2a6b;
+                                flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(room.name || 'Chat')}</div>
+                    <span style="font-size:11px;font-family:Montserrat,sans-serif;font-weight:700;
+                                 color:#1b2a6b;background:#f0f2f8;padding:4px 10px;border-radius:8px;flex-shrink:0;">Send</span>
+                </div>`;
+            }).join('');
         } catch(e) {
-            list.innerHTML = '<div style="padding:12px;text-align:center;color:#e74c3c;font-size:13px;">Could not load chats</div>';
+            list.innerHTML = '<div class="share-hint" style="color:#e74c3c;">Could not load chats</div>';
         }
     }
 
     async function shareToRoom(roomId) {
         closeShareModal();
-        const postUrl  = window.location.origin + '/feed/post/' + _sharePostId;
-        const preview  = _shareContent ? _shareContent.substring(0, 100) + (_shareContent.length > 100 ? '…' : '') : '';
-        const message  = '🔗 Shared post by ' + _shareAuthor + ':\n' + preview + '\n' + postUrl;
-
+        const postUrl = window.location.origin + '/feed/post/' + _sharePostId;
+        const preview = _shareContent ? _shareContent.substring(0, 100) + (_shareContent.length > 100 ? '…' : '') : '';
+        const message = '🔗 Shared post by ' + _shareAuthor + ':\n' + preview + '\n' + postUrl;
         try {
             const res = await fetch('/chat/share', {
                 method: 'POST',

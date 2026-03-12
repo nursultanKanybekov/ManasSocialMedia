@@ -56,13 +56,20 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
     List<AppUser> findByFacultyIdAndStatus(UUID facultyId, UserStatus status);
 
     @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile p " +
+            "WHERE u.id <> :excludeId " +
+            "AND u.status = com.com.manasuniversityecosystem.domain.enums.UserStatus.ACTIVE " +
+            "AND (LOWER(CAST(u.fullName AS string)) LIKE :query OR LOWER(u.email) LIKE :query) " +
+            "ORDER BY u.fullName")
+    List<AppUser> searchByNameOrEmail(@Param("query") String query, @Param("excludeId") UUID excludeId);
+
+    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile p " +
             "WHERE u.role = 'MEZUN' " +
             "AND u.status = com.com.manasuniversityecosystem.domain.enums.UserStatus.ACTIVE " +
             "AND (:facultyId IS NULL OR u.faculty.id = :facultyId) " +
             "AND (:graduationYear IS NULL OR u.graduationYear = :graduationYear) " +
             "AND (:name IS NULL OR LOWER(CAST(u.fullName AS string)) LIKE :name) ")
     Page<AppUser> searchMezun(@Param("facultyId") UUID facultyId,
-                               @Param("graduationYear") Integer graduationYear,
-                               @Param("name") String name,
-                               Pageable pageable);
+                              @Param("graduationYear") Integer graduationYear,
+                              @Param("name") String name,
+                              Pageable pageable);
 }
