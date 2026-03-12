@@ -7,14 +7,47 @@
 
 <style>
     /* ── Layout ────────────────────────────────────────────────── */
-    .chat-wrap { display:flex; width:100%; height:calc(100vh - var(--navbar-h)); overflow:hidden; }
+    .chat-wrap { display:flex; width:100%; height:calc(100vh - var(--navbar-h)); overflow:hidden; position:relative; }
 
     /* ── Room sidebar ───────────────────────────────────────────── */
     .chat-rooms { width:280px; min-width:220px; background:#fff; border-right:1.5px solid #e8eaf6;
-        display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; }
+        display:flex; flex-direction:column; overflow:hidden; flex-shrink:0;
+        transition:transform .25s cubic-bezier(.4,0,.2,1); }
     .chat-rooms-header { padding:18px 16px 12px; border-bottom:1.5px solid #e8eaf6;
-        background:linear-gradient(135deg,#1b2a6b,#2d4a9e); }
+        background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+        display:flex; align-items:center; justify-content:space-between; }
     .chat-rooms-header h3 { color:#fff; font-family:Montserrat,sans-serif; font-weight:800; font-size:16px; margin:0; }
+
+    /* ── Hamburger (mobile only) ────────────────────────────────── */
+    .rooms-close-btn { display:none; background:rgba(255,255,255,0.15); border:none; color:#fff;
+        border-radius:8px; padding:5px 9px; cursor:pointer; font-size:18px; line-height:1; }
+    .chat-menu-btn { display:none; background:#f0f2f8; border:none; border-radius:10px;
+        padding:7px 10px; cursor:pointer; color:#1b2a6b; font-size:20px; line-height:1;
+        align-items:center; justify-content:center; flex-shrink:0; transition:background .15s; }
+    .chat-menu-btn:hover { background:#e8eaf6; }
+
+    /* ── Overlay (mobile) ───────────────────────────────────────── */
+    #rooms-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4);
+        z-index:199; animation:fadeIn .2s; }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+        .chat-rooms {
+            position:fixed; top:0; left:0; height:100vh; z-index:200;
+            transform:translateX(-100%); width:280px !important;
+            box-shadow:4px 0 24px rgba(0,0,0,.15);
+        }
+        .chat-rooms.open { transform:translateX(0); }
+        .rooms-close-btn { display:block; }
+        .chat-menu-btn   { display:flex; }
+        #rooms-overlay.show { display:block; }
+        .chat-main { width:100% !important; }
+        .msg-body { max-width:85% !important; }
+        .chat-header { padding:10px 14px; }
+        .chat-header-name { font-size:14px; }
+        .chat-input-area { padding:10px 12px; }
+        #msgInput { font-size:13px; }
+    }
     .room-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
         text-decoration:none; color:inherit; margin-bottom:4px; transition:background .15s; }
     .room-item:hover { background:#f0f2f8; }
@@ -226,12 +259,14 @@
 </style>
 
 <main class="main-content" style="padding:0;">
+    <div id="rooms-overlay" onclick="closeRoomsSidebar()"></div>
     <div class="chat-wrap">
 
         <!-- ── Room List Sidebar ─────────────────────────────────── -->
         <aside class="chat-rooms">
             <div class="chat-rooms-header">
                 <h3 th:text="#{chat.messages}">Messages</h3>
+                <button class="rooms-close-btn" onclick="closeRoomsSidebar()">✕</button>
             </div>
 
             <!-- Quick links -->
@@ -281,6 +316,7 @@
                     <div class="chat-header-name" th:text="${currentRoom != null ? currentRoom.name : 'Chat'}">Chat Room</div>
                     <div class="chat-header-sub" th:text="${#lists.size(members)} + ' members'">0 members</div>
                 </div>
+                <button class="chat-menu-btn" onclick="openRoomsSidebar()" title="Chats">&#9776;</button>
                 <button onclick="toggleMembers()" class="header-btn">
                     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                         <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -999,6 +1035,24 @@
         document.body.appendChild(t);
         setTimeout(() => t.remove(), 1800);
     }
+
+    // ── ROOMS SIDEBAR (mobile) ───────────────────────────────────
+    function openRoomsSidebar() {
+        document.querySelector('.chat-rooms').classList.add('open');
+        document.getElementById('rooms-overlay').classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeRoomsSidebar() {
+        document.querySelector('.chat-rooms').classList.remove('open');
+        document.getElementById('rooms-overlay').classList.remove('show');
+        document.body.style.overflow = '';
+    }
+    // Close rooms sidebar when a room is selected on mobile
+    document.querySelectorAll('.room-item').forEach(el => {
+        el.addEventListener('click', () => {
+            if (window.innerWidth <= 768) closeRoomsSidebar();
+        });
+    });
 
     // Close forward modal on backdrop click
     document.getElementById('forward-modal').addEventListener('click', function(e) {
