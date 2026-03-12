@@ -2,189 +2,394 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/header :: head('Feed')}"></head>
-<body class="app-layout feed-dark-mode">
+<body class="app-layout feed-light-mode">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
 <style>
-    .feed-dark-mode .main-content {
-        background: #080d1a;
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap');
+
+    /* ─── ROOT ─── */
+    .feed-light-mode .main-content {
+        background: #eef2f7;
         min-height: 100vh;
-        padding: 24px 20px 60px;
+        padding: 28px 20px 70px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        position: relative;
     }
-    .feed-dark-mode .main-content::before {
+
+    /* soft ambient blobs */
+    .feed-light-mode .main-content::before {
         content: '';
         position: fixed;
         inset: 0;
         background:
-                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(59,130,246,0.08) 0%, transparent 60%),
-                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(168,85,247,0.06) 0%, transparent 60%),
-                radial-gradient(ellipse 40% 40% at 50% 50%, rgba(16,185,129,0.03) 0%, transparent 70%);
+                radial-gradient(ellipse 70% 55% at 10% 5%,  rgba(99,179,237,0.18)  0%, transparent 55%),
+                radial-gradient(ellipse 55% 45% at 88% 85%, rgba(167,139,250,0.14) 0%, transparent 55%),
+                radial-gradient(ellipse 40% 40% at 55% 45%, rgba(52,211,153,0.07)  0%, transparent 65%);
         pointer-events: none;
         z-index: 0;
     }
-    .feed-dark-mode .main-content > * { position: relative; z-index: 1; }
+    .feed-light-mode .main-content > * { position: relative; z-index: 1; }
+
+    /* ─── LAYOUT ─── */
     .fd-layout {
         display: grid;
-        grid-template-columns: 260px 1fr 256px;
-        gap: 20px;
-        max-width: 1200px;
+        grid-template-columns: 264px 1fr 260px;
+        gap: 22px;
+        max-width: 1210px;
         margin: 0 auto;
         align-items: start;
     }
-    @media(max-width:1100px){.fd-layout{grid-template-columns:220px 1fr}.fd-right{display:none}}
-    @media(max-width:768px){.fd-layout{grid-template-columns:1fr}.fd-left{display:none}}
+    @media(max-width:1110px){ .fd-layout{ grid-template-columns:220px 1fr } .fd-right{ display:none } }
+    @media(max-width:768px){  .fd-layout{ grid-template-columns:1fr }        .fd-left{ display:none } }
+
+    /* ─── GLASS CARD ─── */
     .glass-card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 18px;
-        backdrop-filter: blur(20px);
-        transition: border-color .25s, box-shadow .25s;
+        background: rgba(255,255,255,0.72);
+        border: 1px solid rgba(255,255,255,0.9);
+        border-radius: 20px;
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        box-shadow: 0 4px 24px rgba(100,120,160,0.09), 0 1px 2px rgba(100,120,160,0.06);
+        transition: box-shadow .25s, border-color .25s;
     }
-    .glass-card:hover { border-color: rgba(255,255,255,0.13); }
-    .fd-left { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 14px; }
-    .fd-user-card { padding: 0; overflow: hidden; }
+    .glass-card:hover {
+        box-shadow: 0 8px 36px rgba(100,120,160,0.14), 0 1px 2px rgba(100,120,160,0.06);
+        border-color: rgba(255,255,255,1);
+    }
+
+    /* ─── LEFT SIDEBAR ─── */
+    .fd-left { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 16px; }
+
+    .fd-user-card { padding: 0; overflow: visible; }
+
     .fd-user-banner {
-        height: 64px;
-        background: linear-gradient(135deg, #1e3a8a 0%, #3b0764 50%, #1e1b4b 100%);
+        height: 70px;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+        position: relative;
+        border-radius: 20px 20px 0 0;
     }
-    .fd-user-body { padding: 0 18px 18px; text-align: center; }
+    .fd-user-banner::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.07'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .fd-user-body { padding: 0 18px 20px; text-align: center; }
     .fd-user-avatar-wrap {
-        margin: -28px auto 10px;
-        width: 56px; height: 56px;
+        margin: -30px auto 12px;
+        width: 60px; height: 60px;
         border-radius: 50%;
-        padding: 2px;
+        padding: 3px;
         background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+        box-shadow: 0 4px 16px rgba(139,92,246,0.3);
+        position: relative;
+        z-index: 10;
     }
     .fd-user-avatar-wrap img {
         width: 100%; height: 100%;
         border-radius: 50%; object-fit: cover;
-        border: 2px solid #0d1324;
+        border: 3px solid #eef2f7;
     }
-    .fd-user-name { font-family: Montserrat,sans-serif; font-weight: 800; font-size: 14px; color: #f1f5f9; margin-bottom: 3px; }
+    .fd-user-name {
+        font-family: 'Sora', sans-serif;
+        font-weight: 700; font-size: 14px;
+        color: #1e293b; margin-bottom: 4px;
+    }
     .fd-user-role {
-        display: inline-block; font-size: 10px; font-family: Montserrat,sans-serif; font-weight: 700;
-        letter-spacing: .06em; padding: 2px 10px; border-radius: 20px;
-        background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); margin-bottom: 12px;
+        display: inline-block; font-size: 10px;
+        font-family: 'Sora', sans-serif; font-weight: 700;
+        letter-spacing: .07em; padding: 3px 12px; border-radius: 20px;
+        background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12));
+        color: #6366f1; border: 1px solid rgba(99,102,241,0.25);
+        margin-bottom: 14px; text-transform: uppercase;
     }
-    .fd-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-    .fd-stat { background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 6px; border: 1px solid rgba(255,255,255,0.06); }
-    .fd-stat strong { display: block; font-family: Montserrat,sans-serif; font-weight: 800; font-size: 18px; color: #60a5fa; }
-    .fd-stat small { font-size: 10px; color: #64748b; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-    .fd-widget-title { font-family: Montserrat,sans-serif; font-weight: 800; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #475569; padding: 14px 18px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .fd-top-list { list-style: none; padding: 10px 0 4px; margin: 0; }
-    .fd-top-item { display: flex; align-items: center; gap: 10px; padding: 7px 18px; transition: background .18s; cursor: pointer; }
-    .fd-top-item:hover { background: rgba(255,255,255,0.04); }
-    .fd-rank { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: Montserrat,sans-serif; font-weight: 800; font-size: 10px; flex-shrink: 0; }
-    .fd-rank.r1 { background: linear-gradient(135deg,#ffd700,#ffb300); color: #000; }
-    .fd-rank.r2 { background: linear-gradient(135deg,#b0b7c3,#94a3b8); color: #fff; }
-    .fd-rank.r3 { background: linear-gradient(135deg,#cd7f32,#a0522d); color: #fff; }
-    .fd-rank.rn { background: rgba(255,255,255,0.08); color: #94a3b8; }
-    .fd-top-name { flex: 1; font-size: 12px; font-weight: 600; color: #cbd5e1; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .fd-top-name:hover { color: #60a5fa; }
-    .fd-top-pts { font-size: 11px; font-weight: 700; color: #f59e0b; font-family: Montserrat,sans-serif; }
+    .fd-view-profile-btn {
+        display: block; text-align: center; padding: 8px 0; border-radius: 12px;
+        background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08));
+        border: 1px solid rgba(99,102,241,0.2);
+        color: #6366f1; font-size: 12px; font-weight: 700;
+        font-family: 'Sora', sans-serif; text-decoration: none;
+        transition: all .2s;
+    }
+    .fd-view-profile-btn:hover {
+        background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15));
+        border-color: rgba(99,102,241,0.4);
+        box-shadow: 0 4px 14px rgba(99,102,241,0.15);
+    }
+    .fd-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .fd-stat {
+        background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.06));
+        border-radius: 12px; padding: 12px 6px;
+        border: 1px solid rgba(99,102,241,0.12);
+    }
+    .fd-stat strong {
+        display: block; font-family: 'Sora', sans-serif;
+        font-weight: 800; font-size: 20px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .fd-stat small { font-size: 10px; color: #94a3b8; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+
+    /* Top widget */
+    .fd-widget-title {
+        font-family: 'Sora', sans-serif; font-weight: 700; font-size: 11px;
+        letter-spacing: .08em; text-transform: uppercase; color: #94a3b8;
+        padding: 16px 18px 12px; border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .fd-top-list { list-style: none; padding: 10px 0 6px; margin: 0; }
+    .fd-top-item { display: flex; align-items: center; gap: 10px; padding: 8px 18px; transition: background .18s; cursor: pointer; border-radius: 10px; margin: 0 6px; }
+    .fd-top-item:hover { background: rgba(99,102,241,0.06); }
+    .fd-rank { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Sora', sans-serif; font-weight: 800; font-size: 10px; flex-shrink: 0; }
+    .fd-rank.r1 { background: linear-gradient(135deg,#ffd700,#f59e0b); color: #fff; box-shadow: 0 2px 8px rgba(245,158,11,0.4); }
+    .fd-rank.r2 { background: linear-gradient(135deg,#c0c9d4,#94a3b8); color: #fff; box-shadow: 0 2px 8px rgba(148,163,184,0.4); }
+    .fd-rank.r3 { background: linear-gradient(135deg,#cd7f32,#a0522d); color: #fff; box-shadow: 0 2px 8px rgba(160,82,45,0.3); }
+    .fd-rank.rn { background: rgba(99,102,241,0.1); color: #6366f1; }
+    .fd-top-name { flex: 1; font-size: 12px; font-weight: 600; color: #475569; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fd-top-name:hover { color: #6366f1; }
+    .fd-top-pts { font-size: 11px; font-weight: 700; color: #f59e0b; font-family: 'Sora', sans-serif; background: rgba(245,158,11,0.1); padding: 2px 7px; border-radius: 8px; }
+
+    /* ─── POST CREATOR ─── */
     .fd-creator-wrap {
-        position: relative; border-radius: 20px; padding: 2px; margin-bottom: 6px;
-        background: linear-gradient(135deg, rgba(96,165,250,0.5), rgba(167,139,250,0.5), rgba(244,114,182,0.5));
+        position: relative; border-radius: 22px; padding: 2px; margin-bottom: 8px;
+        background: linear-gradient(135deg, rgba(59,130,246,0.6), rgba(139,92,246,0.6), rgba(236,72,153,0.5));
         background-size: 300% 300%;
-        animation: gradientShift 4s ease infinite;
+        animation: gradientShift 5s ease infinite;
+        box-shadow: 0 6px 28px rgba(99,102,241,0.2);
     }
     @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
-    .fd-creator { background: #0d1324; border-radius: 18px; padding: 18px 20px; }
-    .fd-creator-row { display: flex; align-items: center; gap: 12px; }
-    .fd-creator-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(96,165,250,0.4); flex-shrink: 0; }
-    .fd-creator-input {
-        flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 24px; padding: 10px 18px; font-size: 14px; color: #94a3b8;
-        cursor: pointer; font-family: inherit; transition: all .2s; resize: none; overflow: hidden; min-height: 42px;
+    .fd-creator {
+        background: rgba(255,255,255,0.92);
+        border-radius: 20px; padding: 18px 20px;
+        backdrop-filter: blur(20px);
     }
-    .fd-creator-input:focus { outline: none; border-color: rgba(96,165,250,0.5); background: rgba(255,255,255,0.07); color: #e2e8f0; }
+    .fd-creator-row { display: flex; align-items: center; gap: 12px; }
+    .fd-creator-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(99,102,241,0.3); flex-shrink: 0; }
+    .fd-creator-input {
+        flex: 1; background: rgba(238,242,247,0.9);
+        border: 1.5px solid rgba(99,102,241,0.15);
+        border-radius: 24px; padding: 11px 20px; font-size: 14px; color: #64748b;
+        cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+        transition: all .2s; resize: none; overflow: hidden; min-height: 44px;
+    }
+    .fd-creator-input:focus {
+        outline: none; border-color: rgba(99,102,241,0.45);
+        background: rgba(255,255,255,0.95); color: #1e293b;
+        box-shadow: 0 0 0 4px rgba(99,102,241,0.08);
+    }
     .fd-creator-expanded { margin-top: 14px; display: none; }
     .fd-creator-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-    .fd-action-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #94a3b8; font-size: 12px; font-weight: 600; cursor: pointer; font-family: Montserrat,sans-serif; transition: all .18s; }
-    .fd-action-btn:hover { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.4); color: #60a5fa; }
-    .fd-type-select { padding: 7px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #94a3b8; font-size: 12px; font-weight: 600; cursor: pointer; font-family: Montserrat,sans-serif; }
-    .fd-type-select option { background: #1e293b; }
-    .fd-submit-btn { margin-left: auto; padding: 8px 22px; border-radius: 20px; border: none; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; font-family: Montserrat,sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: all .2s; box-shadow: 0 4px 14px rgba(59,130,246,0.3); }
-    .fd-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.45); }
-    .fd-cancel-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #64748b; font-family: Montserrat,sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; transition: all .18s; }
-    .fd-cancel-btn:hover { color: #94a3b8; }
+    .fd-action-btn {
+        display: flex; align-items: center; gap: 6px; padding: 8px 16px;
+        border-radius: 20px; border: 1.5px solid rgba(99,102,241,0.18);
+        background: rgba(99,102,241,0.06); color: #6366f1;
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        font-family: 'Plus Jakarta Sans', sans-serif; transition: all .18s;
+    }
+    .fd-action-btn:hover { background: rgba(99,102,241,0.14); border-color: rgba(99,102,241,0.35); }
+    .fd-type-select {
+        padding: 8px 14px; border-radius: 20px;
+        border: 1.5px solid rgba(99,102,241,0.18); background: rgba(99,102,241,0.06);
+        color: #6366f1; font-size: 12px; font-weight: 600;
+        cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .fd-type-select option { background: #fff; color: #1e293b; }
+    .fd-submit-btn {
+        margin-left: auto; padding: 9px 24px; border-radius: 20px; border: none;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff;
+        font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px;
+        cursor: pointer; transition: all .2s;
+        box-shadow: 0 4px 16px rgba(99,102,241,0.35);
+    }
+    .fd-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(99,102,241,0.45); }
+    .fd-cancel-btn {
+        padding: 9px 18px; border-radius: 20px;
+        border: 1.5px solid rgba(0,0,0,0.1); background: transparent;
+        color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif;
+        font-weight: 600; font-size: 13px; cursor: pointer; transition: all .18s;
+    }
+    .fd-cancel-btn:hover { color: #64748b; border-color: rgba(0,0,0,0.2); }
     .fd-img-preview-wrap { position: relative; display: inline-block; margin-bottom: 10px; }
-    .fd-img-preview-wrap img { max-width: 100%; max-height: 280px; border-radius: 12px; object-fit: cover; }
-    .fd-img-remove { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
-    .fd-error { padding: 10px 14px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; color: #f87171; font-size: 13px; margin: 8px 0; }
-    .fd-tabs { display: flex; gap: 6px; padding: 14px 0 6px; overflow-x: auto; }
+    .fd-img-preview-wrap img { max-width: 100%; max-height: 280px; border-radius: 14px; object-fit: cover; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .fd-img-remove { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.55); color: #fff; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+    .fd-error { padding: 11px 16px; background: rgba(239,68,68,0.08); border: 1.5px solid rgba(239,68,68,0.25); border-radius: 12px; color: #ef4444; font-size: 13px; margin: 8px 0; }
+
+    /* ─── TABS ─── */
+    .fd-tabs { display: flex; gap: 8px; padding: 16px 0 8px; overflow-x: auto; }
     .fd-tabs::-webkit-scrollbar { display: none; }
-    .fd-tab { padding: 8px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #64748b; font-family: Montserrat,sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; transition: all .2s; }
-    .fd-tab:hover { color: #94a3b8; border-color: rgba(255,255,255,0.2); }
-    .fd-tab.active { background: linear-gradient(135deg, #1d4ed8, #6d28d9); border-color: transparent; color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,0.3); }
+    .fd-tab {
+        padding: 9px 20px; border-radius: 20px;
+        border: 1.5px solid rgba(0,0,0,0.08);
+        background: rgba(255,255,255,0.7);
+        color: #94a3b8; font-family: 'Sora', sans-serif;
+        font-weight: 700; font-size: 12px; cursor: pointer;
+        white-space: nowrap; transition: all .2s;
+        backdrop-filter: blur(10px);
+    }
+    .fd-tab:hover { color: #6366f1; border-color: rgba(99,102,241,0.3); background: rgba(255,255,255,0.9); }
+    .fd-tab.active {
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-color: transparent;
+        color: #fff; box-shadow: 0 4px 16px rgba(99,102,241,0.35);
+    }
+
+    /* ─── POSTS ─── */
     .fd-post {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.07);
-        border-radius: 18px;
-        margin-bottom: 14px;
+        background: rgba(255,255,255,0.78);
+        border: 1.5px solid rgba(255,255,255,0.95);
+        border-radius: 20px;
+        margin-bottom: 16px;
         overflow: visible;
         position: relative;
         transition: border-color .25s, transform .2s, box-shadow .25s;
         animation: cardIn .4s ease both;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 4px 20px rgba(100,120,160,0.08), 0 1px 3px rgba(100,120,160,0.06);
     }
-    .fd-post:hover { border-color: rgba(255,255,255,0.12); box-shadow: 0 8px 40px rgba(0,0,0,0.3); }
-    @keyframes cardIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-    .fd-post:nth-child(1){animation-delay:.05s}.fd-post:nth-child(2){animation-delay:.1s}.fd-post:nth-child(3){animation-delay:.15s}
-    .fd-post:nth-child(4){animation-delay:.2s}.fd-post:nth-child(5){animation-delay:.25s}.fd-post:nth-child(6){animation-delay:.3s}
-    .fd-post.type-NEWS { border-left: 3px solid #3b82f6; }
-    .fd-post.type-SUCCESS_STORY { border-left: 3px solid #10b981; }
-    .fd-post.type-ANNOUNCEMENT { border-left: 3px solid #f59e0b; }
-    .fd-post.type-GENERAL { border-left: 3px solid rgba(255,255,255,0.08); }
-    .fd-post.post-pinned { border-left: 3px solid #f472b6; }
-    .fd-pin-badge { position: absolute; top: -1px; left: 16px; font-size: 10px; font-family: Montserrat,sans-serif; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #f472b6; background: rgba(244,114,182,0.12); border: 1px solid rgba(244,114,182,0.3); padding: 2px 10px; border-radius: 0 0 8px 8px; }
-    .fd-post-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px 10px; position: relative; overflow: visible; }
-    .fd-post-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.1); flex-shrink: 0; transition: border-color .2s; }
-    .fd-post-avatar:hover { border-color: #60a5fa; }
-    .fd-post-author { font-family: Montserrat,sans-serif; font-weight: 700; font-size: 14px; color: #e2e8f0; text-decoration: none; display: block; }
-    .fd-post-author:hover { color: #60a5fa; }
-    .fd-post-meta-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
-    .fd-role-badge { font-size: 9px; font-family: Montserrat,sans-serif; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,0.07); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
-    .fd-type-tag { font-size: 10px; font-weight: 600; padding: 1px 8px; border-radius: 10px; }
-    .fd-type-tag.news { background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.25); }
-    .fd-type-tag.success { background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.25); }
-    .fd-type-tag.announce { background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.25); }
-    .fd-type-tag.general { background:rgba(255,255,255,0.06); color:#94a3b8; border:1px solid rgba(255,255,255,0.08); }
-    .fd-post-time { font-size: 11px; color: #475569; }
-    .fd-post-body { padding: 4px 18px 14px; font-size: 14px; line-height: 1.7; color: #cbd5e1; }
+    .fd-post:hover {
+        border-color: rgba(255,255,255,1);
+        box-shadow: 0 10px 40px rgba(100,120,160,0.14), 0 2px 6px rgba(100,120,160,0.08);
+        transform: translateY(-1px);
+    }
+    @keyframes cardIn { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+    .fd-post:nth-child(1){animation-delay:.04s}.fd-post:nth-child(2){animation-delay:.09s}.fd-post:nth-child(3){animation-delay:.14s}
+    .fd-post:nth-child(4){animation-delay:.19s}.fd-post:nth-child(5){animation-delay:.24s}.fd-post:nth-child(6){animation-delay:.29s}
+
+    /* type left accents */
+    .fd-post.type-NEWS          { border-left: 4px solid #3b82f6; }
+    .fd-post.type-SUCCESS_STORY { border-left: 4px solid #10b981; }
+    .fd-post.type-ANNOUNCEMENT  { border-left: 4px solid #f59e0b; }
+    .fd-post.type-GENERAL       { border-left: 4px solid rgba(99,102,241,0.25); }
+    .fd-post.post-pinned        { border-left: 4px solid #ec4899; }
+
+    .fd-pin-badge {
+        position: absolute; top: -1px; left: 16px; font-size: 10px;
+        font-family: 'Sora', sans-serif; font-weight: 800; letter-spacing: .06em;
+        text-transform: uppercase; color: #ec4899;
+        background: rgba(236,72,153,0.1); border: 1px solid rgba(236,72,153,0.25);
+        padding: 3px 12px; border-radius: 0 0 10px 10px;
+    }
+    .fd-post-header { display: flex; align-items: center; gap: 12px; padding: 18px 20px 12px; position: relative; overflow: visible; }
+    .fd-post-avatar {
+        width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
+        border: 2px solid rgba(255,255,255,0.9);
+        box-shadow: 0 2px 10px rgba(100,120,160,0.15);
+        flex-shrink: 0; transition: box-shadow .2s;
+    }
+    .fd-post-avatar:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.25); }
+    .fd-post-author {
+        font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px;
+        color: #1e293b; text-decoration: none; display: block;
+    }
+    .fd-post-author:hover { color: #6366f1; }
+    .fd-post-meta-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+    .fd-role-badge {
+        font-size: 9px; font-family: 'Sora', sans-serif; font-weight: 700;
+        letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px;
+        border-radius: 10px; background: rgba(99,102,241,0.08);
+        color: #6366f1; border: 1px solid rgba(99,102,241,0.18);
+    }
+    .fd-type-tag { font-size: 10px; font-weight: 600; padding: 2px 9px; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .fd-type-tag.news    { background:rgba(59,130,246,0.1);  color:#2563eb; border:1px solid rgba(59,130,246,0.2);  }
+    .fd-type-tag.success { background:rgba(16,185,129,0.1);  color:#059669; border:1px solid rgba(16,185,129,0.2);  }
+    .fd-type-tag.announce{ background:rgba(245,158,11,0.1);  color:#d97706; border:1px solid rgba(245,158,11,0.2);  }
+    .fd-type-tag.general { background:rgba(99,102,241,0.08); color:#6366f1; border:1px solid rgba(99,102,241,0.18); }
+    .fd-post-time { font-size: 11px; color: #cbd5e1; font-weight: 500; }
+    .fd-post-body { padding: 4px 20px 16px; font-size: 14px; line-height: 1.75; color: #475569; }
     .fd-post-img { width: 100%; max-height: 420px; object-fit: cover; cursor: zoom-in; display: block; }
-    .fd-edit-wrap { padding: 0 18px 14px; }
-    .fd-edit-textarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(96,165,250,0.4); border-radius: 12px; padding: 12px 14px; font-family: inherit; font-size: 14px; color: #e2e8f0; resize: vertical; box-sizing: border-box; }
-    .fd-edit-textarea:focus { outline: none; border-color: #60a5fa; }
-    .fd-post-footer { display: flex; align-items: center; gap: 6px; padding: 8px 14px 12px; border-top: 1px solid rgba(255,255,255,0.05); }
-    .fd-foot-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; font-family: Montserrat,sans-serif; transition: all .18s; }
-    .fd-foot-btn:hover { background: rgba(255,255,255,0.06); color: #94a3b8; border-color: rgba(255,255,255,0.15); }
-    .fd-foot-btn.liked { color: #f87171; border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.08); }
-    .fd-menu-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #475569; font-size: 20px; padding: 2px 8px; border-radius: 8px; line-height: 1; transition: all .15s; }
-    .fd-menu-btn:hover { background: rgba(255,255,255,0.07); color: #94a3b8; }
-    .fd-dropdown { display: none; position: absolute; right: 10px; top: 50px; background: #1e2d47; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); z-index: 500; min-width: 145px; overflow: hidden; }
-    .fd-dd-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 16px; border: none; background: transparent; font-size: 13px; font-weight: 600; font-family: Montserrat,sans-serif; cursor: pointer; color: #cbd5e1; transition: background .15s; }
-    .fd-dd-btn:hover { background: rgba(255,255,255,0.06); }
-    .fd-dd-btn.danger { color: #f87171; }
-    .fd-dd-btn.danger:hover { background: rgba(248,113,113,0.1); }
-    .fd-dd-divider { height: 1px; background: rgba(255,255,255,0.07); }
-    .fd-comments { padding: 0 18px 6px; }
-    .fd-comment-row { display: flex; align-items: center; gap: 8px; padding: 8px 18px 14px; }
-    .fd-comment-input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 9px 16px; font-size: 13px; color: #e2e8f0; font-family: inherit; transition: all .18s; }
-    .fd-comment-input:focus { outline: none; border-color: rgba(96,165,250,0.4); background: rgba(255,255,255,0.07); }
-    .fd-comment-input::placeholder { color: #475569; }
-    .fd-comment-send { width: 36px; height: 36px; border-radius: 50%; border: none; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .18s; }
-    .fd-comment-send:hover { transform: scale(1.1); box-shadow: 0 4px 14px rgba(59,130,246,0.4); }
-    .fd-right { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 14px; }
-    .fd-widget-body { padding: 12px 14px; }
-    .fd-widget-link { display: block; text-align: center; padding: 9px; margin: 4px 14px 14px; border-radius: 10px; border: 1px solid rgba(59,130,246,0.25); color: #60a5fa; font-size: 12px; font-weight: 700; font-family: Montserrat,sans-serif; text-decoration: none; transition: all .18s; background: rgba(59,130,246,0.06); }
-    .fd-widget-link:hover { background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.4); }
-    .fd-empty { text-align: center; padding: 60px 20px; color: #475569; }
-    .fd-empty-icon { font-size: 48px; margin-bottom: 12px; opacity: .6; }
-    .fd-empty-title { font-family: Montserrat,sans-serif; font-weight: 700; font-size: 16px; color: #94a3b8; margin-bottom: 6px; }
-    .load-more-trigger { display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .fd-edit-wrap { padding: 0 20px 16px; }
+    .fd-edit-textarea {
+        width: 100%; background: rgba(238,242,247,0.8);
+        border: 1.5px solid rgba(99,102,241,0.3); border-radius: 14px;
+        padding: 12px 16px; font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 14px; color: #1e293b; resize: vertical; box-sizing: border-box;
+    }
+    .fd-edit-textarea:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,0.1); }
+
+    /* footer */
+    .fd-post-footer {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 20px 14px;
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    .fd-foot-btn {
+        display: flex; align-items: center; gap: 6px; padding: 8px 16px;
+        border-radius: 20px; border: 1.5px solid rgba(0,0,0,0.08);
+        background: rgba(238,242,247,0.8); color: #94a3b8;
+        font-size: 13px; font-weight: 600; cursor: pointer;
+        font-family: 'Plus Jakarta Sans', sans-serif; transition: all .18s;
+    }
+    .fd-foot-btn:hover { background: rgba(99,102,241,0.08); color: #6366f1; border-color: rgba(99,102,241,0.25); }
+    .fd-foot-btn.liked { color: #ef4444; border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.07); }
+
+    /* dropdown */
+    .fd-menu-btn {
+        margin-left: auto; background: none; border: none; cursor: pointer;
+        color: #94a3b8; font-size: 22px; padding: 2px 8px; border-radius: 10px;
+        line-height: 1; transition: all .15s;
+    }
+    .fd-menu-btn:hover { background: rgba(99,102,241,0.08); color: #6366f1; }
+    .fd-dropdown {
+        display: none; position: absolute; right: 10px; top: 52px;
+        background: rgba(255,255,255,0.96); border: 1.5px solid rgba(255,255,255,1);
+        border-radius: 16px; box-shadow: 0 16px 48px rgba(100,120,160,0.22);
+        z-index: 500; min-width: 158px; overflow: hidden;
+        backdrop-filter: blur(20px);
+    }
+    .fd-dd-btn {
+        display: flex; align-items: center; gap: 8px; width: 100%;
+        padding: 11px 18px; border: none; background: transparent;
+        font-size: 13px; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif;
+        cursor: pointer; color: #475569; transition: background .15s;
+    }
+    .fd-dd-btn:hover { background: rgba(99,102,241,0.07); color: #6366f1; }
+    .fd-dd-btn.danger { color: #ef4444; }
+    .fd-dd-btn.danger:hover { background: rgba(239,68,68,0.07); }
+    .fd-dd-divider { height: 1px; background: rgba(0,0,0,0.06); }
+
+    /* comments */
+    .fd-comments { padding: 0 20px 8px; }
+    .fd-comment-row { display: flex; align-items: center; gap: 10px; padding: 10px 20px 18px; }
+    .fd-comment-input {
+        flex: 1; background: rgba(238,242,247,0.9);
+        border: 1.5px solid rgba(99,102,241,0.15); border-radius: 22px;
+        padding: 10px 18px; font-size: 13px; color: #475569;
+        font-family: 'Plus Jakarta Sans', sans-serif; transition: all .18s;
+    }
+    .fd-comment-input:focus { outline: none; border-color: rgba(99,102,241,0.4); background: #fff; box-shadow: 0 0 0 4px rgba(99,102,241,0.08); }
+    .fd-comment-input::placeholder { color: #cbd5e1; }
+    .fd-comment-send {
+        width: 38px; height: 38px; border-radius: 50%; border: none;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff;
+        font-size: 14px; cursor: pointer; display: flex; align-items: center;
+        justify-content: center; flex-shrink: 0; transition: all .18s;
+        box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    }
+    .fd-comment-send:hover { transform: scale(1.1); box-shadow: 0 6px 18px rgba(99,102,241,0.45); }
+
+    /* ─── RIGHT SIDEBAR ─── */
+    .fd-right { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 16px; }
+    .fd-widget-body { padding: 14px 16px; }
+    .fd-widget-link {
+        display: block; text-align: center; padding: 10px;
+        margin: 4px 16px 16px; border-radius: 12px;
+        border: 1.5px solid rgba(99,102,241,0.2);
+        color: #6366f1; font-size: 12px; font-weight: 700;
+        font-family: 'Sora', sans-serif; text-decoration: none;
+        transition: all .18s; background: rgba(99,102,241,0.06);
+    }
+    .fd-widget-link:hover { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.4); box-shadow: 0 4px 14px rgba(99,102,241,0.15); }
+
+    /* ─── EMPTY ─── */
+    .fd-empty { text-align: center; padding: 70px 20px; color: #cbd5e1; }
+    .fd-empty-icon { font-size: 52px; margin-bottom: 14px; opacity: .7; }
+    .fd-empty-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 17px; color: #94a3b8; margin-bottom: 8px; }
+
+    /* ─── LOAD MORE ─── */
+    .load-more-trigger { display: flex; align-items: center; justify-content: center; padding: 28px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .fd-spinner { width: 24px; height: 24px; border: 2px solid rgba(96,165,250,0.2); border-top-color: #60a5fa; border-radius: 50%; animation: spin .7s linear infinite; }
+    .fd-spinner { width: 26px; height: 26px; border: 2.5px solid rgba(99,102,241,0.18); border-top-color: #6366f1; border-radius: 50%; animation: spin .7s linear infinite; }
 </style>
 
 <main class="main-content">
@@ -200,28 +405,27 @@
                     </div>
                     <div class="fd-user-name" th:text="${currentUser.fullName}">Name</div>
                     <div class="fd-user-role" th:text="${currentUser.role}">ROLE</div>
-                    <a th:href="@{/profile/{id}(id=${currentUser.id})}"
-                       style="display:block;text-align:center;padding:7px 0;border-radius:10px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);color:#60a5fa;font-size:12px;font-weight:700;font-family:Montserrat,sans-serif;text-decoration:none;transition:all .18s;"
-                       onmouseover="this.style.background='rgba(96,165,250,0.18)'" onmouseout="this.style.background='rgba(96,165,250,0.1)'">View Profile &#8594;</a>
+                    <a th:href="@{/profile/{id}(id=${currentUser.id})}" class="fd-view-profile-btn">View Profile →</a>
                     <div class="fd-stats" th:if="${currentUser.profile != null}">
                         <div class="fd-stat">
                             <strong th:text="${currentUser.profile.totalPoints}">0</strong>
                             <small>Points</small>
                         </div>
                         <div class="fd-stat">
-                            <strong th:text="${currentUser.profile.rankPosition != null ? '#' + currentUser.profile.rankPosition : '&#8212;'}">&#8212;</strong>
+                            <strong th:text="${currentUser.profile.rankPosition != null ? '#' + currentUser.profile.rankPosition : '—'}">—</strong>
                             <small>Rank</small>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div class="glass-card">
-                <div class="fd-widget-title">&#127942; Top This Week</div>
+                <div class="fd-widget-title">🏆 Top This Week</div>
                 <ul class="fd-top-list">
                     <li th:each="p, i : ${topUsers}" class="fd-top-item">
-          <span class="fd-rank"
-                th:classappend="${i.index == 0} ? ' r1' : (${i.index == 1} ? ' r2' : (${i.index == 2} ? ' r3' : ' rn'))"
-                th:text="${i.index + 1}">1</span>
+                        <span class="fd-rank"
+                              th:classappend="${i.index == 0} ? ' r1' : (${i.index == 1} ? ' r2' : (${i.index == 2} ? ' r3' : ' rn'))"
+                              th:text="${i.index + 1}">1</span>
                         <a th:href="@{/mezun/{id}(id=${p.user.id})}" class="fd-top-name" th:text="${p.user.fullName}">Name</a>
                         <span class="fd-top-pts" th:text="${p.totalPoints} + ' pts'">0 pts</span>
                     </li>
@@ -240,21 +444,21 @@
                     <div id="postExpanded" class="fd-creator-expanded">
                         <div id="imagePreviewWrap" style="display:none;" class="fd-img-preview-wrap">
                             <img id="imagePreview" src="" alt="preview"/>
-                            <button onclick="removeImage()" class="fd-img-remove">&#10005;</button>
+                            <button onclick="removeImage()" class="fd-img-remove">✕</button>
                         </div>
                         <div class="fd-creator-actions">
                             <label for="postImage" class="fd-action-btn" style="cursor:pointer;">
-                                &#128247; Photo
+                                📷 Photo
                                 <input type="file" id="postImage" name="image" accept="image/*" style="display:none;" onchange="previewImage(this)"/>
                             </label>
                             <select id="postType" name="postType" class="fd-type-select">
-                                <option value="GENERAL">&#128172; General</option>
-                                <option value="SUCCESS_STORY">&#127775; Success Story</option>
-                                <option value="NEWS">&#128240; News</option>
-                                <option value="ANNOUNCEMENT">&#128226; Announcement</option>
+                                <option value="GENERAL">💬 General</option>
+                                <option value="SUCCESS_STORY">✨ Success Story</option>
+                                <option value="NEWS">📰 News</option>
+                                <option value="ANNOUNCEMENT">📢 Announcement</option>
                             </select>
                             <button onclick="cancelPost()" class="fd-cancel-btn">Cancel</button>
-                            <button id="postSubmitBtn" class="fd-submit-btn" onclick="submitPost()">&#128640; Post</button>
+                            <button id="postSubmitBtn" class="fd-submit-btn" onclick="submitPost()">🚀 Post</button>
                         </div>
                     </div>
                 </div>
@@ -264,9 +468,9 @@
 
             <div class="fd-tabs">
                 <button class="fd-tab active" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0" hx-target="#feed-list" hx-swap="innerHTML">All</button>
-                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=NEWS" hx-target="#feed-list" hx-swap="innerHTML">&#128240; News</button>
-                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=SUCCESS_STORY" hx-target="#feed-list" hx-swap="innerHTML">&#127775; Success</button>
-                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=ANNOUNCEMENT" hx-target="#feed-list" hx-swap="innerHTML">&#128226; Announcements</button>
+                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=NEWS" hx-target="#feed-list" hx-swap="innerHTML">📰 News</button>
+                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=SUCCESS_STORY" hx-target="#feed-list" hx-swap="innerHTML">✨ Success</button>
+                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=ANNOUNCEMENT" hx-target="#feed-list" hx-swap="innerHTML">📢 Announcements</button>
             </div>
 
             <div id="feed-list">
@@ -276,7 +480,7 @@
                      th:attrappend="class=${' type-' + post.postType.name()}"
                      th:id="'post-' + ${post.id}">
 
-                    <div th:if="${post.isPinned}" class="fd-pin-badge">&#128204; Pinned</div>
+                    <div th:if="${post.isPinned}" class="fd-pin-badge">📌 Pinned</div>
 
                     <div class="fd-post-header">
                         <a th:href="@{/mezun/{id}(id=${post.author.id})}">
@@ -289,20 +493,20 @@
                                 <span class="fd-type-tag"
                                       th:classappend="${post.postType.name() == 'NEWS'} ? ' news' : (${post.postType.name() == 'SUCCESS_STORY'} ? ' success' : (${post.postType.name() == 'ANNOUNCEMENT'} ? ' announce' : ' general'))"
                                       th:switch="${post.postType.name()}">
-                <span th:case="'SUCCESS_STORY'">&#127775; Success</span>
-                <span th:case="'NEWS'">&#128240; News</span>
-                <span th:case="'ANNOUNCEMENT'">&#128226; Announcement</span>
-                <span th:case="*">&#128172; General</span>
-              </span>
+                                    <span th:case="'SUCCESS_STORY'">✨ Success</span>
+                                    <span th:case="'NEWS'">📰 News</span>
+                                    <span th:case="'ANNOUNCEMENT'">📢 Announcement</span>
+                                    <span th:case="*">💬 General</span>
+                                </span>
                                 <time class="fd-post-time" th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy · HH:mm')}">Date</time>
                             </div>
                         </div>
                         <div th:if="${currentUserId != null and (post.author.id == currentUserId or isAdmin == true)}" style="position:relative;">
-                            <button class="fd-menu-btn" th:data-post-id="${post.id}" onclick="togglePostMenu(this)">&#8942;</button>
+                            <button class="fd-menu-btn" th:data-post-id="${post.id}" onclick="togglePostMenu(this)">⋯</button>
                             <div class="fd-dropdown">
-                                <button th:if="${post.author.id == currentUserId}" th:data-post-id="${post.id}" onclick="startEditPost(this.dataset.postId)" class="fd-dd-btn">&#9999;&#65039; Edit post</button>
+                                <button th:if="${post.author.id == currentUserId}" th:data-post-id="${post.id}" onclick="startEditPost(this.dataset.postId)" class="fd-dd-btn">✏️ Edit post</button>
                                 <div th:if="${post.author.id == currentUserId}" class="fd-dd-divider"></div>
-                                <button th:data-post-id="${post.id}" onclick="deletePostAction(this.dataset.postId)" class="fd-dd-btn danger">&#128465; Delete post</button>
+                                <button th:data-post-id="${post.id}" onclick="deletePostAction(this.dataset.postId)" class="fd-dd-btn danger">🗑 Delete post</button>
                             </div>
                         </div>
                     </div>
@@ -312,15 +516,15 @@
                     </div>
 
                     <div th:id="'post-edit-' + ${post.id}" class="fd-edit-wrap" style="display:none;">
-          <textarea th:id="'post-edit-txt-' + ${post.id}" rows="4" class="fd-edit-textarea"
-                    th:text="${post.getLocalizedContent(#locale.language)}"></textarea>
+                        <textarea th:id="'post-edit-txt-' + ${post.id}" rows="4" class="fd-edit-textarea"
+                                  th:text="${post.getLocalizedContent(#locale.language)}"></textarea>
                         <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
                             <button th:data-post-id="${post.id}" onclick="cancelEditPost(this.dataset.postId)" class="fd-cancel-btn">Cancel</button>
-                            <button th:data-post-id="${post.id}" onclick="saveEditPost(this.dataset.postId)" class="fd-submit-btn" style="padding:8px 18px;">&#128190; Save</button>
+                            <button th:data-post-id="${post.id}" onclick="saveEditPost(this.dataset.postId)" class="fd-submit-btn" style="padding:8px 20px;">💾 Save</button>
                         </div>
                     </div>
 
-                    <div th:if="${post.imageUrl != null}" style="overflow:hidden;">
+                    <div th:if="${post.imageUrl != null}" style="overflow:hidden;border-radius:0 0 6px 6px;">
                         <img th:src="${post.imageUrl}" class="fd-post-img" onclick="openImageModal(this.src)" alt="post image"/>
                     </div>
 
@@ -329,29 +533,29 @@
                             <button class="fd-foot-btn"
                                     th:classappend="${initialLikedIds != null and #lists.contains(initialLikedIds, post.id.toString())} ? ' liked'"
                                     th:attr="data-post-id=${post.id}" onclick="toggleLike(this.dataset.postId)">
-                                <span th:text="${initialLikedIds != null and #lists.contains(initialLikedIds, post.id.toString())} ? '&#10084;&#65039;' : '&#129293;'">&#129293;</span>
+                                <span th:text="${initialLikedIds != null and #lists.contains(initialLikedIds, post.id.toString())} ? '❤️' : '🤍'">🤍</span>
                                 <span th:text="${post.likesCount}">0</span>
                             </button>
                         </div>
                         <button class="fd-foot-btn" th:attr="data-post-id=${post.id}" onclick="toggleComments(this.dataset.postId)">
-                            &#128172; <span th:id="${'ccount-' + post.id}" th:text="${post.commentsCount}">0</span>
+                            💬 <span th:id="${'ccount-' + post.id}" th:text="${post.commentsCount}">0</span>
                         </button>
                     </div>
 
                     <div th:id="${'comments-' + post.id}" class="fd-comments" style="display:none;"></div>
                     <div th:id="${'comment-row-' + post.id}" class="fd-comment-row" style="display:none;">
                         <input type="text" th:id="${'comment-input-' + post.id}" name="content"
-                               placeholder="Write a comment&#8230;" class="fd-comment-input"
+                               placeholder="Write a comment…" class="fd-comment-input"
                                th:attr="data-post-id=${post.id}"
                                onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
-                        <button class="fd-comment-send" th:attr="data-post-id=${post.id}" onclick="submitComment(this.dataset.postId)">&#10148;</button>
+                        <button class="fd-comment-send" th:attr="data-post-id=${post.id}" onclick="submitComment(this.dataset.postId)">➤</button>
                     </div>
                 </div>
 
                 <div th:if="${#lists.isEmpty(initialPosts)}" class="fd-empty">
-                    <div class="fd-empty-icon">&#128235;</div>
+                    <div class="fd-empty-icon">💬</div>
                     <div class="fd-empty-title">Nothing here yet</div>
-                    <div style="font-size:13px;">Be the first to share something! &#127881;</div>
+                    <div style="font-size:13px;color:#cbd5e1;">Be the first to share something! 🎉</div>
                 </div>
 
                 <div th:if="${initialNextPage > -1}"
@@ -368,11 +572,11 @@
         <!-- RIGHT -->
         <aside class="fd-right">
             <div class="glass-card">
-                <div class="fd-widget-title">&#128188; Open Jobs</div>
+                <div class="fd-widget-title">💼 Open Jobs</div>
                 <div class="fd-widget-body" hx-get="/career/jobs/widget" hx-trigger="load" hx-swap="innerHTML">
                     <div class="load-more-trigger"><div class="fd-spinner"></div></div>
                 </div>
-                <a th:href="@{/career/jobs}" class="fd-widget-link">Browse All Jobs &#8594;</a>
+                <a th:href="@{/career/jobs}" class="fd-widget-link">Browse All Jobs →</a>
             </div>
         </aside>
 
@@ -498,14 +702,14 @@
         if (!confirm('Delete this post?')) return;
         const headers = {}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
         const res = await fetch('/feed/post/' + id, {method: 'DELETE', headers});
-        if (res.ok) { const card = document.getElementById('post-' + id); if (card) { card.style.cssText='opacity:0;transition:opacity 0.3s;'; setTimeout(()=>card.remove(),300); } }
+        if (res.ok) { const card = document.getElementById('post-' + id); if (card) { card.style.cssText='opacity:0;transform:scale(0.97);transition:all 0.3s;'; setTimeout(()=>card.remove(),300); } }
     }
     function openImageModal(src) {
         let m = document.getElementById('imgModal');
         if (!m) {
             m = document.createElement('div'); m.id='imgModal';
-            m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
-            m.innerHTML='<img style="max-width:92vw;max-height:92vh;border-radius:12px;box-shadow:0 0 60px rgba(0,0,0,0.8);"/>';
+            m.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,0.85);backdrop-filter:blur(12px);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+            m.innerHTML='<img style="max-width:92vw;max-height:92vh;border-radius:16px;box-shadow:0 0 80px rgba(0,0,0,0.4);"/>';
             m.onclick=()=>m.remove(); document.body.appendChild(m);
         }
         m.querySelector('img').src=src; m.style.display='flex';
