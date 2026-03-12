@@ -5,6 +5,7 @@ import com.com.manasuniversityecosystem.domain.entity.chat.ChatMessage;
 import com.com.manasuniversityecosystem.domain.entity.chat.ChatRoom;
 import com.com.manasuniversityecosystem.domain.enums.RoomType;
 import com.com.manasuniversityecosystem.repository.chat.ChatMessageRepository;
+import com.com.manasuniversityecosystem.repository.chat.ChatParticipantRepository;
 import com.com.manasuniversityecosystem.repository.chat.ChatRoomRepository;
 import com.com.manasuniversityecosystem.web.ws.ChatMessageDTO;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class ChatService {
 
     private final ChatRoomRepository roomRepo;
     private final ChatMessageRepository messageRepo;
+    private final ChatParticipantRepository participantRepo;
     private final SimpMessagingTemplate messagingTemplate;
 
     // ── SEND ─────────────────────────────────────────────────

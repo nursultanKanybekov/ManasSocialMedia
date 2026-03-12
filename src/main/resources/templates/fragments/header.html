@@ -39,8 +39,8 @@
         /*]]>*/
     </script>
 
-    <!-- WebSocket libs: always for chat pages, also always for secretary/admin for live notifications -->
-    <th:block th:if="${includeChat}">
+    <!-- WebSocket libs: loaded for ALL authenticated users for real-time notifications -->
+    <th:block sec:authorize="isAuthenticated()">
         <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     </th:block>
@@ -51,138 +51,379 @@
          JS array literals [[...]] are escaped inside CDATA to avoid Thymeleaf parsing.
          ═══════════════════════════════════════════════════════════ -->
     <th:block sec:authorize="hasAnyRole('SECRETARY','ADMIN','SUPER_ADMIN')">
-        <th:block th:if="${includeChat != true}">
-            <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-        </th:block>
+        <!-- SockJS/STOMP already loaded globally above for all authenticated users -->
 
+        <!-- ═══════════════════════════════════════════════
+             GLOBAL TOAST SYSTEM — shared CSS for all types
+        ════════════════════════════════════════════════ -->
         <style>
+            /* ── Container ── */
             #manas-toast-wrap {
-                position:fixed; bottom:28px; right:24px; z-index:99999;
-                display:flex; flex-direction:column-reverse; gap:10px;
-                pointer-events:none;
+                position: fixed;
+                bottom: 24px; right: 24px;
+                z-index: 99999;
+                display: flex;
+                flex-direction: column-reverse;
+                gap: 10px;
+                pointer-events: none;
             }
+
+            /* ── Base toast ── */
             .manas-toast {
-                pointer-events:all;
-                background:#1e293b; border-left:4px solid #7c3aed;
-                border-radius:14px; padding:14px 16px 14px 14px;
-                box-shadow:0 8px 40px rgba(0,0,0,0.45);
-                display:flex; align-items:flex-start; gap:12px;
-                min-width:300px; max-width:360px;
-                animation:mnToastIn 0.38s cubic-bezier(.22,1,.36,1);
+                pointer-events: all;
+                background: rgba(15, 23, 42, 0.96);
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 18px;
+                padding: 0;
+                box-shadow: 0 16px 56px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.3);
+                display: flex;
+                flex-direction: column;
+                min-width: 320px;
+                max-width: 380px;
+                overflow: hidden;
+                animation: mnToastIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
             }
             @keyframes mnToastIn {
-                from { opacity:0; transform:translateY(30px) scale(0.94); }
-                to   { opacity:1; transform:translateY(0) scale(1); }
+                from { opacity:0; transform: translateX(40px) scale(0.92); }
+                to   { opacity:1; transform: translateX(0) scale(1); }
             }
-            .manas-toast.hiding { animation:mnToastOut 0.3s ease forwards; }
-            @keyframes mnToastOut { to { opacity:0; transform:translateY(20px) scale(0.9); } }
+            .manas-toast.hiding {
+                animation: mnToastOut 0.28s ease forwards;
+            }
+            @keyframes mnToastOut {
+                to { opacity:0; transform: translateX(30px) scale(0.9); }
+            }
+
+            /* ── Accent bar (top) ── */
+            .mn-toast-bar {
+                height: 3px;
+                width: 100%;
+                border-radius: 18px 18px 0 0;
+            }
+            .mn-toast-bar.chat    { background: linear-gradient(90deg, #10b981, #34d399); }
+            .mn-toast-bar.like    { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+            .mn-toast-bar.comment { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+            .mn-toast-bar.reg     { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+            .mn-toast-bar.default { background: linear-gradient(90deg, #6366f1, #818cf8); }
+
+            /* ── Progress bar ── */
+            .mn-toast-progress {
+                height: 2px;
+                background: rgba(255,255,255,0.12);
+                position: relative;
+                overflow: hidden;
+            }
+            .mn-toast-progress-inner {
+                position: absolute;
+                top: 0; left: 0;
+                height: 100%;
+                width: 100%;
+                transform-origin: left;
+                animation: mnProgress linear forwards;
+            }
+            @keyframes mnProgress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+            .mn-toast-bar.chat    ~ * .mn-toast-progress-inner,
+            .mn-toast-progress-inner.chat    { background: #10b981; }
+            .mn-toast-progress-inner.like    { background: #f43f5e; }
+            .mn-toast-progress-inner.comment { background: #3b82f6; }
+            .mn-toast-progress-inner.reg     { background: #8b5cf6; }
+            .mn-toast-progress-inner.default { background: #6366f1; }
+
+            /* ── Body ── */
+            .mn-toast-inner {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 14px 16px 14px 16px;
+            }
+
+            /* ── Avatar ── */
+            .mn-toast-avatar-wrap {
+                position: relative;
+                flex-shrink: 0;
+            }
             .mn-toast-avatar {
-                width:42px; height:42px; border-radius:50%;
-                background:linear-gradient(135deg,#7c3aed,#4f46e5);
-                display:flex; align-items:center; justify-content:center;
-                font-size:18px; flex-shrink:0;
+                width: 44px; height: 44px;
+                border-radius: 50%;
+                object-fit: cover;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                border: 2px solid rgba(255,255,255,0.08);
             }
-            .mn-toast-body  { flex:1; min-width:0; }
-            .mn-toast-title { font-weight:700; font-size:13px; color:#f1f5f9; font-family:Montserrat,sans-serif; margin-bottom:2px; }
-            .mn-toast-sub   { font-size:12px; color:#94a3b8; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-            .mn-toast-actions { display:flex; gap:8px; }
-            .mn-toast-btn { font-size:11px; font-weight:700; font-family:Montserrat,sans-serif; padding:4px 12px; border-radius:20px; border:none; cursor:pointer; text-decoration:none; }
-            .mn-toast-btn-primary   { background:#7c3aed; color:white; }
-            .mn-toast-btn-secondary { background:#334155; color:#94a3b8; }
-            .mn-toast-close { background:none; border:none; color:#475569; cursor:pointer; font-size:16px; padding:0; line-height:1; align-self:flex-start; flex-shrink:0; }
+            .mn-toast-avatar.is-img {
+                background: transparent;
+            }
+            .mn-toast-avatar.no-img {
+                background: rgba(255,255,255,0.07);
+            }
+            .mn-toast-badge {
+                position: absolute;
+                bottom: -2px; right: -2px;
+                width: 18px; height: 18px;
+                border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 10px;
+                border: 2px solid rgba(15,23,42,0.96);
+            }
+            .mn-toast-badge.chat    { background: #10b981; }
+            .mn-toast-badge.like    { background: #f43f5e; }
+            .mn-toast-badge.comment { background: #3b82f6; }
+            .mn-toast-badge.reg     { background: #8b5cf6; }
+
+            /* ── Text ── */
+            .mn-toast-content { flex: 1; min-width: 0; }
+            .mn-toast-label {
+                font-size: 10px;
+                font-family: Montserrat, sans-serif;
+                font-weight: 800;
+                letter-spacing: .07em;
+                text-transform: uppercase;
+                margin-bottom: 3px;
+            }
+            .mn-toast-label.chat    { color: #34d399; }
+            .mn-toast-label.like    { color: #fb7185; }
+            .mn-toast-label.comment { color: #60a5fa; }
+            .mn-toast-label.reg     { color: #a78bfa; }
+            .mn-toast-label.default { color: #818cf8; }
+
+            .mn-toast-title {
+                font-family: Montserrat, sans-serif;
+                font-weight: 700;
+                font-size: 13px;
+                color: #f1f5f9;
+                margin-bottom: 2px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .mn-toast-sub {
+                font-size: 12px;
+                color: #94a3b8;
+                margin-bottom: 8px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                line-height: 1.4;
+            }
+            .mn-toast-actions {
+                display: flex;
+                gap: 7px;
+                align-items: center;
+            }
+            .mn-toast-btn {
+                font-size: 11px;
+                font-weight: 700;
+                font-family: Montserrat, sans-serif;
+                padding: 5px 14px;
+                border-radius: 20px;
+                border: none;
+                cursor: pointer;
+                text-decoration: none;
+                display: inline-block;
+                transition: all .15s;
+            }
+            .mn-toast-btn-open.chat    { background: rgba(16,185,129,0.2);  color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+            .mn-toast-btn-open.like    { background: rgba(244,63,94,0.18);  color: #fb7185; border: 1px solid rgba(244,63,94,0.3); }
+            .mn-toast-btn-open.comment { background: rgba(59,130,246,0.18); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+            .mn-toast-btn-open.reg     { background: rgba(139,92,246,0.18); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+            .mn-toast-btn-open.default { background: rgba(99,102,241,0.18); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
+            .mn-toast-btn-open:hover   { filter: brightness(1.2); transform: translateY(-1px); }
+            .mn-toast-btn-dismiss {
+                background: transparent;
+                color: #475569;
+                border: 1px solid rgba(255,255,255,0.08);
+                font-size: 11px; font-weight: 600;
+                font-family: Montserrat, sans-serif;
+                padding: 5px 12px; border-radius: 20px; cursor: pointer;
+                transition: all .15s;
+            }
+            .mn-toast-btn-dismiss:hover { color: #94a3b8; border-color: rgba(255,255,255,0.15); }
+            .mn-toast-close {
+                background: none; border: none;
+                color: #475569; cursor: pointer;
+                font-size: 15px; padding: 0;
+                line-height: 1; align-self: flex-start;
+                flex-shrink: 0; margin-top: 1px;
+                transition: color .15s;
+            }
+            .mn-toast-close:hover { color: #94a3b8; }
         </style>
 
         <script>
-            /* Secretary/Admin live notification — WhatsApp-style */
+            /* ══════════════════════════════════════════════════════════
+               GLOBAL TOAST ENGINE — Secretary/Admin registrations
+            ══════════════════════════════════════════════════════════ */
             (function () {
-                var wrap = document.createElement('div');
-                wrap.id = 'manas-toast-wrap';
-                document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(wrap); });
+                function getWrap() {
+                    var w = document.getElementById('manas-toast-wrap');
+                    if (!w) {
+                        w = document.createElement('div');
+                        w.id = 'manas-toast-wrap';
+                        document.body.appendChild(w);
+                    }
+                    return w;
+                }
+                document.addEventListener('DOMContentLoaded', getWrap);
 
-                function playSound() {
+                /* ── Sounds ── */
+                function playSound(type) {
                     try {
                         var ctx = new (window.AudioContext || window.webkitAudioContext)();
-                        var notes = [{t:0, f:880, d:0.18}, {t:0.18, f:1108, d:0.18}];
+                        var configs = {
+                            chat:    [{t:0,f:1047,d:0.12},{t:0.12,f:1319,d:0.14}],
+                            like:    [{t:0,f:880,d:0.1},{t:0.1,f:1047,d:0.1},{t:0.2,f:1319,d:0.14}],
+                            comment: [{t:0,f:784,d:0.12},{t:0.12,f:988,d:0.14}],
+                            default: [{t:0,f:880,d:0.18},{t:0.18,f:1108,d:0.18}]
+                        };
+                        var notes = configs[type] || configs.default;
                         notes.forEach(function(n) {
                             var osc = ctx.createOscillator(), gain = ctx.createGain();
                             osc.connect(gain); gain.connect(ctx.destination);
                             osc.type = 'sine'; osc.frequency.value = n.f;
                             gain.gain.setValueAtTime(0, ctx.currentTime + n.t);
-                            gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + n.t + 0.02);
+                            gain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + n.t + 0.02);
                             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + n.t + n.d);
                             osc.start(ctx.currentTime + n.t);
-                            osc.stop(ctx.currentTime + n.t + n.d + 0.05);
+                            osc.stop(ctx.currentTime + n.t + n.d + 0.06);
                         });
                     } catch(e) {}
                 }
 
-                function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+                function esc(s) {
+                    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                }
 
-                function showToast(fullName, role, link) {
-                    playSound();
+                /* ── Core toast builder ── */
+                window.mnShowToast = function(opts) {
+                    /*
+                      opts = {
+                        type:        'chat' | 'like' | 'comment' | 'reg' | 'default'
+                        label:       string  (small caps header line)
+                        title:       string  (bold line)
+                        sub:         string  (message preview)
+                        avatarUrl:   string  (img URL or falsy for emoji)
+                        avatarEmoji: string  (emoji fallback)
+                        badgeEmoji:  string  (small badge icon)
+                        link:        string  (href for action btn)
+                        btnText:     string  (action button label)
+                        autoDismiss: number  (ms, default 7000)
+                      }
+                    */
+                    var type        = opts.type || 'default';
+                    var autoDismiss = opts.autoDismiss || 7000;
+
+                    playSound(type);
+
+                    var avatarHtml;
+                    if (opts.avatarUrl && opts.avatarUrl.startsWith('http')) {
+                        avatarHtml = '<img class="mn-toast-avatar is-img" src="' + esc(opts.avatarUrl) + '" alt=""/>';
+                    } else {
+                        avatarHtml = '<div class="mn-toast-avatar no-img">' + esc(opts.avatarEmoji || '🔔') + '</div>';
+                    }
+
                     var toast = document.createElement('div');
                     toast.className = 'manas-toast';
                     toast.innerHTML =
-                        '<div class="mn-toast-avatar">&#128100;</div>' +
-                        '<div class="mn-toast-body">' +
-                        '<div class="mn-toast-title">New registration request</div>' +
-                        '<div class="mn-toast-sub">' + esc(fullName) + ' &bull; ' + esc(role) + '</div>' +
+                        '<div class="mn-toast-bar ' + type + '"></div>' +
+                        '<div class="mn-toast-inner">' +
+                        '<div class="mn-toast-avatar-wrap">' +
+                        avatarHtml +
+                        (opts.badgeEmoji ? '<div class="mn-toast-badge ' + type + '">' + esc(opts.badgeEmoji) + '</div>' : '') +
+                        '</div>' +
+                        '<div class="mn-toast-content">' +
+                        '<div class="mn-toast-label ' + type + '">' + esc(opts.label || 'Notification') + '</div>' +
+                        '<div class="mn-toast-title">' + esc(opts.title || '') + '</div>' +
+                        '<div class="mn-toast-sub">' + esc(opts.sub || '') + '</div>' +
                         '<div class="mn-toast-actions">' +
-                        '<a href="' + esc(link) + '" class="mn-toast-btn mn-toast-btn-primary">Review &#8594;</a>' +
-                        '<button class="mn-toast-btn mn-toast-btn-secondary" onclick="mnDismiss(this)">Dismiss</button>' +
+                        (opts.link ? '<a href="' + esc(opts.link) + '" class="mn-toast-btn mn-toast-btn-open ' + type + '">' + esc(opts.btnText || 'Open') + ' →</a>' : '') +
+                        '<button class="mn-toast-btn-dismiss" onclick="mnDismiss(this)">Dismiss</button>' +
                         '</div>' +
                         '</div>' +
-                        '<button class="mn-toast-close" onclick="mnDismiss(this)">&#x2715;</button>';
+                        '<button class="mn-toast-close" onclick="mnDismiss(this)">✕</button>' +
+                        '</div>' +
+                        '<div class="mn-toast-progress"><div class="mn-toast-progress-inner ' + type + '" style="animation-duration:' + autoDismiss + 'ms"></div></div>';
 
-                    if (!wrap.parentNode) document.body.appendChild(wrap);
-                    wrap.appendChild(toast);
+                    getWrap().appendChild(toast);
 
+                    // Bell badge bump (non-chat notifications only)
+                    if (type !== 'chat') {
+                        var badge = document.getElementById('notif-badge');
+                        if (badge) {
+                            badge.textContent = (parseInt(badge.textContent) || 0) + 1;
+                            badge.style.display = 'flex';
+                        }
+                    }
+
+                    // Browser push
                     if (window.Notification && Notification.permission === 'granted') {
-                        new Notification('New registration — ' + fullName, {
-                            body: fullName + ' (' + role + ') wants to join.',
-                            icon: '/images/university_logo.png'
+                        new Notification(opts.title || opts.label, {
+                            body: opts.sub || '',
+                            icon: opts.avatarUrl || '/images/university_logo.png'
                         });
                     }
-                    var timer = setTimeout(function(){ mnDismiss(toast.querySelector('.mn-toast-close')); }, 10000);
-                    toast._timer = timer;
 
-                    var badge = document.getElementById('notif-badge');
-                    if (badge) { badge.textContent = (parseInt(badge.textContent)||0)+1; badge.style.display='flex'; }
-                }
-
-                window.mnDismiss = function(btn) {
-                    var t = btn.closest('.manas-toast'); if (!t) return;
-                    clearTimeout(t._timer); t.classList.add('hiding');
-                    setTimeout(function(){ t.remove(); }, 300);
+                    toast._timer = setTimeout(function() {
+                        if (toast.parentNode) {
+                            toast.classList.add('hiding');
+                            setTimeout(function() { toast.remove(); }, 280);
+                        }
+                    }, autoDismiss);
                 };
 
-                document.addEventListener('click', function(){
-                    if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
-                }, {once:true});
+                window.mnDismiss = function(btn) {
+                    var t = btn.closest('.manas-toast');
+                    if (!t) return;
+                    clearTimeout(t._timer);
+                    t.classList.add('hiding');
+                    setTimeout(function() { t.remove(); }, 280);
+                };
 
-                var retryDelay = 3000;
-                function connect() {
-                    if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') { setTimeout(connect, 500); return; }
-                    var client = Stomp.over(new SockJS('/ws'));
-                    client.debug = null;
-                    client.connect({}, function() {
-                        retryDelay = 3000;
-                        client.subscribe('/topic/secretary.newUser', function(frame) {
-                            try {
-                                var d = JSON.parse(frame.body);
-                                showToast(d.fullName||'Unknown', d.role||'', d.link||'/secretary');
-                                document.dispatchEvent(new CustomEvent('secretaryNewUser', {detail:d}));
-                            } catch(e){ console.error('[SecWS]',e); }
-                        });
-                    }, function(){
-                        setTimeout(connect, retryDelay);
-                        retryDelay = Math.min(retryDelay*2, 30000);
+                /* ── Registration toast (Secretary/Admin) ── */
+                function showRegistrationToast(fullName, role, link) {
+                    window.mnShowToast({
+                        type:        'reg',
+                        label:       'New Registration',
+                        title:       fullName,
+                        sub:         role + ' · Waiting for approval',
+                        avatarEmoji: '👤',
+                        badgeEmoji:  '🔔',
+                        link:        link,
+                        btnText:     'Review',
+                        autoDismiss: 10000
                     });
                 }
 
-                if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', connect); }
-                else { connect(); }
+                document.addEventListener('click', function(){
+                    if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
+                }, {once: true});
+
+                var secRetry = 3000;
+                function connectSec() {
+                    if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') { setTimeout(connectSec, 500); return; }
+                    var client = Stomp.over(new SockJS('/ws'));
+                    client.debug = null;
+                    client.connect({}, function() {
+                        secRetry = 3000;
+                        client.subscribe('/topic/secretary.newUser', function(frame) {
+                            try {
+                                var d = JSON.parse(frame.body);
+                                showRegistrationToast(d.fullName || 'Unknown', d.role || '', d.link || '/secretary');
+                                document.dispatchEvent(new CustomEvent('secretaryNewUser', { detail: d }));
+                            } catch(e) { console.error('[SecWS]', e); }
+                        });
+                    }, function() {
+                        setTimeout(connectSec, secRetry);
+                        secRetry = Math.min(secRetry * 2, 30000);
+                    });
+                }
+                if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', connectSec); }
+                else { connectSec(); }
             })();
         </script>
     </th:block>
@@ -197,72 +438,64 @@
                 var notifTopic = '/topic/user.' + currentUserId;
                 var retryDelay = 3000;
 
-                // Toast container (shared with secretary toasts)
-                function getWrap() {
-                    var w = document.getElementById('manas-toast-wrap');
-                    if (!w) { w = document.createElement('div'); w.id = 'manas-toast-wrap'; document.body.appendChild(w); }
-                    return w;
-                }
+                /* ── Map backend type → toast options ── */
+                function buildOpts(d) {
+                    var type    = d.type || 'default';
+                    var message = d.message || '';
+                    var link    = d.link || '/';
 
-                function playChime() {
-                    try {
-                        var ctx = new (window.AudioContext || window.webkitAudioContext)();
-                        [{t:0,f:880,d:0.15},{t:0.15,f:1108,d:0.18}].forEach(function(n){
-                            var osc=ctx.createOscillator(), g=ctx.createGain();
-                            osc.connect(g); g.connect(ctx.destination);
-                            osc.type='sine'; osc.frequency.value=n.f;
-                            g.gain.setValueAtTime(0, ctx.currentTime+n.t);
-                            g.gain.linearRampToValueAtTime(0.22, ctx.currentTime+n.t+0.02);
-                            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+n.t+n.d);
-                            osc.start(ctx.currentTime+n.t); osc.stop(ctx.currentTime+n.t+n.d+0.05);
-                        });
-                    } catch(e){}
-                }
-
-                function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-                function showNotifToast(icon, message, link) {
-                    playChime();
-                    var wrap = getWrap();
-                    var toast = document.createElement('div');
-                    toast.className = 'manas-toast';
-                    toast.innerHTML =
-                        '<div class="mn-toast-avatar">' + esc(icon) + '</div>' +
-                        '<div class="mn-toast-body">' +
-                        '<div class="mn-toast-title">New notification</div>' +
-                        '<div class="mn-toast-sub">' + esc(message) + '</div>' +
-                        '<div class="mn-toast-actions">' +
-                        (link ? '<a href="' + esc(link) + '" class="mn-toast-btn mn-toast-btn-primary">View &#8594;</a>' : '') +
-                        '<button class="mn-toast-btn mn-toast-btn-secondary" onclick="mnDismiss(this)">Dismiss</button>' +
-                        '</div>' +
-                        '</div>' +
-                        '<button class="mn-toast-close" onclick="mnDismiss(this)">&#x2715;</button>';
-
-                    wrap.appendChild(toast);
-
-                    // Bump the notification bell badge
-                    var badge = document.getElementById('notif-badge');
-                    if (badge) {
-                        var cur = parseInt(badge.textContent) || 0;
-                        badge.textContent = cur + 1;
-                        badge.style.display = 'flex';
+                    if (type === 'CHAT_MESSAGE') {
+                        return {
+                            type:        'chat',
+                            label:       'New Message',
+                            title:       d.senderName || 'Someone',
+                            sub:         d.roomName && d.roomName !== 'Direct Message'
+                                ? d.roomName + ' · ' + (message.split(': ').slice(1).join(': ') || message)
+                                : (message.split(': ').slice(1).join(': ') || message),
+                            avatarUrl:   d.senderAvatar || '',
+                            avatarEmoji: '💬',
+                            badgeEmoji:  '💬',
+                            link:        link,
+                            btnText:     'Open chat',
+                            autoDismiss: 7000
+                        };
                     }
-
-                    // Browser push notification
-                    if (window.Notification && Notification.permission === 'granted') {
-                        new Notification(message, { icon: '/images/university_logo.png' });
+                    if (type === 'POST_LIKED') {
+                        return {
+                            type:        'like',
+                            label:       'New Like',
+                            title:       message,
+                            sub:         'Tap to see your post',
+                            avatarEmoji: '❤️',
+                            badgeEmoji:  '❤️',
+                            link:        link,
+                            btnText:     'See post',
+                            autoDismiss: 6000
+                        };
                     }
-
-                    var timer = setTimeout(function(){ if (toast.parentNode) { toast.classList.add('hiding'); setTimeout(function(){ toast.remove(); }, 300); } }, 8000);
-                    toast._timer = timer;
-                }
-
-                // Make sure mnDismiss is defined (may already be from secretary block)
-                if (!window.mnDismiss) {
-                    window.mnDismiss = function(btn) {
-                        var t = btn.closest('.manas-toast'); if (!t) return;
-                        clearTimeout(t._timer); t.classList.add('hiding');
-                        setTimeout(function(){ t.remove(); }, 300);
+                    if (type === 'POST_COMMENTED') {
+                        return {
+                            type:        'comment',
+                            label:       'New Comment',
+                            title:       message,
+                            sub:         'Tap to see the comment',
+                            avatarEmoji: '💬',
+                            badgeEmoji:  '💬',
+                            link:        link,
+                            btnText:     'See post',
+                            autoDismiss: 6000
+                        };
+                    }
+                    /* fallback for all other types */
+                    return {
+                        type:        'default',
+                        label:       'Notification',
+                        title:       message,
+                        sub:         '',
+                        avatarEmoji: d.icon || '🔔',
+                        link:        link,
+                        btnText:     'View',
+                        autoDismiss: 7000
                     };
                 }
 
@@ -275,12 +508,11 @@
                         client.subscribe(notifTopic, function(frame) {
                             try {
                                 var d = JSON.parse(frame.body);
-                                showNotifToast(d.icon || '🔔', d.message || '', d.link || '/');
-                                // Fire a DOM event so other scripts can react
+                                if (window.mnShowToast) window.mnShowToast(buildOpts(d));
                                 document.dispatchEvent(new CustomEvent('manasNotification', { detail: d }));
-                            } catch(e){ console.error('[NotifWS]', e); }
+                            } catch(e) { console.error('[NotifWS]', e); }
                         });
-                    }, function(){
+                    }, function() {
                         setTimeout(connectUserWS, retryDelay);
                         retryDelay = Math.min(retryDelay * 2, 30000);
                     });
@@ -289,7 +521,6 @@
                 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', connectUserWS); }
                 else { connectUserWS(); }
 
-                // Request browser notification permission on first click
                 document.addEventListener('click', function(){
                     if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
                 }, {once: true});

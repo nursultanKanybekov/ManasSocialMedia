@@ -1,6 +1,9 @@
 package com.com.manasuniversityecosystem.web.ws;
 
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
+import com.com.manasuniversityecosystem.domain.entity.chat.ChatMessage;
+import com.com.manasuniversityecosystem.domain.enums.RoomType;
+import com.com.manasuniversityecosystem.repository.chat.ChatParticipantRepository;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.service.UserService;
 import com.com.manasuniversityecosystem.service.chat.ChatService;
@@ -12,6 +15,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -21,6 +27,7 @@ public class ChatWebSocketController {
 
     private final ChatService chatService;
     private final UserService userService;
+    private final ChatParticipantRepository participantRepo;
     private final SimpMessagingTemplate messaging;
 
     private UserDetailsImpl extractPrincipal(Principal principal) {
@@ -32,8 +39,9 @@ public class ChatWebSocketController {
 
     /**
      * Client publishes to: /app/chat.send/{roomId}
-     * Payload: SendMessageRequest JSON
-     * Broadcast to: /topic/chat.{roomId}
+     * chatService.sendMessage() is @Transactional and commits before returning.
+     * Notifications are pushed HERE after the transaction is done — no lazy-load,
+     * no session state issues, works for every role.
      */
     @MessageMapping("/chat.send/{roomId}")
     public void sendMessage(@DestinationVariable UUID roomId,
@@ -41,29 +49,65 @@ public class ChatWebSocketController {
                             Principal principal) {
         UserDetailsImpl details = extractPrincipal(principal);
         AppUser sender = userService.getById(details.getId());
-        chatService.sendMessage(sender, roomId,
+
+        // Transaction commits when this returns
+        ChatMessage msg = chatService.sendMessage(sender, roomId,
                 request.getContent(), request.getMessageType());
-        log.debug("WS message: room={} sender={}", roomId, sender.getEmail());
+
+        // Push notifications after commit — fresh state, any role
+        try {
+            pushChatNotifications(sender, roomId, msg);
+        } catch (Exception e) {
+            log.error("[ChatNotif] push failed room={} sender={}: {}", roomId, sender.getEmail(), e.getMessage(), e);
+        }
     }
 
-    /**
-     * Client publishes typing indicator to: /app/chat.typing/{roomId}
-     * Broadcasts to /topic/typing.{roomId}
-     */
+    private void pushChatNotifications(AppUser sender, UUID roomId, ChatMessage msg) {
+        String content  = msg.getContent();
+        String roomName = msg.getRoom().getName();
+        RoomType type   = msg.getRoom().getRoomType();
+
+        String label   = (roomName != null && !roomName.isBlank()) ? roomName : "Direct Message";
+        String preview = (content != null && content.length() > 70) ? content.substring(0, 70) + "..." : content;
+        String avatar  = (sender.getProfile() != null && sender.getProfile().getAvatarUrl() != null)
+                ? sender.getProfile().getAvatarUrl() : "";
+        String link = switch (type) {
+            case DIRECT  -> "/chat/room/" + roomId;
+            case GLOBAL  -> "/chat/room/" + roomId;
+            case GROUP   -> "/channels/" + roomId;
+            case FACULTY -> "/chat/faculty-group/" + roomId;
+            default      -> "/chat/room/" + roomId;
+        };
+
+        Map<String, String> notif = new HashMap<>();
+        notif.put("type",         "CHAT_MESSAGE");
+        notif.put("senderName",   sender.getFullName());
+        notif.put("senderAvatar", avatar);
+        notif.put("icon",         avatar.isBlank() ? "msg" : avatar);
+        notif.put("roomName",     label);
+        notif.put("message",      sender.getFullName() + ": " + preview);
+        notif.put("link",         link);
+
+        // Fresh DB query after transaction commit — works for any sender role
+        List<AppUser> recipients = participantRepo.findParticipantsExcluding(roomId, sender.getId());
+        log.info("[ChatNotif] room={} type={} sender={} role={} recipients={}",
+                roomId, type, sender.getEmail(), sender.getRole(), recipients.size());
+
+        recipients.forEach(r -> {
+            messaging.convertAndSend("/topic/user." + r.getId(), notif);
+            log.info("[ChatNotif] -> uid={} ({})", r.getId(), r.getEmail());
+        });
+    }
+
     @MessageMapping("/chat.typing/{roomId}")
-    public void typingIndicator(@DestinationVariable UUID roomId,
-                                Principal principal) {
+    public void typingIndicator(@DestinationVariable UUID roomId, Principal principal) {
         UserDetailsImpl details = extractPrincipal(principal);
         TypingIndicatorDTO dto = new TypingIndicatorDTO(details.getId(), details.getFullName());
         messaging.convertAndSend("/topic/typing." + roomId, dto);
     }
 
-    /**
-     * Client publishes to: /app/chat.join/{roomId}
-     */
     @MessageMapping("/chat.join/{roomId}")
-    public void joinRoom(@DestinationVariable UUID roomId,
-                         Principal principal) {
+    public void joinRoom(@DestinationVariable UUID roomId, Principal principal) {
         UserDetailsImpl details = extractPrincipal(principal);
         AppUser user = userService.getById(details.getId());
         chatService.joinRoom(user, roomId);

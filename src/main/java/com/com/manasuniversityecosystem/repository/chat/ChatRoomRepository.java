@@ -37,7 +37,14 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, UUID> {
 
     List<ChatRoom> findByRoomTypeOrderByCreatedAtDesc(RoomType roomType);
 
-    @Query("SELECT cr FROM ChatRoom cr JOIN FETCH cr.participants cp " +
+    @Query("SELECT cr FROM ChatRoom cr " +
+            "JOIN FETCH cr.participants cp " +
+            "JOIN FETCH cp.user u " +
+            "LEFT JOIN FETCH u.profile " +
             "WHERE cr.id = :roomId")
     Optional<ChatRoom> findByIdWithParticipants(@Param("roomId") UUID roomId);
+
+    /** Returns every participant user ID — native SQL, works for any role, zero lazy-load risk */
+    @Query(value = "SELECT user_id FROM chat_participant WHERE room_id = :roomId", nativeQuery = true)
+    List<UUID> findParticipantUserIds(@Param("roomId") UUID roomId);
 }

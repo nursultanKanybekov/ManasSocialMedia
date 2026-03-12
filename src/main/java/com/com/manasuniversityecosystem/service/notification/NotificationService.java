@@ -83,18 +83,28 @@ public class NotificationService {
         notifRepo.save(n);
 
         // Real-time push to recipient's personal channel
-        pushToUser(recipientId, icon != null ? icon : "🔔", message, link, type.name());
+        String actorName   = actor != null ? actor.getFullName() : null;
+        String actorAvatar = (actor != null && actor.getProfile() != null)
+                ? actor.getProfile().getAvatarUrl() : null;
+        pushToUser(recipientId, icon != null ? icon : "🔔", message, link, type.name(), actorName, actorAvatar);
     }
 
     /** Push real-time notification to a specific user via WebSocket */
     private void pushToUser(UUID userId, String icon, String message, String link, String type) {
+        pushToUser(userId, icon, message, link, type, null, null);
+    }
+
+    /** Push real-time notification with optional actor name + avatar */
+    private void pushToUser(UUID userId, String icon, String message, String link, String type,
+                            String actorName, String actorAvatar) {
         try {
-            Map<String, String> payload = Map.of(
-                    "icon",    icon    != null ? icon    : "🔔",
-                    "message", message != null ? message : "",
-                    "link",    link    != null ? link    : "/",
-                    "type",    type    != null ? type    : "GENERAL"
-            );
+            Map<String, String> payload = new java.util.HashMap<>();
+            payload.put("icon",    icon    != null ? icon    : "🔔");
+            payload.put("message", message != null ? message : "");
+            payload.put("link",    link    != null ? link    : "/");
+            payload.put("type",    type    != null ? type    : "GENERAL");
+            if (actorName   != null) payload.put("senderName",   actorName);
+            if (actorAvatar != null) payload.put("senderAvatar", actorAvatar);
             messagingTemplate.convertAndSend("/topic/user." + userId, payload);
             log.debug("WS push → /topic/user.{}: {}", userId, message);
         } catch (Exception e) {
