@@ -51,6 +51,8 @@ public class FeedController {
         model.addAttribute("posts",         posts.getContent());
         model.addAttribute("nextPage",      posts.hasNext() ? page + 1 : -1);
         model.addAttribute("currentUserId", principal.getId());
+        model.addAttribute("isAdmin", principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN")));
         model.addAttribute("likedPostIds",
                 posts.getContent().stream()
                         .filter(p -> postService.isLikedByUser(p.getId(), principal.getId()))
@@ -100,7 +102,28 @@ public class FeedController {
         Post post = postService.createPost(user, req);
         model.addAttribute("post",          post);
         model.addAttribute("currentUserId", principal.getId());
+        model.addAttribute("isAdmin", principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN")));
         model.addAttribute("liked",         false);
+        return "feed/fragments/post-card :: postCard";
+    }
+
+    @PostMapping("/post/{id}/edit")
+    public String editPost(@PathVariable UUID id,
+                           @RequestParam("content") String content,
+                           @AuthenticationPrincipal UserDetailsImpl principal,
+                           @RequestHeader(value = "Accept-Language", defaultValue = "en") String lang,
+                           Model model) {
+        AppUser user = userService.getById(principal.getId());
+        CreatePostRequest req = new CreatePostRequest();
+        req.setContent(content);
+        req.setLang(resolveLang(lang));
+        Post updated = postService.updatePost(id, user, req);
+        model.addAttribute("post",          updated);
+        model.addAttribute("currentUserId", principal.getId());
+        model.addAttribute("isAdmin", principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN")));
+        model.addAttribute("likedPostIds",  java.util.List.of());
         return "feed/fragments/post-card :: postCard";
     }
 
@@ -109,7 +132,13 @@ public class FeedController {
     public ResponseEntity<Void> deletePost(@PathVariable UUID id,
                                            @AuthenticationPrincipal UserDetailsImpl principal) {
         AppUser user = userService.getById(principal.getId());
-        postService.deletePost(id, user);
+        boolean isAdmin = principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (isAdmin) {
+            postService.deletePost(id); // admin override
+        } else {
+            postService.deletePost(id, user);
+        }
         return ResponseEntity.ok().build();
     }
 

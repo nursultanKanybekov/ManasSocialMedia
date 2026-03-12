@@ -4,7 +4,8 @@
 <div th:fragment="postList">
 
     <div th:each="post : ${posts}" class="post-card"
-         th:classappend="${post.isPinned} ? 'post-pinned'">
+         th:classappend="${post.isPinned} ? 'post-pinned'"
+         th:id="'post-' + ${post.id}">
 
         <div th:if="${post.isPinned}" class="pin-badge">📌 Pinned</div>
 
@@ -27,16 +28,58 @@
                 <time class="post-time"
                       th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy HH:mm')}">Date</time>
             </div>
-            <div th:if="${currentUserId != null and post.author.id == currentUserId}" class="post-actions-menu">
-                <button class="btn-icon"
-                        th:attr="data-post-id=${post.id}"
-                        onclick="deletePost(this.dataset.postId, this)"
-                        title="Delete">🗑</button>
+
+            <!-- ⋮ menu: owner → Edit+Delete, admin → Delete only -->
+            <div th:if="${currentUserId != null and (post.author.id == currentUserId or isAdmin == true)}"
+                 style="position:relative;margin-left:auto;">
+                <button class="post-menu-btn"
+                        th:data-post-id="${post.id}"
+                        onclick="togglePostMenu(this)"
+                        style="background:none;border:none;cursor:pointer;font-size:20px;
+                               padding:2px 8px;border-radius:6px;color:#8a91a8;line-height:1;">⋮</button>
+                <div class="post-dropdown" style="display:none;position:absolute;right:0;top:34px;
+                     background:#fff;border:1.5px solid #e2e5f0;border-radius:10px;
+                     box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:200;min-width:130px;overflow:hidden;">
+                    <button th:if="${post.author.id == currentUserId}"
+                            th:data-post-id="${post.id}"
+                            onclick="startEditPost(this.dataset.postId)"
+                            style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+                                   border:none;background:#fff;font-size:13px;color:#1b2a6b;cursor:pointer;
+                                   font-weight:600;font-family:Montserrat,sans-serif;"
+                            onmouseover="this.style.background='#f0f2f8'"
+                            onmouseout="this.style.background='#fff'">✏️ Edit</button>
+                    <button th:data-post-id="${post.id}"
+                            onclick="deletePostAction(this.dataset.postId)"
+                            style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+                                   border:none;border-top:1px solid #f0f2f8;background:#fff;font-size:13px;
+                                   color:#dc2626;cursor:pointer;font-weight:600;font-family:Montserrat,sans-serif;"
+                            onmouseover="this.style.background='#fef2f2'"
+                            onmouseout="this.style.background='#fff'">🗑 Delete</button>
+                </div>
             </div>
         </div>
 
-        <div class="post-content">
+        <!-- View mode -->
+        <div class="post-content" th:id="'post-view-' + ${post.id}">
             <p th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
+        </div>
+
+        <!-- Edit mode (hidden) -->
+        <div th:id="'post-edit-' + ${post.id}" style="display:none;margin:10px 0;">
+            <textarea th:id="'post-edit-txt-' + ${post.id}" rows="4"
+                      style="width:100%;padding:10px 14px;border:1.5px solid #1b2a6b;border-radius:10px;
+                             font-family:inherit;font-size:14px;resize:vertical;box-sizing:border-box;"
+                      th:text="${post.getLocalizedContent(#locale.language)}"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+                <button th:data-post-id="${post.id}" onclick="cancelEditPost(this.dataset.postId)"
+                        style="padding:7px 16px;border:1.5px solid #e2e5f0;border-radius:8px;background:#fff;
+                               font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer;color:#64748b;font-weight:600;">
+                    Cancel</button>
+                <button th:data-post-id="${post.id}" onclick="saveEditPost(this.dataset.postId)"
+                        style="padding:7px 16px;background:#1b2a6b;border:none;border-radius:8px;color:#fff;
+                               font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer;font-weight:700;">
+                    💾 Save</button>
+            </div>
         </div>
 
         <div th:if="${post.imageUrl != null}" class="post-image-wrap">
@@ -45,8 +88,7 @@
         </div>
 
         <div class="post-footer">
-            <!-- Like button: plain onclick, no HTMX -->
-            <div th:id="${'like-' + post.id}">
+            <div th:id="'like-' + ${post.id}">
                 <button class="btn-action"
                         th:classappend="${likedPostIds != null and #lists.contains(likedPostIds, post.id.toString())} ? ' liked'"
                         th:attr="data-post-id=${post.id}"
@@ -55,26 +97,19 @@
                     <span th:text="${post.likesCount}">0</span>
                 </button>
             </div>
-            <!-- Comment button -->
-            <button class="btn-action"
-                    th:attr="data-post-id=${post.id}"
+            <button class="btn-action" th:attr="data-post-id=${post.id}"
                     onclick="toggleComments(this.dataset.postId)">
-                💬 <span th:id="${'ccount-' + post.id}" th:text="${post.commentsCount}">0</span>
+                💬 <span th:id="'ccount-' + ${post.id}" th:text="${post.commentsCount}">0</span>
             </button>
         </div>
 
-        <div th:id="${'comments-' + post.id}" class="comments-section" style="display:none;"></div>
-
-        <div th:id="${'comment-row-' + post.id}" class="comment-input-row" style="display:none;">
-            <input type="text"
-                   th:id="${'comment-input-' + post.id}"
-                   th:attr="data-post-id=${post.id}"
-                   name="content"
-                   placeholder="Write a comment..."
-                   class="comment-input"
+        <div th:id="'comments-' + ${post.id}" class="comments-section" style="display:none;"></div>
+        <div th:id="'comment-row-' + ${post.id}" class="comment-input-row" style="display:none;">
+            <input type="text" th:id="'comment-input-' + ${post.id}"
+                   th:attr="data-post-id=${post.id}" name="content"
+                   placeholder="Write a comment..." class="comment-input"
                    onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
-            <button class="comment-send-btn"
-                    th:attr="data-post-id=${post.id}"
+            <button class="comment-send-btn" th:attr="data-post-id=${post.id}"
                     onclick="submitComment(this.dataset.postId)">➤</button>
         </div>
     </div>
@@ -92,3 +127,5 @@
         <p>No posts yet. Be the first to share! 🎉</p>
     </div>
 </div>
+</body>
+</html>

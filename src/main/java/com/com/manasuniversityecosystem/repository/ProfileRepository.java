@@ -52,4 +52,8 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID> {
             "WHERE p.canMentor = true AND u.status = 'ACTIVE' " +
             "AND u.faculty.id = :facultyId ORDER BY p.totalPoints DESC")
     List<Profile> findAvailableMentorsByFaculty(@Param("facultyId") UUID facultyId);
+
+    @Modifying
+    @Query("DELETE FROM Profile p WHERE p.user.id = :userId")
+    void deleteByUserId(@Param("userId") UUID userId);
 }

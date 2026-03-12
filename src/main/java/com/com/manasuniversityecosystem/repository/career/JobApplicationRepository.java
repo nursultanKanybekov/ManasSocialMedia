@@ -3,6 +3,7 @@ package com.com.manasuniversityecosystem.repository.career;
 
 import com.com.manasuniversityecosystem.domain.entity.career.JobApplication;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -36,4 +37,8 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     boolean existsByApplicantIdAndJobPosterId(
             @Param("applicantId") UUID applicantId,
             @Param("posterId")    UUID posterId);
+
+    @Modifying
+    @Query("DELETE FROM JobApplication a WHERE a.applicant.id = :applicantId")
+    void deleteByApplicantId(@Param("applicantId") UUID applicantId);
 }

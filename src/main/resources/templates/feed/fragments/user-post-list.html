@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="userPostList">
+
+  <div th:each="post : ${posts}" class="post-card"
+       th:id="'post-' + ${post.id}">
+
+    <div class="post-header">
+      <a th:href="@{/profile/{id}(id=${post.author.id})}">
+        <img th:src="${post.author.profile != null and post.author.profile.avatarUrl != null
+                               ? post.author.profile.avatarUrl : '/images/default-avatar.svg'}"
+             class="post-avatar" alt="avatar"/>
+      </a>
+      <div class="post-meta">
+        <a th:href="@{/profile/{id}(id=${post.author.id})}"
+           class="post-author" th:text="${post.author.fullName}">Author</a>
+        <span class="post-type-badge" th:switch="${post.postType.name()}">
+                    <span th:case="'SUCCESS_STORY'">🌟 Success</span>
+                    <span th:case="'NEWS'">📰 News</span>
+                    <span th:case="'ANNOUNCEMENT'">📢 Announcement</span>
+                    <span th:case="*">💬 General</span>
+                </span>
+        <time class="post-time"
+              th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy HH:mm')}">Date</time>
+      </div>
+
+      <div th:if="${currentUserId != null and (post.author.id == currentUserId or isAdmin == true)}"
+           style="position:relative;margin-left:auto;">
+        <button class="post-menu-btn"
+                th:data-post-id="${post.id}"
+                onclick="togglePostMenu(this)"
+                style="background:none;border:none;cursor:pointer;font-size:20px;
+                               padding:2px 8px;border-radius:6px;color:#8a91a8;line-height:1;">⋮</button>
+        <div class="post-dropdown" style="display:none;position:absolute;right:0;top:34px;
+                     background:#fff;border:1.5px solid #e2e5f0;border-radius:10px;
+                     box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:500;min-width:130px;overflow:hidden;">
+          <button th:if="${post.author.id == currentUserId}"
+                  th:data-post-id="${post.id}"
+                  onclick="startEditPost(this.dataset.postId)"
+                  style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+                                   border:none;background:#fff;font-size:13px;color:#1b2a6b;cursor:pointer;
+                                   font-weight:600;font-family:Montserrat,sans-serif;"
+                  onmouseover="this.style.background='#f0f2f8'"
+                  onmouseout="this.style.background='#fff'">✏️ Edit</button>
+          <button th:data-post-id="${post.id}"
+                  onclick="deletePostAction(this.dataset.postId)"
+                  style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+                                   border:none;border-top:1px solid #f0f2f8;background:#fff;font-size:13px;
+                                   color:#dc2626;cursor:pointer;font-weight:600;font-family:Montserrat,sans-serif;"
+                  onmouseover="this.style.background='#fef2f2'"
+                  onmouseout="this.style.background='#fff'">🗑 Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="post-content" th:id="'post-view-' + ${post.id}">
+      <p class="post-body" th:text="${post.getLocalizedContent('en')}">Content</p>
+    </div>
+
+    <div th:id="'post-edit-' + ${post.id}" style="display:none;padding:0 20px 12px;">
+            <textarea th:id="'post-edit-txt-' + ${post.id}" rows="4"
+                      style="width:100%;padding:10px 14px;border:1.5px solid #1b2a6b;border-radius:10px;
+                             font-family:inherit;font-size:14px;resize:vertical;box-sizing:border-box;"
+                      th:text="${post.getLocalizedContent('en')}"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+        <button th:data-post-id="${post.id}" onclick="cancelEditPost(this.dataset.postId)"
+                style="padding:7px 16px;border:1.5px solid #e2e5f0;border-radius:8px;background:#fff;
+                               font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer;color:#64748b;font-weight:600;">Cancel</button>
+        <button th:data-post-id="${post.id}" onclick="saveEditPost(this.dataset.postId)"
+                style="padding:7px 16px;background:#1b2a6b;border:none;border-radius:8px;color:#fff;
+                               font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer;font-weight:700;">💾 Save</button>
+      </div>
+    </div>
+
+    <div th:if="${post.imageUrl != null}">
+      <img th:src="${post.imageUrl}" alt="post image" class="post-image"
+           onclick="openImageModal(this.src)" style="cursor:zoom-in;width:100%;max-height:400px;object-fit:cover;"/>
+    </div>
+
+    <div class="post-actions">
+      <div th:id="'like-' + ${post.id}">
+        <button class="post-action-btn"
+                th:classappend="${likedPostIds != null and #lists.contains(likedPostIds, post.id.toString())} ? ' liked'"
+                th:attr="data-post-id=${post.id}"
+                onclick="toggleLike(this.dataset.postId)">
+          <span th:text="${likedPostIds != null and #lists.contains(likedPostIds, post.id.toString())} ? '❤️' : '🤍'">🤍</span>
+          <span th:text="${post.likesCount}">0</span>
+        </button>
+      </div>
+      <button class="post-action-btn" th:attr="data-post-id=${post.id}"
+              onclick="toggleComments(this.dataset.postId)">
+        💬 <span th:id="'ccount-' + ${post.id}" th:text="${post.commentsCount}">0</span>
+      </button>
+    </div>
+
+    <div th:id="'comments-' + ${post.id}" class="comments-section" style="display:none;"></div>
+    <div th:id="'comment-row-' + ${post.id}" class="comment-input-row" style="display:none;">
+      <input type="text" th:id="'comment-input-' + ${post.id}"
+             th:attr="data-post-id=${post.id}" name="content"
+             placeholder="Write a comment..." class="comment-input"
+             onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
+      <button class="comment-send-btn" th:attr="data-post-id=${post.id}"
+              onclick="submitComment(this.dataset.postId)">➤</button>
+    </div>
+  </div>
+
+  <!-- Next page trigger -->
+  <div th:if="${nextPage > -1}"
+       th:attr="hx-get=${'/profile/' + profileUser.id + '/posts?page=' + nextPage}"
+       hx-trigger="intersect once"
+       hx-target="#user-feed-list"
+       hx-swap="beforeend"
+       class="load-more-trigger">
+    <div class="loading-spinner-sm"></div>
+  </div>
+
+</th:block>
+</body>
+</html>

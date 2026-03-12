@@ -9,8 +9,19 @@ import com.com.manasuniversityecosystem.domain.enums.UserStatus;
 import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.repository.SecretaryValidationRepository;
 import com.com.manasuniversityecosystem.repository.UserRepository;
+import com.com.manasuniversityecosystem.repository.notification.NotificationRepository;
+import com.com.manasuniversityecosystem.repository.social.PostRepository;
+import com.com.manasuniversityecosystem.repository.social.PostLikeRepository;
+import com.com.manasuniversityecosystem.repository.social.CommentRepository;
+import com.com.manasuniversityecosystem.repository.career.JobApplicationRepository;
+import com.com.manasuniversityecosystem.repository.career.MentorshipRepository;
+import com.com.manasuniversityecosystem.repository.gamification.UserBadgeRepository;
+import com.com.manasuniversityecosystem.repository.gamification.PointTransactionRepository;
+import com.com.manasuniversityecosystem.repository.ProfileRepository;
 import com.com.manasuniversityecosystem.service.notification.NotificationService;
 import com.com.manasuniversityecosystem.web.dto.auth.RegisterRequest;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,11 +37,23 @@ import java.util.UUID;
 @Slf4j
 public class UserService {
 
-    private final UserRepository userRepo;
-    private final FacultyRepository facultyRepo;
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    private final UserRepository              userRepo;
+    private final FacultyRepository           facultyRepo;
     private final SecretaryValidationRepository validationRepo;
-    private final PasswordEncoder passwordEncoder;
-    private final NotificationService notificationService;
+    private final PasswordEncoder             passwordEncoder;
+    private final NotificationService         notificationService;
+    private final NotificationRepository      notifRepo;
+    private final PostRepository              postRepo;
+    private final PostLikeRepository          postLikeRepo;
+    private final CommentRepository           commentRepo;
+    private final JobApplicationRepository    jobApplicationRepo;
+    private final MentorshipRepository        mentorshipRepo;
+    private final UserBadgeRepository         userBadgeRepo;
+    private final PointTransactionRepository  pointTransactionRepo;
+    private final ProfileRepository           profileRepo;
 
     @Transactional(readOnly = true)
     public AppUser getById(UUID id) {
@@ -127,12 +150,53 @@ public class UserService {
         return saved;
     }
 
-    /** Admin: delete a user and all their data (cascades via JPA) */
+    /** Admin: delete a user and ALL related data to avoid FK violations */
     @Transactional
     public void deleteUser(UUID userId) {
         AppUser user = getById(userId);
-        userRepo.delete(user);
-        log.info("User deleted by admin: {}", user.getEmail());
+        String email = user.getEmail();
+
+        // 1. Notifications (recipient AND actor)
+        notifRepo.deleteByRecipientId(userId);
+        notifRepo.deleteByActorId(userId);
+
+        // 2. Post likes by user
+        postLikeRepo.deleteByUserId(userId);
+
+        // 3. Comments authored by user
+        commentRepo.deleteByAuthorId(userId);
+
+        // 4. Posts authored by user (cascades post likes/comments via JPA)
+        postRepo.deleteByAuthorId(userId);
+
+        // 5. Job applications
+        jobApplicationRepo.deleteByApplicantId(userId);
+
+        // 6. Mentorship requests (as student or mentor)
+        mentorshipRepo.deleteByStudentId(userId);
+        mentorshipRepo.deleteByMentorId(userId);
+
+        // 7. Gamification
+        pointTransactionRepo.deleteByUserId(userId);
+        userBadgeRepo.deleteByUserId(userId);
+
+        // 8. Profile
+        profileRepo.deleteByUserId(userId);
+
+        // 9. Secretary validations
+        validationRepo.deleteByUserId(userId);
+
+        // Flush all bulk JPQL deletes to DB and clear Hibernate's first-level cache.
+        // Without this, Hibernate still holds the Profile/User in its session cache
+        // and tries to delete them again on commit → StaleObjectStateException.
+        entityManager.flush();
+        entityManager.clear();
+
+        // 10. Finally delete the user (re-fetch after clear)
+        AppUser freshUser = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found after cleanup: " + userId));
+        userRepo.delete(freshUser);
+        log.info("User fully deleted by admin: {}", email);
     }
 
     public void changePassword(AppUser user, String oldPassword, String newPassword) {

@@ -3,6 +3,7 @@ package com.com.manasuniversityecosystem.repository.career;
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.domain.entity.career.MentorshipRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -33,4 +34,12 @@ public interface MentorshipRepository extends JpaRepository<MentorshipRequest, U
     long countByMentorIdAndStatus(UUID mentorId, MentorshipRequest.MentorshipStatus status);
 
     long countByMentorIdAndStatusIn(UUID mentorId, List<MentorshipRequest.MentorshipStatus> statuses);
+
+    @Modifying
+    @Query("DELETE FROM MentorshipRequest m WHERE m.student.id = :studentId")
+    void deleteByStudentId(@Param("studentId") UUID studentId);
+
+    @Modifying
+    @Query("DELETE FROM MentorshipRequest m WHERE m.mentor.id = :mentorId")
+    void deleteByMentorId(@Param("mentorId") UUID mentorId);
 }

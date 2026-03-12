@@ -16,11 +16,11 @@ import java.util.UUID;
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
     @Query("SELECT n FROM Notification n LEFT JOIN FETCH n.actor " +
-           "WHERE n.recipient.id = :userId ORDER BY n.createdAt DESC")
+            "WHERE n.recipient.id = :userId ORDER BY n.createdAt DESC")
     Page<Notification> findByRecipientId(@Param("userId") UUID userId, Pageable pageable);
 
     @Query("SELECT n FROM Notification n LEFT JOIN FETCH n.actor " +
-           "WHERE n.recipient.id = :userId AND n.isRead = false ORDER BY n.createdAt DESC")
+            "WHERE n.recipient.id = :userId AND n.isRead = false ORDER BY n.createdAt DESC")
     List<Notification> findUnreadByRecipientId(@Param("userId") UUID userId);
 
     long countByRecipientIdAndIsReadFalse(UUID recipientId);
@@ -36,4 +36,12 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     @Query("DELETE FROM Notification n WHERE n.recipient.id = :userId AND n.isRead = true")
     @Modifying
     void deleteReadForUser(@Param("userId") UUID userId);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.recipient.id = :userId")
+    void deleteByRecipientId(@Param("userId") UUID userId);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.actor.id = :userId")
+    void deleteByActorId(@Param("userId") UUID userId);
 }

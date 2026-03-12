@@ -101,6 +101,20 @@ public class AdminController {
     }
 
     // POST /admin/posts/{id}/pin
+    // POST /admin/users/{id}/delete
+    @PostMapping("/users/{id}/delete")
+    public String deleteUser(@PathVariable UUID id,
+                             @AuthenticationPrincipal com.com.manasuniversityecosystem.security.UserDetailsImpl principal,
+                             RedirectAttributes ra) {
+        if (id.equals(principal.getId())) {
+            ra.addFlashAttribute("errorMsg", "You cannot delete your own account.");
+            return "redirect:/admin/users";
+        }
+        userService.deleteUser(id);
+        ra.addFlashAttribute("successMsg", "User deleted successfully.");
+        return "redirect:/admin/users";
+    }
+
     @PostMapping("/posts/{id}/pin")
     public String pinPost(@PathVariable UUID id, RedirectAttributes ra) {
         // PostService.pinPost toggles pin state
@@ -141,20 +155,6 @@ public class AdminController {
         }
         return "redirect:/admin/import-mezuns";
     }
-    // POST /admin/users/{id}/delete  — hard-delete alumnus or student
-    @PostMapping("/users/{id}/delete")
-    public String deleteUser(@PathVariable UUID id, RedirectAttributes ra) {
-        AppUser target = userService.getById(id);
-        // Only allow deletion of STUDENT and MEZUN roles
-        if (target.getRole() == UserRole.ADMIN || target.getRole() == UserRole.SECRETARY) {
-            ra.addFlashAttribute("errorMsg", "Cannot delete admin or secretary users.");
-            return "redirect:/admin/users";
-        }
-        userService.deleteUser(id);
-        ra.addFlashAttribute("successMsg", "admin.user.deleted");
-        return "redirect:/admin/users";
-    }
-
     // GET /admin/news  — university news management
     @GetMapping("/news")
     public String newsManagement(@RequestParam(defaultValue = "0") int page, Model model) {

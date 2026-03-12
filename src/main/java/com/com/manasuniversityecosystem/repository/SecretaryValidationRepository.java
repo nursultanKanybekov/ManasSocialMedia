@@ -3,6 +3,7 @@ package com.com.manasuniversityecosystem.repository;
 
 import com.com.manasuniversityecosystem.domain.entity.SecretaryValidation;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -25,4 +26,8 @@ public interface SecretaryValidationRepository extends JpaRepository<SecretaryVa
     List<SecretaryValidation> findPendingWithUsers(@Param("status") SecretaryValidation.ValidationStatus status);
 
     long countByStatus(SecretaryValidation.ValidationStatus status);
+
+    @Modifying
+    @Query("DELETE FROM SecretaryValidation v WHERE v.user.id = :userId")
+    void deleteByUserId(@Param("userId") UUID userId);
 }

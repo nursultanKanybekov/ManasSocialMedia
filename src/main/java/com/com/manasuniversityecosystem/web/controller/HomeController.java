@@ -59,6 +59,8 @@ public class HomeController {
                         .map(p -> p.getId().toString())
                         .toList());
         model.addAttribute("currentUserId", principal.getId());
+        model.addAttribute("isAdmin", principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN")));
         return "feed/feed";
     }
 

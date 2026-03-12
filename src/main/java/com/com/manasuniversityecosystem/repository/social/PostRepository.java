@@ -54,4 +54,8 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     void decrementComments(@Param("id") UUID id);
 
     long countByAuthorId(UUID authorId);
+
+    @Modifying
+    @Query("DELETE FROM Post p WHERE p.author.id = :authorId")
+    void deleteByAuthorId(@Param("authorId") UUID authorId);
 }

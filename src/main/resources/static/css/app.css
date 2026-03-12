@@ -396,7 +396,10 @@ select.form-control { cursor: pointer; }
 .leaderboard-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 
 /* ===================== FEED / POSTS ===================== */
-.post-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 16px; overflow: hidden; }
+.post-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 16px; overflow: visible; position: relative; }
+.post-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; position: relative; overflow: visible; }
+.post-menu-btn { z-index: 10; position: relative; }
+.post-dropdown { z-index: 500 !important; }
 .post-card-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; }
 .post-avatar {
   width: 42px; height: 42px; border-radius: 50%; background: var(--navy); color: white;

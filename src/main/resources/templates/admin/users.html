@@ -1,54 +1,125 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/header :: head('Admin - Users')}"></head>
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
 
-        <div class="page-header">
-            <h2>User Management</h2>
-            <a th:href="@{/admin}" class="btn btn-outline">← Dashboard</a>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div>
+            <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:20px;color:#1b2a6b;margin:0 0 4px;">User Management</h2>
+            <span style="font-size:13px;color:#8a91a8;">Total: <strong th:text="${#lists.size(users)}">0</strong> users</span>
         </div>
+        <a th:href="@{/admin}" class="btn btn-outline">← Dashboard</a>
+    </div>
 
-        <!-- Filters -->
-        <div class="filter-bar">
-            <a th:href="@{/admin/users}" class="filter-btn">All</a>
-            <a th:each="r : ${roles}" th:href="@{/admin/users(role=${r.name()})}"
-               class="filter-btn" th:text="${r.name()}">ROLE</a>
-            <a th:each="s : ${statuses}" th:href="@{/admin/users(status=${s.name()})}"
-               class="filter-btn" th:text="${s.name()}">STATUS</a>
-        </div>
+    <!-- Flash messages -->
+    <div th:if="${successMsg}" style="background:#dcfce7;border:1px solid #86efac;color:#166534;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;" th:text="${successMsg}"></div>
+    <div th:if="${errorMsg}"   style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;" th:text="${errorMsg}"></div>
 
-        <table class="data-table">
+    <!-- Role filter pills -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+        <a th:href="@{/admin/users}" style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;
+       font-family:Montserrat,sans-serif;text-decoration:none;background:#1b2a6b;color:#fff;">All</a>
+        <a th:each="r : ${roles}" th:href="@{/admin/users(role=${r.name()})}"
+           th:text="${r.name()}"
+           style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;
+              font-family:Montserrat,sans-serif;text-decoration:none;background:#f0f2f8;color:#1b2a6b;"></a>
+    </div>
+
+    <!-- Users table -->
+    <div style="background:#fff;border-radius:14px;border:1.5px solid #e2e5f0;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;">
             <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Faculty</th>
-                    <th>Actions</th>
-                </tr>
+            <tr style="background:#f7f8fc;border-bottom:1.5px solid #e2e5f0;">
+                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">User</th>
+                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Role</th>
+                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Status</th>
+                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Faculty</th>
+                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Joined</th>
+                <th style="padding:12px 16px;text-align:right;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Actions</th>
+            </tr>
             </thead>
             <tbody>
-                <tr th:each="user : ${users}">
-                    <td><a th:href="@{/admin/users/{id}(id=${user.id})}" th:text="${user.fullName}">Name</a></td>
-                    <td th:text="${user.email}">email</td>
-                    <td><span class="role-badge" th:text="${user.role}">ROLE</span></td>
-                    <td><span class="status-badge" th:text="${user.status}">STATUS</span></td>
-                    <td th:text="${user.faculty != null ? user.faculty.name : '-'}">Faculty</td>
-                    <td>
-                        <a th:href="@{/admin/users/{id}(id=${user.id})}" class="btn btn-sm btn-outline">View</a>
-                    </td>
-                </tr>
+            <tr th:each="user : ${users}" style="border-bottom:1px solid #f0f2f8;"
+                onmouseover="this.style.background='#f7f8fc'" onmouseout="this.style.background='#fff'">
+
+                <!-- User -->
+                <td style="padding:14px 16px;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+                          color:#fff;display:flex;align-items:center;justify-content:center;
+                          font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;flex-shrink:0;"
+                             th:text="${#strings.substring(user.fullName,0,1)}">A</div>
+                        <div>
+                            <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;"
+                                 th:text="${user.fullName}">Name</div>
+                            <div style="font-size:11px;color:#8a91a8;" th:text="${user.email}">email</div>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Role -->
+                <td style="padding:14px 16px;">
+            <span th:text="${user.role}"
+                  th:style="${user.role.name() == 'ADMIN' or user.role.name() == 'SUPER_ADMIN'}
+                             ? 'background:#1b2a6b;color:#fff;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;'
+                             : (${user.role.name() == 'MEZUN'}
+                             ? 'background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;'
+                             : 'background:#f0f2f8;color:#1b2a6b;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;')">ROLE</span>
+                </td>
+
+                <!-- Status -->
+                <td style="padding:14px 16px;">
+            <span th:text="${user.status}"
+                  th:style="${user.status.name() == 'ACTIVE'}
+                             ? 'background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;'
+                             : (${user.status.name() == 'PENDING'}
+                             ? 'background:#fef9c3;color:#92400e;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;'
+                             : 'background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;')">STATUS</span>
+                </td>
+
+                <!-- Faculty -->
+                <td style="padding:14px 16px;font-size:12px;color:#64748b;"
+                    th:text="${user.faculty != null ? user.faculty.name : '—'}">Faculty</td>
+
+                <!-- Joined -->
+                <td style="padding:14px 16px;font-size:12px;color:#64748b;"
+                    th:text="${#temporals.format(user.createdAt,'dd MMM yyyy')}">Date</td>
+
+                <!-- Actions -->
+                <td style="padding:14px 16px;text-align:right;">
+                    <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">
+                        <a th:href="@{/admin/users/{id}(id=${user.id})}"
+                           style="padding:5px 12px;background:#f0f2f8;color:#1b2a6b;border-radius:6px;font-size:11px;
+                        font-weight:700;font-family:Montserrat,sans-serif;text-decoration:none;">
+                            👁 View</a>
+
+                        <!-- Delete button — not for SUPER_ADMIN accounts -->
+                        <form th:if="${user.role.name() != 'SUPER_ADMIN'}"
+                              th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post" style="margin:0;">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit"
+                                    onclick="return confirm('⚠️ Delete user \'' + /*[[${user.fullName}]]*/ '' + '\'? This cannot be undone.')"
+                                    style="padding:5px 12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;
+                               border-radius:6px;font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;cursor:pointer;">
+                                🗑 Delete</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
             </tbody>
         </table>
 
-        <div th:if="${users.isEmpty()}" class="empty-state">No users found.</div>
+        <div th:if="${#lists.isEmpty(users)}"
+             style="text-align:center;padding:48px;color:#8a91a8;font-size:14px;">
+            No users found.
+        </div>
+    </div>
 
-    </main>
+</main>
 </div>
 <div th:replace="~{fragments/footer :: footer}"></div>
 </body>

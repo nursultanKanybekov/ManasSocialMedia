@@ -2,329 +2,513 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/header :: head('Feed')}"></head>
-<body class="app-layout">
+<body class="app-layout feed-dark-mode">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
-<!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<style>
+    .feed-dark-mode .main-content {
+        background: #080d1a;
+        min-height: 100vh;
+        padding: 24px 20px 60px;
+    }
+    .feed-dark-mode .main-content::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(59,130,246,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(168,85,247,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 50% 50%, rgba(16,185,129,0.03) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+    }
+    .feed-dark-mode .main-content > * { position: relative; z-index: 1; }
+    .fd-layout {
+        display: grid;
+        grid-template-columns: 260px 1fr 256px;
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+        align-items: start;
+    }
+    @media(max-width:1100px){.fd-layout{grid-template-columns:220px 1fr}.fd-right{display:none}}
+    @media(max-width:768px){.fd-layout{grid-template-columns:1fr}.fd-left{display:none}}
+    .glass-card {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 18px;
+        backdrop-filter: blur(20px);
+        transition: border-color .25s, box-shadow .25s;
+    }
+    .glass-card:hover { border-color: rgba(255,255,255,0.13); }
+    .fd-left { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 14px; }
+    .fd-user-card { padding: 0; overflow: hidden; }
+    .fd-user-banner {
+        height: 64px;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b0764 50%, #1e1b4b 100%);
+    }
+    .fd-user-body { padding: 0 18px 18px; text-align: center; }
+    .fd-user-avatar-wrap {
+        margin: -28px auto 10px;
+        width: 56px; height: 56px;
+        border-radius: 50%;
+        padding: 2px;
+        background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+    }
+    .fd-user-avatar-wrap img {
+        width: 100%; height: 100%;
+        border-radius: 50%; object-fit: cover;
+        border: 2px solid #0d1324;
+    }
+    .fd-user-name { font-family: Montserrat,sans-serif; font-weight: 800; font-size: 14px; color: #f1f5f9; margin-bottom: 3px; }
+    .fd-user-role {
+        display: inline-block; font-size: 10px; font-family: Montserrat,sans-serif; font-weight: 700;
+        letter-spacing: .06em; padding: 2px 10px; border-radius: 20px;
+        background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); margin-bottom: 12px;
+    }
+    .fd-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .fd-stat { background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 6px; border: 1px solid rgba(255,255,255,0.06); }
+    .fd-stat strong { display: block; font-family: Montserrat,sans-serif; font-weight: 800; font-size: 18px; color: #60a5fa; }
+    .fd-stat small { font-size: 10px; color: #64748b; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+    .fd-widget-title { font-family: Montserrat,sans-serif; font-weight: 800; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #475569; padding: 14px 18px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .fd-top-list { list-style: none; padding: 10px 0 4px; margin: 0; }
+    .fd-top-item { display: flex; align-items: center; gap: 10px; padding: 7px 18px; transition: background .18s; cursor: pointer; }
+    .fd-top-item:hover { background: rgba(255,255,255,0.04); }
+    .fd-rank { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: Montserrat,sans-serif; font-weight: 800; font-size: 10px; flex-shrink: 0; }
+    .fd-rank.r1 { background: linear-gradient(135deg,#ffd700,#ffb300); color: #000; }
+    .fd-rank.r2 { background: linear-gradient(135deg,#b0b7c3,#94a3b8); color: #fff; }
+    .fd-rank.r3 { background: linear-gradient(135deg,#cd7f32,#a0522d); color: #fff; }
+    .fd-rank.rn { background: rgba(255,255,255,0.08); color: #94a3b8; }
+    .fd-top-name { flex: 1; font-size: 12px; font-weight: 600; color: #cbd5e1; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fd-top-name:hover { color: #60a5fa; }
+    .fd-top-pts { font-size: 11px; font-weight: 700; color: #f59e0b; font-family: Montserrat,sans-serif; }
+    .fd-creator-wrap {
+        position: relative; border-radius: 20px; padding: 2px; margin-bottom: 6px;
+        background: linear-gradient(135deg, rgba(96,165,250,0.5), rgba(167,139,250,0.5), rgba(244,114,182,0.5));
+        background-size: 300% 300%;
+        animation: gradientShift 4s ease infinite;
+    }
+    @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    .fd-creator { background: #0d1324; border-radius: 18px; padding: 18px 20px; }
+    .fd-creator-row { display: flex; align-items: center; gap: 12px; }
+    .fd-creator-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(96,165,250,0.4); flex-shrink: 0; }
+    .fd-creator-input {
+        flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 24px; padding: 10px 18px; font-size: 14px; color: #94a3b8;
+        cursor: pointer; font-family: inherit; transition: all .2s; resize: none; overflow: hidden; min-height: 42px;
+    }
+    .fd-creator-input:focus { outline: none; border-color: rgba(96,165,250,0.5); background: rgba(255,255,255,0.07); color: #e2e8f0; }
+    .fd-creator-expanded { margin-top: 14px; display: none; }
+    .fd-creator-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .fd-action-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #94a3b8; font-size: 12px; font-weight: 600; cursor: pointer; font-family: Montserrat,sans-serif; transition: all .18s; }
+    .fd-action-btn:hover { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.4); color: #60a5fa; }
+    .fd-type-select { padding: 7px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #94a3b8; font-size: 12px; font-weight: 600; cursor: pointer; font-family: Montserrat,sans-serif; }
+    .fd-type-select option { background: #1e293b; }
+    .fd-submit-btn { margin-left: auto; padding: 8px 22px; border-radius: 20px; border: none; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; font-family: Montserrat,sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: all .2s; box-shadow: 0 4px 14px rgba(59,130,246,0.3); }
+    .fd-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.45); }
+    .fd-cancel-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #64748b; font-family: Montserrat,sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; transition: all .18s; }
+    .fd-cancel-btn:hover { color: #94a3b8; }
+    .fd-img-preview-wrap { position: relative; display: inline-block; margin-bottom: 10px; }
+    .fd-img-preview-wrap img { max-width: 100%; max-height: 280px; border-radius: 12px; object-fit: cover; }
+    .fd-img-remove { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+    .fd-error { padding: 10px 14px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; color: #f87171; font-size: 13px; margin: 8px 0; }
+    .fd-tabs { display: flex; gap: 6px; padding: 14px 0 6px; overflow-x: auto; }
+    .fd-tabs::-webkit-scrollbar { display: none; }
+    .fd-tab { padding: 8px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #64748b; font-family: Montserrat,sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; transition: all .2s; }
+    .fd-tab:hover { color: #94a3b8; border-color: rgba(255,255,255,0.2); }
+    .fd-tab.active { background: linear-gradient(135deg, #1d4ed8, #6d28d9); border-color: transparent; color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,0.3); }
+    .fd-post {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 18px;
+        margin-bottom: 14px;
+        overflow: visible;
+        position: relative;
+        transition: border-color .25s, transform .2s, box-shadow .25s;
+        animation: cardIn .4s ease both;
+    }
+    .fd-post:hover { border-color: rgba(255,255,255,0.12); box-shadow: 0 8px 40px rgba(0,0,0,0.3); }
+    @keyframes cardIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .fd-post:nth-child(1){animation-delay:.05s}.fd-post:nth-child(2){animation-delay:.1s}.fd-post:nth-child(3){animation-delay:.15s}
+    .fd-post:nth-child(4){animation-delay:.2s}.fd-post:nth-child(5){animation-delay:.25s}.fd-post:nth-child(6){animation-delay:.3s}
+    .fd-post.type-NEWS { border-left: 3px solid #3b82f6; }
+    .fd-post.type-SUCCESS_STORY { border-left: 3px solid #10b981; }
+    .fd-post.type-ANNOUNCEMENT { border-left: 3px solid #f59e0b; }
+    .fd-post.type-GENERAL { border-left: 3px solid rgba(255,255,255,0.08); }
+    .fd-post.post-pinned { border-left: 3px solid #f472b6; }
+    .fd-pin-badge { position: absolute; top: -1px; left: 16px; font-size: 10px; font-family: Montserrat,sans-serif; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #f472b6; background: rgba(244,114,182,0.12); border: 1px solid rgba(244,114,182,0.3); padding: 2px 10px; border-radius: 0 0 8px 8px; }
+    .fd-post-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px 10px; position: relative; overflow: visible; }
+    .fd-post-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.1); flex-shrink: 0; transition: border-color .2s; }
+    .fd-post-avatar:hover { border-color: #60a5fa; }
+    .fd-post-author { font-family: Montserrat,sans-serif; font-weight: 700; font-size: 14px; color: #e2e8f0; text-decoration: none; display: block; }
+    .fd-post-author:hover { color: #60a5fa; }
+    .fd-post-meta-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+    .fd-role-badge { font-size: 9px; font-family: Montserrat,sans-serif; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,0.07); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
+    .fd-type-tag { font-size: 10px; font-weight: 600; padding: 1px 8px; border-radius: 10px; }
+    .fd-type-tag.news { background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.25); }
+    .fd-type-tag.success { background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.25); }
+    .fd-type-tag.announce { background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.25); }
+    .fd-type-tag.general { background:rgba(255,255,255,0.06); color:#94a3b8; border:1px solid rgba(255,255,255,0.08); }
+    .fd-post-time { font-size: 11px; color: #475569; }
+    .fd-post-body { padding: 4px 18px 14px; font-size: 14px; line-height: 1.7; color: #cbd5e1; }
+    .fd-post-img { width: 100%; max-height: 420px; object-fit: cover; cursor: zoom-in; display: block; }
+    .fd-edit-wrap { padding: 0 18px 14px; }
+    .fd-edit-textarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(96,165,250,0.4); border-radius: 12px; padding: 12px 14px; font-family: inherit; font-size: 14px; color: #e2e8f0; resize: vertical; box-sizing: border-box; }
+    .fd-edit-textarea:focus { outline: none; border-color: #60a5fa; }
+    .fd-post-footer { display: flex; align-items: center; gap: 6px; padding: 8px 14px 12px; border-top: 1px solid rgba(255,255,255,0.05); }
+    .fd-foot-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; font-family: Montserrat,sans-serif; transition: all .18s; }
+    .fd-foot-btn:hover { background: rgba(255,255,255,0.06); color: #94a3b8; border-color: rgba(255,255,255,0.15); }
+    .fd-foot-btn.liked { color: #f87171; border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.08); }
+    .fd-menu-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #475569; font-size: 20px; padding: 2px 8px; border-radius: 8px; line-height: 1; transition: all .15s; }
+    .fd-menu-btn:hover { background: rgba(255,255,255,0.07); color: #94a3b8; }
+    .fd-dropdown { display: none; position: absolute; right: 10px; top: 50px; background: #1e2d47; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); z-index: 500; min-width: 145px; overflow: hidden; }
+    .fd-dd-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 16px; border: none; background: transparent; font-size: 13px; font-weight: 600; font-family: Montserrat,sans-serif; cursor: pointer; color: #cbd5e1; transition: background .15s; }
+    .fd-dd-btn:hover { background: rgba(255,255,255,0.06); }
+    .fd-dd-btn.danger { color: #f87171; }
+    .fd-dd-btn.danger:hover { background: rgba(248,113,113,0.1); }
+    .fd-dd-divider { height: 1px; background: rgba(255,255,255,0.07); }
+    .fd-comments { padding: 0 18px 6px; }
+    .fd-comment-row { display: flex; align-items: center; gap: 8px; padding: 8px 18px 14px; }
+    .fd-comment-input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 9px 16px; font-size: 13px; color: #e2e8f0; font-family: inherit; transition: all .18s; }
+    .fd-comment-input:focus { outline: none; border-color: rgba(96,165,250,0.4); background: rgba(255,255,255,0.07); }
+    .fd-comment-input::placeholder { color: #475569; }
+    .fd-comment-send { width: 36px; height: 36px; border-radius: 50%; border: none; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .18s; }
+    .fd-comment-send:hover { transform: scale(1.1); box-shadow: 0 4px 14px rgba(59,130,246,0.4); }
+    .fd-right { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 14px; }
+    .fd-widget-body { padding: 12px 14px; }
+    .fd-widget-link { display: block; text-align: center; padding: 9px; margin: 4px 14px 14px; border-radius: 10px; border: 1px solid rgba(59,130,246,0.25); color: #60a5fa; font-size: 12px; font-weight: 700; font-family: Montserrat,sans-serif; text-decoration: none; transition: all .18s; background: rgba(59,130,246,0.06); }
+    .fd-widget-link:hover { background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.4); }
+    .fd-empty { text-align: center; padding: 60px 20px; color: #475569; }
+    .fd-empty-icon { font-size: 48px; margin-bottom: 12px; opacity: .6; }
+    .fd-empty-title { font-family: Montserrat,sans-serif; font-weight: 700; font-size: 16px; color: #94a3b8; margin-bottom: 6px; }
+    .load-more-trigger { display: flex; align-items: center; justify-content: center; padding: 24px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .fd-spinner { width: 24px; height: 24px; border: 2px solid rgba(96,165,250,0.2); border-top-color: #60a5fa; border-radius: 50%; animation: spin .7s linear infinite; }
+</style>
 
-    <main class="main-content">
-        <div class="feed-layout">
+<main class="main-content">
+    <div class="fd-layout">
 
-            <!-- LEFT: User stats -->
-            <aside class="feed-left">
-                <div class="widget user-stats-widget">
-                    <img th:src="${currentUser.profile != null and currentUser.profile.avatarUrl != null
-                                   ? currentUser.profile.avatarUrl : '/images/default-avatar.svg'}"
-                         class="widget-avatar" alt="avatar"/>
-                    <h3 th:text="${currentUser.fullName}">Name</h3>
-                    <span class="role-badge" th:text="${currentUser.role}">ROLE</span>
-                    <div class="stat-row" th:if="${currentUser.profile != null}">
-                        <div class="stat">
+        <!-- LEFT -->
+        <aside class="fd-left">
+            <div class="glass-card fd-user-card">
+                <div class="fd-user-banner"></div>
+                <div class="fd-user-body">
+                    <div class="fd-user-avatar-wrap">
+                        <img th:src="${currentUser.profile != null and currentUser.profile.avatarUrl != null ? currentUser.profile.avatarUrl : '/images/default-avatar.svg'}" alt="avatar"/>
+                    </div>
+                    <div class="fd-user-name" th:text="${currentUser.fullName}">Name</div>
+                    <div class="fd-user-role" th:text="${currentUser.role}">ROLE</div>
+                    <a th:href="@{/profile/{id}(id=${currentUser.id})}"
+                       style="display:block;text-align:center;padding:7px 0;border-radius:10px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);color:#60a5fa;font-size:12px;font-weight:700;font-family:Montserrat,sans-serif;text-decoration:none;transition:all .18s;"
+                       onmouseover="this.style.background='rgba(96,165,250,0.18)'" onmouseout="this.style.background='rgba(96,165,250,0.1)'">View Profile &#8594;</a>
+                    <div class="fd-stats" th:if="${currentUser.profile != null}">
+                        <div class="fd-stat">
                             <strong th:text="${currentUser.profile.totalPoints}">0</strong>
                             <small>Points</small>
                         </div>
-                        <div class="stat">
-                            <strong th:text="${currentUser.profile.rankPosition != null ? '#' + currentUser.profile.rankPosition : '-'}">-</strong>
+                        <div class="fd-stat">
+                            <strong th:text="${currentUser.profile.rankPosition != null ? '#' + currentUser.profile.rankPosition : '&#8212;'}">&#8212;</strong>
                             <small>Rank</small>
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="glass-card">
+                <div class="fd-widget-title">&#127942; Top This Week</div>
+                <ul class="fd-top-list">
+                    <li th:each="p, i : ${topUsers}" class="fd-top-item">
+          <span class="fd-rank"
+                th:classappend="${i.index == 0} ? ' r1' : (${i.index == 1} ? ' r2' : (${i.index == 2} ? ' r3' : ' rn'))"
+                th:text="${i.index + 1}">1</span>
+                        <a th:href="@{/mezun/{id}(id=${p.user.id})}" class="fd-top-name" th:text="${p.user.fullName}">Name</a>
+                        <span class="fd-top-pts" th:text="${p.totalPoints} + ' pts'">0 pts</span>
+                    </li>
+                </ul>
+            </div>
+        </aside>
 
-                <div class="widget">
-                    <h4>🏆 Top This Week</h4>
-                    <ul class="top-list">
-                        <li th:each="p, i : ${topUsers}" class="top-list-item">
-                            <span class="rank-num" th:text="${i.index + 1}">1</span>
-                            <a th:href="@{/mezun/{id}(id=${p.user.id})}"
-                               th:text="${p.user.fullName}">Name</a>
-                            <span class="pts" th:text="${p.totalPoints} + ' pts'">0 pts</span>
-                        </li>
-                    </ul>
-                </div>
-            </aside>
-
-            <!-- CENTER: Feed -->
-            <div class="feed-center">
-
-                <!-- Post Create Box (Instagram style) -->
-                <div class="post-create-box" id="postCreateBox">
-                    <div class="create-header">
-                        <img th:src="${currentUser.profile != null and currentUser.profile.avatarUrl != null
-                                       ? currentUser.profile.avatarUrl : '/images/default-avatar.svg'}"
-                             class="create-avatar" alt="avatar"/>
-                        <textarea id="postContent" name="content"
-                                  class="create-textarea"
-                                  placeholder="What's on your mind?"
-                                  rows="2"
-                                  onclick="expandPostBox()"></textarea>
+        <!-- CENTER -->
+        <div>
+            <div class="fd-creator-wrap">
+                <div class="fd-creator">
+                    <div class="fd-creator-row">
+                        <img th:src="${currentUser.profile != null and currentUser.profile.avatarUrl != null ? currentUser.profile.avatarUrl : '/images/default-avatar.svg'}" class="fd-creator-avatar" alt="avatar"/>
+                        <textarea id="postContent" name="content" class="fd-creator-input" placeholder="What's on your mind?" rows="1" onclick="expandPostBox()"></textarea>
                     </div>
-
-                    <!-- Expanded section (image preview + actions) -->
-                    <div id="postExpanded" style="display:none;">
-                        <!-- Image preview -->
-                        <div id="imagePreviewWrap" style="display:none; margin: 12px 0;">
-                            <div style="position:relative;display:inline-block;">
-                                <img id="imagePreview" src="" alt="preview"
-                                     style="max-width:100%;max-height:320px;border-radius:12px;object-fit:cover;"/>
-                                <button onclick="removeImage()"
-                                        style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;">✕</button>
-                            </div>
+                    <div id="postExpanded" class="fd-creator-expanded">
+                        <div id="imagePreviewWrap" style="display:none;" class="fd-img-preview-wrap">
+                            <img id="imagePreview" src="" alt="preview"/>
+                            <button onclick="removeImage()" class="fd-img-remove">&#10005;</button>
                         </div>
-
-                        <div class="create-footer">
-                            <!-- Image upload trigger -->
-                            <label for="postImage" class="btn-action" style="cursor:pointer;" title="Add photo">
-                                📷 Photo
-                                <input type="file" id="postImage" name="image" accept="image/*"
-                                       style="display:none;" onchange="previewImage(this)"/>
+                        <div class="fd-creator-actions">
+                            <label for="postImage" class="fd-action-btn" style="cursor:pointer;">
+                                &#128247; Photo
+                                <input type="file" id="postImage" name="image" accept="image/*" style="display:none;" onchange="previewImage(this)"/>
                             </label>
-
-                            <!-- Post type -->
-                            <select id="postType" name="postType" class="type-select">
-                                <option value="GENERAL">💬 General</option>
-                                <option value="SUCCESS_STORY">🌟 Success Story</option>
-                                <option value="NEWS">📰 News</option>
-                                <option value="ANNOUNCEMENT">📢 Announcement</option>
+                            <select id="postType" name="postType" class="fd-type-select">
+                                <option value="GENERAL">&#128172; General</option>
+                                <option value="SUCCESS_STORY">&#127775; Success Story</option>
+                                <option value="NEWS">&#128240; News</option>
+                                <option value="ANNOUNCEMENT">&#128226; Announcement</option>
                             </select>
-
-                            <div style="flex:1;"></div>
-
-                            <button onclick="cancelPost()" class="btn-action" style="margin-right:8px;">Cancel</button>
-                            <button id="postSubmitBtn" class="btn btn-primary" onclick="submitPost()">
-                                🚀 Post
-                            </button>
+                            <button onclick="cancelPost()" class="fd-cancel-btn">Cancel</button>
+                            <button id="postSubmitBtn" class="fd-submit-btn" onclick="submitPost()">&#128640; Post</button>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Error display -->
-                <div id="postError" style="display:none; color:#c0392b; padding:8px 0;"></div>
-
-                <!-- Feed Filter Tabs -->
-                <div class="feed-tabs">
-                    <button class="tab-btn active"
-                            onclick="setActiveTab(this)"
-                            hx-get="/feed/posts?page=0"
-                            hx-target="#feed-list"
-                            hx-swap="innerHTML">All</button>
-                    <button class="tab-btn"
-                            onclick="setActiveTab(this)"
-                            hx-get="/feed/posts?page=0&amp;type=NEWS"
-                            hx-target="#feed-list"
-                            hx-swap="innerHTML">📰 News</button>
-                    <button class="tab-btn"
-                            onclick="setActiveTab(this)"
-                            hx-get="/feed/posts?page=0&amp;type=SUCCESS_STORY"
-                            hx-target="#feed-list"
-                            hx-swap="innerHTML">🌟 Success</button>
-                    <button class="tab-btn"
-                            onclick="setActiveTab(this)"
-                            hx-get="/feed/posts?page=0&amp;type=ANNOUNCEMENT"
-                            hx-target="#feed-list"
-                            hx-swap="innerHTML">📢 Announcements</button>
-                </div>
-
-                <!-- Feed list: first page rendered server-side, subsequent pages via HTMX -->
-                <div id="feed-list">
-
-                    <!-- Server-side rendered initial posts -->
-                    <div th:each="post : ${initialPosts}" class="post-card"
-                         th:classappend="${post.isPinned} ? 'post-pinned'">
-
-                        <div th:if="${post.isPinned}" class="pin-badge">📌 Pinned</div>
-
-                        <div class="post-header">
-                            <a th:href="@{/mezun/{id}(id=${post.author.id})}">
-                                <img th:src="${post.author.profile != null and post.author.profile.avatarUrl != null
-                                               ? post.author.profile.avatarUrl : '/images/default-avatar.svg'}"
-                                     class="post-avatar" alt="avatar"/>
-                            </a>
-                            <div class="post-meta">
-                                <a th:href="@{/mezun/{id}(id=${post.author.id})}"
-                                   class="post-author" th:text="${post.author.fullName}">Author</a>
-                                <span class="role-badge-sm" th:text="${post.author.role}">ROLE</span>
-                                <span class="post-type-badge" th:switch="${post.postType.name()}">
-                                    <span th:case="'SUCCESS_STORY'">🌟 Success</span>
-                                    <span th:case="'NEWS'">📰 News</span>
-                                    <span th:case="'ANNOUNCEMENT'">📢 Announcement</span>
-                                    <span th:case="*">💬 General</span>
-                                </span>
-                                <time class="post-time"
-                                      th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy HH:mm')}">Date</time>
-                            </div>
-                            <div th:if="${currentUserId != null and post.author.id == currentUserId}" class="post-actions-menu">
-                                <button class="btn-icon"
-                                        th:attr="data-post-id=${post.id}"
-                                        onclick="deletePost(this.dataset.postId, this)"
-                                        title="Delete">🗑</button>
-                            </div>
-                        </div>
-
-                        <div class="post-content">
-                            <p th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
-                        </div>
-
-                        <div th:if="${post.imageUrl != null}" class="post-image-wrap">
-                            <img th:src="${post.imageUrl}" alt="post image" class="post-image"
-                                 onclick="openImageModal(this.src)" style="cursor:zoom-in;"/>
-                        </div>
-
-                        <div class="post-footer">
-                            <div th:id="${'like-' + post.id}">
-                                <button class="btn-action"
-                                        th:classappend="${initialLikedIds != null and #lists.contains(initialLikedIds, post.id.toString())} ? ' liked'"
-                                        th:attr="data-post-id=${post.id}"
-                                        onclick="toggleLike(this.dataset.postId)">
-                                    <span th:text="${initialLikedIds != null and #lists.contains(initialLikedIds, post.id.toString())} ? '❤️' : '🤍'">🤍</span>
-                                    <span th:text="${post.likesCount}">0</span>
-                                </button>
-                            </div>
-                            <button class="btn-action"
-                                    th:attr="data-post-id=${post.id}"
-                                    onclick="toggleComments(this.dataset.postId)">
-                                💬 <span th:id="${'ccount-' + post.id}" th:text="${post.commentsCount}">0</span>
-                            </button>
-                        </div>
-
-                        <div th:id="${'comments-' + post.id}" class="comments-section" style="display:none;"></div>
-                        <div th:id="${'comment-row-' + post.id}" class="comment-input-row" style="display:none;">
-                            <input type="text" th:id="${'comment-input-' + post.id}"
-                                   name="content" placeholder="Write a comment..." class="comment-input"
-                                   th:attr="data-post-id=${post.id}"
-                                   onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
-                            <button class="comment-send-btn"
-                                    th:attr="data-post-id=${post.id}"
-                                    onclick="submitComment(this.dataset.postId)">➤</button>
-                        </div>
-                    </div>
-
-                    <!-- Empty state if no posts -->
-                    <div th:if="${#lists.isEmpty(initialPosts)}" class="empty-state">
-                        <p>No posts yet. Be the first to share! 🎉</p>
-                    </div>
-
-                    <!-- Load more (HTMX pagination) -->
-                    <div th:if="${initialNextPage > -1}"
-                         th:attr="hx-get=${'/feed/posts?page=' + initialNextPage}"
-                         hx-trigger="intersect once"
-                         hx-swap="outerHTML"
-                         class="load-more-trigger">
-                        <div class="loading-spinner-sm"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- RIGHT: Jobs widget -->
-            <aside class="feed-right">
-                <div class="widget">
-                    <h4>💼 Open Jobs</h4>
-                    <div hx-get="/career/jobs/widget"
-                         hx-trigger="load"
-                         hx-swap="innerHTML">
-                        <div class="loading-spinner-sm"></div>
-                    </div>
-                    <a th:href="@{/career/jobs}" class="widget-link">All Jobs →</a>
-                </div>
-            </aside>
+            <div id="postError" style="display:none;" class="fd-error"></div>
 
+            <div class="fd-tabs">
+                <button class="fd-tab active" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0" hx-target="#feed-list" hx-swap="innerHTML">All</button>
+                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=NEWS" hx-target="#feed-list" hx-swap="innerHTML">&#128240; News</button>
+                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=SUCCESS_STORY" hx-target="#feed-list" hx-swap="innerHTML">&#127775; Success</button>
+                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=ANNOUNCEMENT" hx-target="#feed-list" hx-swap="innerHTML">&#128226; Announcements</button>
+            </div>
+
+            <div id="feed-list">
+                <div th:each="post : ${initialPosts}"
+                     class="fd-post"
+                     th:classappend="${post.isPinned} ? ' post-pinned'"
+                     th:attrappend="class=${' type-' + post.postType.name()}"
+                     th:id="'post-' + ${post.id}">
+
+                    <div th:if="${post.isPinned}" class="fd-pin-badge">&#128204; Pinned</div>
+
+                    <div class="fd-post-header">
+                        <a th:href="@{/mezun/{id}(id=${post.author.id})}">
+                            <img th:src="${post.author.profile != null and post.author.profile.avatarUrl != null ? post.author.profile.avatarUrl : '/images/default-avatar.svg'}" class="fd-post-avatar" alt="avatar"/>
+                        </a>
+                        <div style="flex:1;">
+                            <a th:href="@{/mezun/{id}(id=${post.author.id})}" class="fd-post-author" th:text="${post.author.fullName}">Author</a>
+                            <div class="fd-post-meta-row">
+                                <span class="fd-role-badge" th:text="${post.author.role}">ROLE</span>
+                                <span class="fd-type-tag"
+                                      th:classappend="${post.postType.name() == 'NEWS'} ? ' news' : (${post.postType.name() == 'SUCCESS_STORY'} ? ' success' : (${post.postType.name() == 'ANNOUNCEMENT'} ? ' announce' : ' general'))"
+                                      th:switch="${post.postType.name()}">
+                <span th:case="'SUCCESS_STORY'">&#127775; Success</span>
+                <span th:case="'NEWS'">&#128240; News</span>
+                <span th:case="'ANNOUNCEMENT'">&#128226; Announcement</span>
+                <span th:case="*">&#128172; General</span>
+              </span>
+                                <time class="fd-post-time" th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy · HH:mm')}">Date</time>
+                            </div>
+                        </div>
+                        <div th:if="${currentUserId != null and (post.author.id == currentUserId or isAdmin == true)}" style="position:relative;">
+                            <button class="fd-menu-btn" th:data-post-id="${post.id}" onclick="togglePostMenu(this)">&#8942;</button>
+                            <div class="fd-dropdown">
+                                <button th:if="${post.author.id == currentUserId}" th:data-post-id="${post.id}" onclick="startEditPost(this.dataset.postId)" class="fd-dd-btn">&#9999;&#65039; Edit post</button>
+                                <div th:if="${post.author.id == currentUserId}" class="fd-dd-divider"></div>
+                                <button th:data-post-id="${post.id}" onclick="deletePostAction(this.dataset.postId)" class="fd-dd-btn danger">&#128465; Delete post</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div th:id="'post-view-' + ${post.id}">
+                        <p class="fd-post-body" th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
+                    </div>
+
+                    <div th:id="'post-edit-' + ${post.id}" class="fd-edit-wrap" style="display:none;">
+          <textarea th:id="'post-edit-txt-' + ${post.id}" rows="4" class="fd-edit-textarea"
+                    th:text="${post.getLocalizedContent(#locale.language)}"></textarea>
+                        <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
+                            <button th:data-post-id="${post.id}" onclick="cancelEditPost(this.dataset.postId)" class="fd-cancel-btn">Cancel</button>
+                            <button th:data-post-id="${post.id}" onclick="saveEditPost(this.dataset.postId)" class="fd-submit-btn" style="padding:8px 18px;">&#128190; Save</button>
+                        </div>
+                    </div>
+
+                    <div th:if="${post.imageUrl != null}" style="overflow:hidden;">
+                        <img th:src="${post.imageUrl}" class="fd-post-img" onclick="openImageModal(this.src)" alt="post image"/>
+                    </div>
+
+                    <div class="fd-post-footer">
+                        <div th:id="${'like-' + post.id}">
+                            <button class="fd-foot-btn"
+                                    th:classappend="${initialLikedIds != null and #lists.contains(initialLikedIds, post.id.toString())} ? ' liked'"
+                                    th:attr="data-post-id=${post.id}" onclick="toggleLike(this.dataset.postId)">
+                                <span th:text="${initialLikedIds != null and #lists.contains(initialLikedIds, post.id.toString())} ? '&#10084;&#65039;' : '&#129293;'">&#129293;</span>
+                                <span th:text="${post.likesCount}">0</span>
+                            </button>
+                        </div>
+                        <button class="fd-foot-btn" th:attr="data-post-id=${post.id}" onclick="toggleComments(this.dataset.postId)">
+                            &#128172; <span th:id="${'ccount-' + post.id}" th:text="${post.commentsCount}">0</span>
+                        </button>
+                    </div>
+
+                    <div th:id="${'comments-' + post.id}" class="fd-comments" style="display:none;"></div>
+                    <div th:id="${'comment-row-' + post.id}" class="fd-comment-row" style="display:none;">
+                        <input type="text" th:id="${'comment-input-' + post.id}" name="content"
+                               placeholder="Write a comment&#8230;" class="fd-comment-input"
+                               th:attr="data-post-id=${post.id}"
+                               onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
+                        <button class="fd-comment-send" th:attr="data-post-id=${post.id}" onclick="submitComment(this.dataset.postId)">&#10148;</button>
+                    </div>
+                </div>
+
+                <div th:if="${#lists.isEmpty(initialPosts)}" class="fd-empty">
+                    <div class="fd-empty-icon">&#128235;</div>
+                    <div class="fd-empty-title">Nothing here yet</div>
+                    <div style="font-size:13px;">Be the first to share something! &#127881;</div>
+                </div>
+
+                <div th:if="${initialNextPage > -1}"
+                     th:attr="hx-get=${'/feed/posts?page=' + initialNextPage}"
+                     hx-trigger="intersect once"
+                     hx-target="#feed-list"
+                     hx-swap="beforeend"
+                     class="load-more-trigger">
+                    <div class="fd-spinner"></div>
+                </div>
+            </div>
         </div>
-    </main>
+
+        <!-- RIGHT -->
+        <aside class="fd-right">
+            <div class="glass-card">
+                <div class="fd-widget-title">&#128188; Open Jobs</div>
+                <div class="fd-widget-body" hx-get="/career/jobs/widget" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="load-more-trigger"><div class="fd-spinner"></div></div>
+                </div>
+                <a th:href="@{/career/jobs}" class="fd-widget-link">Browse All Jobs &#8594;</a>
+            </div>
+        </aside>
+
+    </div>
+</main>
+
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script>
-    // CSRF tokens are available via meta tags injected in header fragment
     const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
+    document.addEventListener('htmx:afterSettle', function() {
+        document.querySelectorAll('.load-more-trigger[hx-get]').forEach(t => htmx.process(t));
+    });
+
     function expandPostBox() {
         document.getElementById('postExpanded').style.display = 'block';
+        document.getElementById('postContent').style.minHeight = '80px';
+        document.getElementById('postContent').focus();
     }
-
     function cancelPost() {
         document.getElementById('postContent').value = '';
+        document.getElementById('postContent').style.minHeight = '';
         document.getElementById('postExpanded').style.display = 'none';
         document.getElementById('imagePreviewWrap').style.display = 'none';
         document.getElementById('imagePreview').src = '';
         document.getElementById('postImage').value = '';
         document.getElementById('postError').style.display = 'none';
     }
-
     function previewImage(input) {
-        const file = input.files[0];
-        if (!file) return;
+        const file = input.files[0]; if (!file) return;
         const reader = new FileReader();
-        reader.onload = e => {
-            document.getElementById('imagePreview').src = e.target.result;
-            document.getElementById('imagePreviewWrap').style.display = 'block';
-        };
+        reader.onload = e => { document.getElementById('imagePreview').src = e.target.result; document.getElementById('imagePreviewWrap').style.display = 'block'; };
         reader.readAsDataURL(file);
     }
-
     function removeImage() {
         document.getElementById('imagePreview').src = '';
         document.getElementById('imagePreviewWrap').style.display = 'none';
         document.getElementById('postImage').value = '';
     }
-
     function setActiveTab(btn) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        document.querySelectorAll('.fd-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active');
     }
-
     async function submitPost() {
         const content = document.getElementById('postContent').value.trim();
-        if (!content) {
-            showError('Post content cannot be empty.');
-            return;
-        }
-
-        const btn = document.getElementById('postSubmitBtn');
-        btn.disabled = true;
-        btn.textContent = 'Posting...';
-
+        if (!content) { showError('Post content cannot be empty.'); return; }
+        const btn = document.getElementById('postSubmitBtn'); btn.disabled = true; btn.textContent = 'Posting…';
         const formData = new FormData();
         formData.append('content', content);
         formData.append('postType', document.getElementById('postType').value);
         const imgFile = document.getElementById('postImage').files[0];
         if (imgFile) formData.append('image', imgFile);
-
         try {
-            const headers = {};
-            if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
-
-            const res = await fetch('/feed/post/create', {
-                method: 'POST',
-                headers: headers,
-                body: formData
-            });
-
-            if (!res.ok) throw new Error('Server error ' + res.status);
-
+            const headers = {}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+            const res = await fetch('/feed/post/create', { method: 'POST', headers, body: formData });
+            if (!res.ok) throw new Error('err');
             const html = await res.text();
             const list = document.getElementById('feed-list');
-            const tmp = document.createElement('div');
-            tmp.innerHTML = html;
+            const tmp = document.createElement('div'); tmp.innerHTML = html;
             list.insertBefore(tmp.firstElementChild, list.firstChild);
-
-            // Process HTMX on new element
             if (window.htmx) htmx.process(list.firstElementChild);
-
             cancelPost();
-        } catch (err) {
-            showError('Failed to post. Please try again.');
-            console.error(err);
-        } finally {
-            btn.disabled = false;
-            btn.textContent = '🚀 Post';
-        }
+        } catch (err) { showError('Failed to post. Please try again.'); }
+        finally { btn.disabled = false; btn.textContent = '🚀 Post'; }
     }
-
     function showError(msg) {
-        const el = document.getElementById('postError');
-        el.textContent = msg;
-        el.style.display = 'block';
+        const el = document.getElementById('postError'); el.textContent = msg; el.style.display = 'block';
         setTimeout(() => el.style.display = 'none', 4000);
+    }
+    async function toggleLike(postId) {
+        const headers = {}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+        const res = await fetch('/feed/post/' + postId + '/like', {method: 'POST', headers});
+        if (res.ok) { const html = await res.text(); const wrap = document.getElementById('like-' + postId); if (wrap) { wrap.outerHTML = html; if (window.htmx) htmx.process(document.getElementById('like-' + postId)); } }
+    }
+    function toggleComments(postId) {
+        const section = document.getElementById('comments-' + postId);
+        const row = document.getElementById('comment-row-' + postId);
+        if (!section) return;
+        const hidden = section.style.display === 'none';
+        if (hidden && section.dataset.loaded !== 'true') {
+            fetch('/feed/post/' + postId + '/comments').then(r=>r.text()).then(html=>{section.innerHTML=html;section.dataset.loaded='true';});
+        }
+        section.style.display = hidden ? 'block' : 'none';
+        if (row) row.style.display = hidden ? 'flex' : 'none';
+    }
+    async function submitComment(postId) {
+        const input = document.getElementById('comment-input-' + postId); if (!input) return;
+        const content = input.value.trim(); if (!content) return;
+        const headers = {'Content-Type': 'application/x-www-form-urlencoded'}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+        const res = await fetch('/feed/post/' + postId + '/comment', {method: 'POST', headers, body: 'content=' + encodeURIComponent(content)});
+        if (!res.ok) return;
+        const section = document.getElementById('comments-' + postId);
+        if (section) section.insertAdjacentHTML('beforeend', await res.text());
+        input.value = '';
+        const ct = document.getElementById('ccount-' + postId); if (ct) ct.textContent = parseInt(ct.textContent||'0')+1;
+    }
+    function togglePostMenu(btn) {
+        const dd = btn.nextElementSibling;
+        const open = dd.style.display === 'block';
+        document.querySelectorAll('.fd-dropdown').forEach(d => d.style.display = 'none');
+        dd.style.display = open ? 'none' : 'block';
+        event.stopPropagation();
+    }
+    document.addEventListener('click', () => document.querySelectorAll('.fd-dropdown').forEach(d => d.style.display = 'none'));
+    function startEditPost(id) {
+        document.querySelectorAll('.fd-dropdown').forEach(d => d.style.display = 'none');
+        document.getElementById('post-view-' + id).style.display = 'none';
+        const ed = document.getElementById('post-edit-' + id); ed.style.display = 'block';
+        const ta = document.getElementById('post-edit-txt-' + id); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    }
+    function cancelEditPost(id) {
+        document.getElementById('post-view-' + id).style.display = 'block';
+        document.getElementById('post-edit-' + id).style.display = 'none';
+    }
+    async function saveEditPost(id) {
+        const txt = document.getElementById('post-edit-txt-' + id).value.trim(); if (!txt) return;
+        const headers = {'Content-Type': 'application/x-www-form-urlencoded'}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+        const res = await fetch('/feed/post/' + id + '/edit', {method: 'POST', headers, body: 'content=' + encodeURIComponent(txt)});
+        if (res.ok) { const html = await res.text(); const card = document.getElementById('post-' + id); if (card) card.outerHTML = html; }
+    }
+    async function deletePostAction(id) {
+        if (!confirm('Delete this post?')) return;
+        const headers = {}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+        const res = await fetch('/feed/post/' + id, {method: 'DELETE', headers});
+        if (res.ok) { const card = document.getElementById('post-' + id); if (card) { card.style.cssText='opacity:0;transition:opacity 0.3s;'; setTimeout(()=>card.remove(),300); } }
+    }
+    function openImageModal(src) {
+        let m = document.getElementById('imgModal');
+        if (!m) {
+            m = document.createElement('div'); m.id='imgModal';
+            m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+            m.innerHTML='<img style="max-width:92vw;max-height:92vh;border-radius:12px;box-shadow:0 0 60px rgba(0,0,0,0.8);"/>';
+            m.onclick=()=>m.remove(); document.body.appendChild(m);
+        }
+        m.querySelector('img').src=src; m.style.display='flex';
     }
 </script>
 </body>

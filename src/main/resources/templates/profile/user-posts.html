@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head(${profileUser.fullName + ' — Posts'})}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<main class="main-content">
+  <div style="max-width:680px;margin:0 auto;padding:0 0 40px;">
+
+    <!-- Back bar + mini profile header -->
+    <div style="display:flex;align-items:center;gap:14px;padding:18px 0 20px;">
+      <a th:href="@{/profile/{id}(id=${profileUser.id})}"
+         style="display:flex;align-items:center;gap:6px;color:#1b2a6b;font-weight:700;
+              font-family:Montserrat,sans-serif;font-size:14px;text-decoration:none;
+              background:#eef1fb;padding:7px 14px;border-radius:20px;border:1.5px solid #d0d6f0;">
+        ← Back to profile
+      </a>
+
+      <div style="display:flex;align-items:center;gap:10px;flex:1;">
+        <img th:src="${profile != null and profile.avatarUrl != null
+                     ? profile.avatarUrl : '/images/default-avatar.svg'}"
+             style="width:40px;height:40px;border-radius:50%;object-fit:cover;
+                  border:2px solid #1b2a6b;" alt="avatar"/>
+        <div>
+          <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:15px;
+                    color:#1b2a6b;" th:text="${profileUser.fullName}">Name</div>
+          <div style="font-size:12px;color:#8a91a8;" th:text="${profileUser.role}">Role</div>
+        </div>
+      </div>
+
+      <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;
+                color:#64748b;background:#f4f6fb;padding:6px 14px;border-radius:20px;">
+        📝 <span th:text="${#lists.size(posts)}">0</span>+ posts
+      </div>
+    </div>
+
+    <!-- Feed list -->
+    <div id="user-feed-list">
+
+      <!-- First page posts rendered server-side -->
+      <div th:each="post : ${posts}" class="post-card" th:id="'post-' + ${post.id}">
+
+        <div class="post-header">
+          <img th:src="${post.author.profile != null and post.author.profile.avatarUrl != null
+                       ? post.author.profile.avatarUrl : '/images/default-avatar.svg'}"
+               class="post-avatar" alt="avatar"/>
+          <div class="post-meta">
+            <span class="post-author" th:text="${post.author.fullName}">Author</span>
+            <span class="post-type-badge" th:switch="${post.postType.name()}">
+            <span th:case="'SUCCESS_STORY'">🌟 Success</span>
+            <span th:case="'NEWS'">📰 News</span>
+            <span th:case="'ANNOUNCEMENT'">📢 Announcement</span>
+            <span th:case="*">💬 General</span>
+          </span>
+            <time class="post-time"
+                  th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy HH:mm')}">Date</time>
+          </div>
+
+          <div th:if="${currentUserId != null and (post.author.id == currentUserId or isAdmin == true)}"
+               style="position:relative;margin-left:auto;">
+            <button class="post-menu-btn" th:data-post-id="${post.id}"
+                    onclick="togglePostMenu(this)"
+                    style="background:none;border:none;cursor:pointer;font-size:20px;
+                         padding:2px 8px;border-radius:6px;color:#8a91a8;line-height:1;">⋮</button>
+            <div class="post-dropdown" style="display:none;position:absolute;right:0;top:34px;
+               background:#fff;border:1.5px solid #e2e5f0;border-radius:10px;
+               box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:500;min-width:130px;overflow:hidden;">
+              <button th:if="${post.author.id == currentUserId}"
+                      th:data-post-id="${post.id}" onclick="startEditPost(this.dataset.postId)"
+                      style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+                           border:none;background:#fff;font-size:13px;color:#1b2a6b;cursor:pointer;
+                           font-weight:600;font-family:Montserrat,sans-serif;"
+                      onmouseover="this.style.background='#f0f2f8'"
+                      onmouseout="this.style.background='#fff'">✏️ Edit</button>
+              <button th:data-post-id="${post.id}" onclick="deletePostAction(this.dataset.postId)"
+                      style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+                           border:none;border-top:1px solid #f0f2f8;background:#fff;font-size:13px;
+                           color:#dc2626;cursor:pointer;font-weight:600;font-family:Montserrat,sans-serif;"
+                      onmouseover="this.style.background='#fef2f2'"
+                      onmouseout="this.style.background='#fff'">🗑 Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="post-content" th:id="'post-view-' + ${post.id}">
+          <p class="post-body" th:text="${post.getLocalizedContent('en')}">Content</p>
+        </div>
+
+        <div th:id="'post-edit-' + ${post.id}" style="display:none;padding:0 20px 12px;">
+        <textarea th:id="'post-edit-txt-' + ${post.id}" rows="4"
+                  style="width:100%;padding:10px 14px;border:1.5px solid #1b2a6b;border-radius:10px;
+                         font-family:inherit;font-size:14px;resize:vertical;box-sizing:border-box;"
+                  th:text="${post.getLocalizedContent('en')}"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+            <button th:data-post-id="${post.id}" onclick="cancelEditPost(this.dataset.postId)"
+                    style="padding:7px 16px;border:1.5px solid #e2e5f0;border-radius:8px;background:#fff;
+                         font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer;color:#64748b;font-weight:600;">Cancel</button>
+            <button th:data-post-id="${post.id}" onclick="saveEditPost(this.dataset.postId)"
+                    style="padding:7px 16px;background:#1b2a6b;border:none;border-radius:8px;color:#fff;
+                         font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer;font-weight:700;">💾 Save</button>
+          </div>
+        </div>
+
+        <div th:if="${post.imageUrl != null}">
+          <img th:src="${post.imageUrl}" alt="post image" class="post-image"
+               onclick="openImageModal(this.src)"
+               style="cursor:zoom-in;width:100%;max-height:400px;object-fit:cover;"/>
+        </div>
+
+        <div class="post-actions">
+          <div th:id="'like-' + ${post.id}">
+            <button class="post-action-btn"
+                    th:classappend="${likedPostIds != null and #lists.contains(likedPostIds, post.id.toString())} ? ' liked'"
+                    th:attr="data-post-id=${post.id}"
+                    onclick="toggleLike(this.dataset.postId)">
+              <span th:text="${likedPostIds != null and #lists.contains(likedPostIds, post.id.toString())} ? '❤️' : '🤍'">🤍</span>
+              <span th:text="${post.likesCount}">0</span>
+            </button>
+          </div>
+          <button class="post-action-btn" th:attr="data-post-id=${post.id}"
+                  onclick="toggleComments(this.dataset.postId)">
+            💬 <span th:id="'ccount-' + ${post.id}" th:text="${post.commentsCount}">0</span>
+          </button>
+        </div>
+
+        <div th:id="'comments-' + ${post.id}" class="comments-section" style="display:none;"></div>
+        <div th:id="'comment-row-' + ${post.id}" class="comment-input-row" style="display:none;">
+          <input type="text" th:id="'comment-input-' + ${post.id}"
+                 th:attr="data-post-id=${post.id}" placeholder="Write a comment..." class="comment-input"
+                 onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
+          <button class="comment-send-btn" th:attr="data-post-id=${post.id}"
+                  onclick="submitComment(this.dataset.postId)">➤</button>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div th:if="${#lists.isEmpty(posts)}"
+           style="text-align:center;padding:60px 20px;color:#8a91a8;">
+        <div style="font-size:48px;margin-bottom:12px;">📭</div>
+        <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:16px;color:#1b2a6b;margin-bottom:6px;">No posts yet</div>
+        <div style="font-size:14px;" th:text="${isOwn} ? 'Share your first post on the feed!' : profileUser.fullName + ' hasn\'t posted yet.'">—</div>
+      </div>
+
+      <!-- Infinite scroll trigger -->
+      <div th:if="${nextPage > -1}"
+           th:attr="hx-get=${'/profile/' + profileUser.id + '/posts?page=' + nextPage}"
+           hx-trigger="intersect once"
+           hx-target="#user-feed-list"
+           hx-swap="beforeend"
+           class="load-more-trigger">
+        <div class="loading-spinner-sm"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script th:inline="javascript">
+  const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+  const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+  document.addEventListener('htmx:afterSettle', function() {
+    document.querySelectorAll('.load-more-trigger[hx-get]').forEach(t => htmx.process(t));
+  });
+
+  function togglePostMenu(btn) {
+    const dd = dd = btn.nextElementSibling;
+    const open = dd.style.display === 'block';
+    document.querySelectorAll('.post-dropdown').forEach(d => d.style.display = 'none');
+    dd.style.display = open ? 'none' : 'block';
+    event.stopPropagation();
+  }
+  document.addEventListener('click', () =>
+          document.querySelectorAll('.post-dropdown').forEach(d => d.style.display = 'none'));
+
+  function startEditPost(id) {
+    document.querySelectorAll('.post-dropdown').forEach(d => d.style.display = 'none');
+    document.getElementById('post-view-' + id).style.display = 'none';
+    const ed = document.getElementById('post-edit-' + id);
+    ed.style.display = 'block';
+    const ta = document.getElementById('post-edit-txt-' + id);
+    ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+  }
+  function cancelEditPost(id) {
+    document.getElementById('post-view-' + id).style.display = 'block';
+    document.getElementById('post-edit-' + id).style.display = 'none';
+  }
+  async function saveEditPost(id) {
+    const txt = document.getElementById('post-edit-txt-' + id).value.trim();
+    if (!txt) return;
+    const headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+    if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+    const res = await fetch('/feed/post/' + id + '/edit', {method:'POST', headers, body:'content='+encodeURIComponent(txt)});
+    if (res.ok) { const html = await res.text(); const card = document.getElementById('post-' + id); if (card) card.outerHTML = html; }
+  }
+  async function deletePostAction(id) {
+    if (!confirm('Delete this post?')) return;
+    const headers = {};
+    if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+    const res = await fetch('/feed/post/' + id, {method:'DELETE', headers});
+    if (res.ok) { const c = document.getElementById('post-' + id); if (c) { c.style.cssText='opacity:0;transition:opacity 0.3s'; setTimeout(()=>c.remove(),300); }}
+  }
+  async function toggleLike(postId) {
+    const headers = {};
+    if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+    const res = await fetch('/feed/post/' + postId + '/like', {method:'POST', headers});
+    if (res.ok) { const html = await res.text(); const w = document.getElementById('like-' + postId); if (w) w.outerHTML = html; }
+  }
+  function toggleComments(postId) {
+    const s = document.getElementById('comments-' + postId);
+    const r = document.getElementById('comment-row-' + postId);
+    if (!s) return;
+    const hidden = s.style.display === 'none';
+    if (hidden && s.dataset.loaded !== 'true') {
+      fetch('/feed/post/' + postId + '/comments').then(r=>r.text()).then(html=>{s.innerHTML=html;s.dataset.loaded='true';});
+    }
+    s.style.display = hidden ? 'block' : 'none';
+    if (r) r.style.display = hidden ? 'flex' : 'none';
+  }
+  async function submitComment(postId) {
+    const input = document.getElementById('comment-input-' + postId);
+    if (!input) return;
+    const content = input.value.trim();
+    if (!content) return;
+    const headers = {'Content-Type':'application/x-www-form-urlencoded'};
+    if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+    const res = await fetch('/feed/post/' + postId + '/comment', {method:'POST', headers, body:'content='+encodeURIComponent(content)});
+    if (!res.ok) return;
+    const s = document.getElementById('comments-' + postId);
+    if (s) s.insertAdjacentHTML('beforeend', await res.text());
+    input.value = '';
+    const ct = document.getElementById('ccount-' + postId);
+    if (ct) ct.textContent = parseInt(ct.textContent||'0')+1;
+  }
+  function openImageModal(src) {
+    let m = document.getElementById('imgModal');
+    if (!m) {
+      m = document.createElement('div'); m.id='imgModal';
+      m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+      m.innerHTML='<img style="max-width:92vw;max-height:92vh;border-radius:8px;"/>';
+      m.onclick=()=>m.remove();
+      document.body.appendChild(m);
+    }
+    m.querySelector('img').src=src; m.style.display='flex';
+  }
+</script>
+</body>
+</html>

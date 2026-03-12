@@ -172,6 +172,36 @@ public class ProfileController {
                 .body(pdf);
     }
 
+    // ── GET /profile/{id}/posts  — user's post feed (HTMX paginated) ─
+    @GetMapping("/{id}/posts")
+    public String userPosts(@PathVariable UUID id,
+                            @RequestParam(defaultValue = "0") int page,
+                            @AuthenticationPrincipal UserDetailsImpl principal,
+                            Model model) {
+        AppUser profileUser = userService.getById(id);
+        Profile profile     = profileService.getByUserId(id);
+        org.springframework.data.domain.Page<com.com.manasuniversityecosystem.domain.entity.social.Post>
+                posts = postService.getUserPosts(id, page, 10);
+
+        boolean isAdmin = principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+
+        java.util.List<String> likedPostIds = posts.getContent().stream()
+                .filter(p -> postService.isLikedByUser(p.getId(), principal.getId()))
+                .map(p -> p.getId().toString())
+                .toList();
+
+        model.addAttribute("profileUser",   profileUser);
+        model.addAttribute("profile",       profile);
+        model.addAttribute("posts",         posts.getContent());
+        model.addAttribute("nextPage",      posts.hasNext() ? page + 1 : -1);
+        model.addAttribute("currentUserId", principal.getId());
+        model.addAttribute("isAdmin",       isAdmin);
+        model.addAttribute("likedPostIds",  likedPostIds);
+        model.addAttribute("isOwn",         principal.getId().equals(id));
+        return page == 0 ? "profile/user-posts" : "feed/fragments/user-post-list :: userPostList";
+    }
+
     // ── POST /profile/me/password  — change password ─────────
     @PostMapping("/me/password")
     public String changePassword(@RequestParam String oldPassword,

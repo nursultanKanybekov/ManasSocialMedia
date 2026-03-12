@@ -148,9 +148,14 @@
                 </div>
 
                 <div class="pv-card pv-posts-card" th:if="${postCount > 0}">
-                    <div class="pv-card-title">&#128247; Posts <span class="pv-posts-badge" th:text="${postCount}">0</span></div>
+                    <div class="pv-card-title">&#128247; Posts <span class="pv-posts-badge" th:text="${postCount}">0</span>
+                        <a th:href="@{/profile/{id}/posts(id=${profileUser.id})}"
+                           style="margin-left:auto;font-size:12px;font-weight:600;color:#1b2a6b;text-decoration:none;
+                    background:#eef1fb;padding:4px 12px;border-radius:20px;">See all →</a>
+                    </div>
                     <div class="pv-posts-grid" th:if="${!#lists.isEmpty(recentPosts)}">
-                        <a th:each="post : ${recentPosts}" th:href="|/feed#post-${post.id}|" class="pv-post-tile" th:classappend="${post.imageUrl != null} ? ' has-img' : ' has-txt'">
+                        <a th:each="post : ${recentPosts}" th:href="@{/profile/{id}/posts(id=${profileUser.id})}"
+                           class="pv-post-tile" th:classappend="${post.imageUrl != null} ? ' has-img' : ' has-txt'">
                             <div th:if="${post.imageUrl != null}" class="pv-tile-img"><img th:src="${post.imageUrl}" alt="" loading="lazy"/></div>
                             <div th:if="${post.imageUrl == null}" class="pv-tile-txt">
                                 <span class="pv-tile-type" th:text="${post.postType}">POST</span>

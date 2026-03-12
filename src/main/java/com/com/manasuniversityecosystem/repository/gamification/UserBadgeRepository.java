@@ -4,6 +4,7 @@ package com.com.manasuniversityecosystem.repository.gamification;
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.domain.entity.gamification.UserBadge;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -25,4 +26,8 @@ public interface UserBadgeRepository extends JpaRepository<UserBadge, UUID> {
     List<UserBadge> findByUserIdWithBadge(@Param("userId") UUID userId);
 
     long countByUserId(UUID userId);
+
+    @Modifying
+    @Query("DELETE FROM UserBadge b WHERE b.user.id = :userId")
+    void deleteByUserId(@Param("userId") UUID userId);
 }

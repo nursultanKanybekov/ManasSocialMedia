@@ -16,4 +16,8 @@ public interface PostLikeRepository extends JpaRepository<PostLike, UUID> {
     Optional<PostLike> findByPostIdAndUserId(UUID postId, UUID userId);
 
     long countByPostId(UUID postId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM PostLike l WHERE l.user.id = :userId")
+    void deleteByUserId(@org.springframework.data.repository.query.Param("userId") UUID userId);
 }

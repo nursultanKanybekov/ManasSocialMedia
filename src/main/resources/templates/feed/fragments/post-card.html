@@ -2,12 +2,12 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
-<div th:fragment="postCard" class="post-card" th:classappend="${post.isPinned} ? 'post-pinned'">
+<div th:fragment="postCard" class="post-card" th:classappend="${post.isPinned} ? 'post-pinned'"
+     th:id="'post-' + ${post.id}">
 
-    <!-- Pinned badge -->
     <div th:if="${post.isPinned}" class="pin-badge">📌 Pinned</div>
 
-    <!-- Header: Avatar + Name + Meta -->
+    <!-- Header -->
     <div class="post-header">
         <a th:href="@{/mezun/{id}(id=${post.author.id})}">
             <img th:src="${post.author.profile != null and post.author.profile.avatarUrl != null
@@ -15,8 +15,8 @@
                  class="post-avatar" alt="avatar"/>
         </a>
         <div class="post-meta">
-            <a th:href="@{/mezun/{id}(id=${post.author.id})}"
-               class="post-author" th:text="${post.author.fullName}">Author</a>
+            <a th:href="@{/mezun/{id}(id=${post.author.id})}" class="post-author"
+               th:text="${post.author.fullName}">Author</a>
             <span class="role-badge-sm" th:text="${post.author.role}">ROLE</span>
             <span class="post-type-badge" th:switch="${post.postType.name()}">
                 <span th:case="'SUCCESS_STORY'">🌟 Success</span>
@@ -28,122 +28,168 @@
                   th:text="${#temporals.format(post.createdAt, 'dd MMM yyyy HH:mm')}">Date</time>
         </div>
 
-        <!-- Delete (own post or admin) -->
-        <div th:if="${currentUserId != null and post.author.id == currentUserId}" class="post-actions-menu">
-            <button class="btn-icon"
-                    th:attr="hx-delete=@{/feed/post/{id}(id=${post.id})}"
-                    hx-target="closest .post-card"
-                    hx-swap="outerHTML"
-                    hx-confirm="Delete this post?"
-                    title="Delete">🗑</button>
+        <!-- ⋮ menu: owner sees Edit+Delete, admin sees Delete -->
+        <div th:if="${currentUserId != null and (post.author.id == currentUserId or isAdmin == true)}"
+             style="position:relative;margin-left:auto;">
+            <button class="post-menu-btn"
+                    th:data-post-id="${post.id}"
+                    onclick="togglePostMenu(this)"
+                    style="background:none;border:none;cursor:pointer;font-size:20px;
+                           padding:2px 8px;border-radius:6px;color:#8a91a8;line-height:1;">⋮</button>
+            <div class="post-dropdown" style="display:none;position:absolute;right:0;top:34px;
+                 background:#fff;border:1.5px solid #e2e5f0;border-radius:10px;
+                 box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:200;min-width:130px;overflow:hidden;">
+                <button th:if="${post.author.id == currentUserId}"
+                        th:data-post-id="${post.id}"
+                        onclick="startEditPost(this.dataset.postId)"
+                        style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+                               border:none;background:#fff;font-size:13px;color:#1b2a6b;cursor:pointer;
+                               font-weight:600;font-family:Montserrat,sans-serif;"
+                        onmouseover="this.style.background='#f0f2f8'"
+                        onmouseout="this.style.background='#fff'">✏️ Edit</button>
+                <button th:data-post-id="${post.id}"
+                        onclick="deletePostAction(this.dataset.postId)"
+                        style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+                               border:none;border-top:1px solid #f0f2f8;background:#fff;font-size:13px;
+                               color:#dc2626;cursor:pointer;font-weight:600;font-family:Montserrat,sans-serif;"
+                        onmouseover="this.style.background='#fef2f2'"
+                        onmouseout="this.style.background='#fff'">🗑 Delete</button>
+            </div>
         </div>
     </div>
 
-    <!-- Post text content -->
-    <div class="post-content">
+    <!-- View mode -->
+    <div class="post-content" th:id="'post-view-' + ${post.id}">
         <p th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
     </div>
 
-    <!-- Post image (if any) -->
+    <!-- Edit mode (hidden) -->
+    <div th:id="'post-edit-' + ${post.id}" style="display:none;margin:10px 0;">
+        <textarea th:id="'post-edit-txt-' + ${post.id}" rows="4"
+                  style="width:100%;padding:10px 14px;border:1.5px solid #1b2a6b;border-radius:10px;
+                         font-family:inherit;font-size:14px;resize:vertical;box-sizing:border-box;"
+                  th:text="${post.getLocalizedContent(#locale.language)}"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+            <button th:data-post-id="${post.id}" onclick="cancelEditPost(this.dataset.postId)"
+                    style="padding:7px 16px;border:1.5px solid #e2e5f0;border-radius:8px;background:#fff;
+                           font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer;color:#64748b;font-weight:600;">
+                Cancel</button>
+            <button th:data-post-id="${post.id}" onclick="saveEditPost(this.dataset.postId)"
+                    style="padding:7px 16px;background:#1b2a6b;border:none;border-radius:8px;color:#fff;
+                           font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer;font-weight:700;">
+                💾 Save</button>
+        </div>
+    </div>
+
     <div th:if="${post.imageUrl != null}" class="post-image-wrap">
         <img th:src="${post.imageUrl}" alt="post image" class="post-image"
              onclick="openImageModal(this.src)" style="cursor:zoom-in;"/>
     </div>
 
-    <!-- Footer: Like + Comment count -->
     <div class="post-footer">
-        <!-- Like button -->
-        <div th:id="${'like-' + post.id}"
-             th:replace="~{feed/fragments/like-btn :: likeBtn(postId=${post.id}, liked=${likedPostIds != null and #lists.contains(likedPostIds, post.id.toString())}, count=${post.likesCount})}">
+        <div th:id="'like-' + ${post.id}"
+             th:replace="~{feed/fragments/like-btn :: likeBtn(postId=${post.id},
+               liked=${likedPostIds != null and #lists.contains(likedPostIds, post.id.toString())},
+               count=${post.likesCount})}">
         </div>
-
-        <!-- Comment toggle: use data-post-id, NOT th:onclick (blocked in Thymeleaf 3.1) -->
-        <button class="btn-action"
-                th:data-post-id="${post.id}"
-                th:attr="data-comments-target=${'comments-' + post.id}"
+        <button class="btn-action" th:data-post-id="${post.id}"
                 onclick="toggleComments(this.dataset.postId)">
-            💬 <span th:id="${'ccount-' + post.id}" th:text="${post.commentsCount}">0</span>
+            💬 <span th:id="'ccount-' + ${post.id}" th:text="${post.commentsCount}">0</span>
         </button>
     </div>
 
-    <!-- Comments Section (lazy-loaded via fetch on first expand) -->
-    <div th:id="${'comments-' + post.id}" class="comments-section" style="display:none;"></div>
-
-    <!-- Comment Input Row -->
-    <div class="comment-input-row" th:id="${'comment-row-' + post.id}" style="display:none;">
-        <input type="text"
-               th:id="${'comment-input-' + post.id}"
-               th:data-post-id="${post.id}"
-               name="content"
-               placeholder="Write a comment..."
-               class="comment-input"
+    <div th:id="'comments-' + ${post.id}" class="comments-section" style="display:none;"></div>
+    <div class="comment-input-row" th:id="'comment-row-' + ${post.id}" style="display:none;">
+        <input type="text" th:id="'comment-input-' + ${post.id}" th:data-post-id="${post.id}"
+               name="content" placeholder="Write a comment..." class="comment-input"
                onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
-        <button class="btn btn-sm btn-primary"
-                th:data-post-id="${post.id}"
+        <button class="btn btn-sm btn-primary" th:data-post-id="${post.id}"
                 onclick="submitComment(this.dataset.postId)">Send</button>
     </div>
 </div>
 
 <script th:inline="javascript" th:if="${post != null}">
     /*<![CDATA[*/
-    function toggleComments(postId) {
-        const section = document.getElementById('comments-' + postId);
-        const row     = document.getElementById('comment-row-' + postId);
-        const isHidden = section.style.display === 'none';
-
-        if (isHidden && section.dataset.loaded !== 'true') {
-            // Lazy-load comments on first open
-            fetch('/feed/post/' + postId + '/comments')
-                .then(r => r.text())
-                .then(html => {
-                    section.innerHTML = html;
-                    section.dataset.loaded = 'true';
-                })
-                .catch(console.error);
+    (function(){
+        function getCsrf(){
+            return {
+                token: document.querySelector('meta[name="_csrf"]')?.content,
+                header: document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN'
+            };
         }
-
-        section.style.display = isHidden ? 'block' : 'none';
-        row.style.display     = isHidden ? 'flex'  : 'none';
-    }
-
-    async function submitComment(postId) {
-        const input   = document.getElementById('comment-input-' + postId);
-        const content = input.value.trim();
-        if (!content) return;
-
-        const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
-        const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-        if (csrfToken) headers[csrfHeader] = csrfToken;
-
-        const res = await fetch('/feed/post/' + postId + '/comment', {
-            method: 'POST',
-            headers: headers,
-            body: 'content=' + encodeURIComponent(content)
-        });
-        if (!res.ok) return;
-        const html = await res.text();
-        const section = document.getElementById('comments-' + postId);
-        section.insertAdjacentHTML('beforeend', html);
-        input.value = '';
-
-        const countEl = document.getElementById('ccount-' + postId);
-        if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
-    }
-
-    function openImageModal(src) {
-        let modal = document.getElementById('imgModal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'imgModal';
-            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
-            modal.innerHTML = '<img style="max-width:92vw;max-height:92vh;border-radius:8px;"/>';
-            modal.onclick = () => modal.remove();
-            document.body.appendChild(modal);
-        }
-        modal.querySelector('img').src = src;
-        modal.style.display = 'flex';
-    }
+        window.togglePostMenu = function(btn) {
+            const dd = btn.nextElementSibling;
+            const open = dd.style.display === 'block';
+            document.querySelectorAll('.post-dropdown').forEach(d => d.style.display='none');
+            dd.style.display = open ? 'none' : 'block';
+        };
+        document.addEventListener('click', function(e){
+            if (!e.target.classList.contains('post-menu-btn'))
+                document.querySelectorAll('.post-dropdown').forEach(d => d.style.display='none');
+        }, true);
+        window.startEditPost = function(id){
+            document.querySelectorAll('.post-dropdown').forEach(d=>d.style.display='none');
+            document.getElementById('post-view-'+id).style.display='none';
+            const ed = document.getElementById('post-edit-'+id);
+            ed.style.display='block';
+            const ta = document.getElementById('post-edit-txt-'+id);
+            ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length);
+        };
+        window.cancelEditPost = function(id){
+            document.getElementById('post-view-'+id).style.display='block';
+            document.getElementById('post-edit-'+id).style.display='none';
+        };
+        window.saveEditPost = async function(id){
+            const txt = document.getElementById('post-edit-txt-'+id).value.trim();
+            if(!txt) return;
+            const c = getCsrf();
+            const headers = {'Content-Type':'application/x-www-form-urlencoded'};
+            if(c.token) headers[c.header]=c.token;
+            const res = await fetch('/feed/post/'+id+'/edit',{method:'POST',headers,body:'content='+encodeURIComponent(txt)});
+            if(res.ok){ const html=await res.text(); document.getElementById('post-'+id).outerHTML=html; }
+        };
+        window.deletePostAction = async function(id){
+            if(!confirm('Delete this post?')) return;
+            const c = getCsrf(); const headers={};
+            if(c.token) headers[c.header]=c.token;
+            const res = await fetch('/feed/post/'+id,{method:'DELETE',headers});
+            if(res.ok){
+                const card=document.getElementById('post-'+id);
+                card.style.cssText='opacity:0;transition:opacity 0.3s';
+                setTimeout(()=>card.remove(),300);
+            }
+        };
+        window.toggleComments = function(id){
+            const sec=document.getElementById('comments-'+id);
+            const row=document.getElementById('comment-row-'+id);
+            const hidden=sec.style.display==='none';
+            if(hidden && sec.dataset.loaded!=='true'){
+                fetch('/feed/post/'+id+'/comments').then(r=>r.text()).then(h=>{sec.innerHTML=h;sec.dataset.loaded='true';});
+            }
+            sec.style.display=hidden?'block':'none';
+            row.style.display=hidden?'flex':'none';
+        };
+        window.submitComment = async function(id){
+            const inp=document.getElementById('comment-input-'+id);
+            const txt=inp.value.trim(); if(!txt) return;
+            const c=getCsrf(); const headers={'Content-Type':'application/x-www-form-urlencoded'};
+            if(c.token) headers[c.header]=c.token;
+            const res=await fetch('/feed/post/'+id+'/comment',{method:'POST',headers,body:'content='+encodeURIComponent(txt)});
+            if(!res.ok) return;
+            document.getElementById('comments-'+id).insertAdjacentHTML('beforeend',await res.text());
+            inp.value='';
+            const ct=document.getElementById('ccount-'+id);
+            if(ct) ct.textContent=parseInt(ct.textContent||'0')+1;
+        };
+        window.openImageModal = function(src){
+            let m=document.getElementById('imgModal');
+            if(!m){m=document.createElement('div');m.id='imgModal';
+                m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+                m.innerHTML='<img style="max-width:92vw;max-height:92vh;border-radius:8px;"/>';
+                m.onclick=()=>m.remove();document.body.appendChild(m);}
+            m.querySelector('img').src=src; m.style.display='flex';
+        };
+    })();
     /*]]>*/
 </script>
 </body>
