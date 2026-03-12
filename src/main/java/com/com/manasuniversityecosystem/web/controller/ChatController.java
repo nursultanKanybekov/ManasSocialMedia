@@ -16,7 +16,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -37,6 +39,8 @@ public class ChatController {
 
         model.addAttribute("currentUser", user);
         model.addAttribute("rooms",       rooms);
+        model.addAttribute("roomNames",   buildRoomNames(rooms, principal.getId()));
+        model.addAttribute("unreadCounts", buildUnreadCounts(rooms, principal.getId()));
         model.addAttribute("includeChat", true);
         return "chat/chat";
     }
@@ -58,7 +62,10 @@ public class ChatController {
         model.addAttribute("roomId",       id);
         model.addAttribute("history",      history);
         model.addAttribute("unread",       unread);
-        model.addAttribute("rooms",        chatService.getUserRooms(principal.getId()));
+        List<ChatRoom> sidebarRooms = chatService.getUserRooms(principal.getId());
+        model.addAttribute("rooms",        sidebarRooms);
+        model.addAttribute("roomNames",    buildRoomNames(sidebarRooms, principal.getId()));
+        model.addAttribute("unreadCounts", buildUnreadCounts(sidebarRooms, principal.getId()));
         model.addAttribute("members",      currentRoom != null ? currentRoom.getParticipants() : java.util.List.of());
         model.addAttribute("includeChat",  true);
         return "chat/chat";
@@ -134,5 +141,16 @@ public class ChatController {
         AppUser user = userService.getById(principal.getId());
         chatService.deleteMessage(id, user);
         return org.springframework.http.ResponseEntity.ok().build();
+    }
+    private Map<UUID, String> buildRoomNames(List<ChatRoom> rooms, UUID userId) {
+        Map<UUID, String> names = new HashMap<>();
+        rooms.forEach(r -> names.put(r.getId(), chatService.getRoomDisplayName(r, userId)));
+        return names;
+    }
+
+    private Map<UUID, Long> buildUnreadCounts(List<ChatRoom> rooms, UUID userId) {
+        Map<UUID, Long> counts = new HashMap<>();
+        rooms.forEach(r -> counts.put(r.getId(), chatService.getUnreadCount(r.getId(), userId)));
+        return counts;
     }
 }

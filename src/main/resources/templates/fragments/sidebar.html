@@ -206,7 +206,7 @@
         </a>
         <a th:href="@{/admin/news}" class="nav-item"
            sec:authorize="hasRole('ADMIN')"
-           th:classappend="${currentUri != null and #strings.contains(currentUri, '/admin/news')} ? ' active'">
+           th:classappend="${currentURI != null and #strings.contains(currentURI, '/admin/news')} ? ' active'">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/>
             </svg>

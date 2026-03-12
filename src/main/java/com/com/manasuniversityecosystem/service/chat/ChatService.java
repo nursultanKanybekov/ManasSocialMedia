@@ -204,6 +204,19 @@ public class ChatService {
         return roomRepo.findRoomsByUserId(userId);
     }
 
+    /** Resolves the display name for a room — for DIRECT rooms returns the OTHER person's name */
+    @Transactional(readOnly = true)
+    public String getRoomDisplayName(ChatRoom room, UUID currentUserId) {
+        if (room.getRoomType() != RoomType.DIRECT) {
+            return room.getName() != null ? room.getName() : room.getRoomType().name();
+        }
+        return room.getParticipants().stream()
+                .filter(p -> !p.getUser().getId().equals(currentUserId))
+                .map(p -> p.getUser().getFullName())
+                .findFirst()
+                .orElse("Direct Message");
+    }
+
     @Transactional(readOnly = true)
     public long getUnreadCount(UUID roomId, UUID userId) {
         return messageRepo.countUnread(roomId, userId);

@@ -50,7 +50,7 @@
          sec:authorize must wrap a th:block, NOT style/script tags directly.
          JS array literals [[...]] are escaped inside CDATA to avoid Thymeleaf parsing.
          ═══════════════════════════════════════════════════════════ -->
-    <th:block sec:authorize="hasAnyRole('SECRETARY','ADMIN','SUPER_ADMIN')">
+    <th:block sec:authorize="isAuthenticated()">
         <!-- SockJS/STOMP already loaded globally above for all authenticated users -->
 
         <!-- ═══════════════════════════════════════════════
@@ -255,11 +255,12 @@
             .mn-toast-close:hover { color: #94a3b8; }
         </style>
 
-        <script>
+        <script th:inline="javascript">
             /* ══════════════════════════════════════════════════════════
                GLOBAL TOAST ENGINE — Secretary/Admin registrations
             ══════════════════════════════════════════════════════════ */
             (function () {
+                var _secAdmin = /*[[${#authorization.expression('hasAnyRole(''ROLE_SECRETARY'',''ROLE_ADMIN'',''ROLE_SUPER_ADMIN'')')}]]*/ false;
                 function getWrap() {
                     var w = document.getElementById('manas-toast-wrap');
                     if (!w) {
@@ -384,46 +385,48 @@
                     setTimeout(function() { t.remove(); }, 280);
                 };
 
-                /* ── Registration toast (Secretary/Admin) ── */
-                function showRegistrationToast(fullName, role, link) {
-                    window.mnShowToast({
-                        type:        'reg',
-                        label:       'New Registration',
-                        title:       fullName,
-                        sub:         role + ' · Waiting for approval',
-                        avatarEmoji: '👤',
-                        badgeEmoji:  '🔔',
-                        link:        link,
-                        btnText:     'Review',
-                        autoDismiss: 10000
-                    });
-                }
-
-                document.addEventListener('click', function(){
-                    if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
-                }, {once: true});
-
-                var secRetry = 3000;
-                function connectSec() {
-                    if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') { setTimeout(connectSec, 500); return; }
-                    var client = Stomp.over(new SockJS('/ws'));
-                    client.debug = null;
-                    client.connect({}, function() {
-                        secRetry = 3000;
-                        client.subscribe('/topic/secretary.newUser', function(frame) {
-                            try {
-                                var d = JSON.parse(frame.body);
-                                showRegistrationToast(d.fullName || 'Unknown', d.role || '', d.link || '/secretary');
-                                document.dispatchEvent(new CustomEvent('secretaryNewUser', { detail: d }));
-                            } catch(e) { console.error('[SecWS]', e); }
+                if (_secAdmin) {
+                    /* ── Registration toast (Secretary/Admin) ── */
+                    function showRegistrationToast(fullName, role, link) {
+                        window.mnShowToast({
+                            type:        'reg',
+                            label:       'New Registration',
+                            title:       fullName,
+                            sub:         role + ' · Waiting for approval',
+                            avatarEmoji: '👤',
+                            badgeEmoji:  '🔔',
+                            link:        link,
+                            btnText:     'Review',
+                            autoDismiss: 10000
                         });
-                    }, function() {
-                        setTimeout(connectSec, secRetry);
-                        secRetry = Math.min(secRetry * 2, 30000);
-                    });
-                }
-                if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', connectSec); }
-                else { connectSec(); }
+                    }
+
+                    document.addEventListener('click', function(){
+                        if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
+                    }, {once: true});
+
+                    var secRetry = 3000;
+                    function connectSec() {
+                        if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') { setTimeout(connectSec, 500); return; }
+                        var client = Stomp.over(new SockJS('/ws'));
+                        client.debug = null;
+                        client.connect({}, function() {
+                            secRetry = 3000;
+                            client.subscribe('/topic/secretary.newUser', function(frame) {
+                                try {
+                                    var d = JSON.parse(frame.body);
+                                    showRegistrationToast(d.fullName || 'Unknown', d.role || '', d.link || '/secretary');
+                                    document.dispatchEvent(new CustomEvent('secretaryNewUser', { detail: d }));
+                                } catch(e) { console.error('[SecWS]', e); }
+                            });
+                        }, function() {
+                            setTimeout(connectSec, secRetry);
+                            secRetry = Math.min(secRetry * 2, 30000);
+                        });
+                    }
+                    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', connectSec); }
+                    else { connectSec(); }
+                } // end _secAdmin
             })();
         </script>
     </th:block>

@@ -1,7 +1,7 @@
 package com.com.manasuniversityecosystem.web.ws;
 
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
-import com.com.manasuniversityecosystem.domain.entity.chat.ChatMessage;
+import com.com.manasuniversityecosystem.domain.entity.chat.ChatRoom;
 import com.com.manasuniversityecosystem.domain.enums.RoomType;
 import com.com.manasuniversityecosystem.repository.chat.ChatParticipantRepository;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
@@ -50,25 +50,26 @@ public class ChatWebSocketController {
         UserDetailsImpl details = extractPrincipal(principal);
         AppUser sender = userService.getById(details.getId());
 
-        // Transaction commits when this returns
-        ChatMessage msg = chatService.sendMessage(sender, roomId,
-                request.getContent(), request.getMessageType());
+        // Fetch room BEFORE sending so we have name+type inside an active session
+        ChatRoom room = chatService.getRoomWithParticipants(roomId);
+        String msgContent = request.getContent();
 
-        // Push notifications after commit — fresh state, any role
+        // Transaction commits when this returns
+        chatService.sendMessage(sender, roomId, msgContent, request.getMessageType());
+
+        // All data gathered from already-loaded objects — no lazy proxy access
         try {
-            pushChatNotifications(sender, roomId, msg);
+            pushChatNotifications(sender, roomId, room, msgContent);
         } catch (Exception e) {
             log.error("[ChatNotif] push failed room={} sender={}: {}", roomId, sender.getEmail(), e.getMessage(), e);
         }
     }
 
-    private void pushChatNotifications(AppUser sender, UUID roomId, ChatMessage msg) {
-        String content  = msg.getContent();
-        String roomName = msg.getRoom().getName();
-        RoomType type   = msg.getRoom().getRoomType();
+    private void pushChatNotifications(AppUser sender, UUID roomId, ChatRoom room, String content) {
+        String roomName = room.getName();
+        RoomType type   = room.getRoomType();
 
         String label   = (roomName != null && !roomName.isBlank()) ? roomName : "Direct Message";
-        String preview = (content != null && content.length() > 70) ? content.substring(0, 70) + "..." : content;
         String avatar  = (sender.getProfile() != null && sender.getProfile().getAvatarUrl() != null)
                 ? sender.getProfile().getAvatarUrl() : "";
         String link = switch (type) {
@@ -85,10 +86,11 @@ public class ChatWebSocketController {
         notif.put("senderAvatar", avatar);
         notif.put("icon",         avatar.isBlank() ? "msg" : avatar);
         notif.put("roomName",     label);
+        String preview = (content != null && content.length() > 70) ? content.substring(0, 70) + "..." : content;
         notif.put("message",      sender.getFullName() + ": " + preview);
         notif.put("link",         link);
 
-        // Fresh DB query after transaction commit — works for any sender role
+        // Fresh DB query — works for every role
         List<AppUser> recipients = participantRepo.findParticipantsExcluding(roomId, sender.getId());
         log.info("[ChatNotif] room={} type={} sender={} role={} recipients={}",
                 roomId, type, sender.getEmail(), sender.getRole(), recipients.size());
