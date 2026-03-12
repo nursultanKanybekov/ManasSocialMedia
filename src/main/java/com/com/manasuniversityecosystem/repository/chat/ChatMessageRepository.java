@@ -8,17 +8,24 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> {
 
     /** Paginated history, newest first. Caller reverses for display. */
-    @Query("SELECT m FROM ChatMessage m JOIN FETCH m.sender s JOIN FETCH s.profile " +
+    @Query("SELECT m FROM ChatMessage m JOIN FETCH m.sender s LEFT JOIN FETCH s.profile " +
             "WHERE m.room.id = :roomId AND m.isDeleted = false " +
             "ORDER BY m.createdAt DESC")
     Page<ChatMessage> findByRoomIdOrderByCreatedAtDesc(
             @Param("roomId") UUID roomId, Pageable pageable);
+
+    /** Pinned messages in a room */
+    @Query("SELECT m FROM ChatMessage m JOIN FETCH m.sender s LEFT JOIN FETCH s.profile " +
+            "WHERE m.room.id = :roomId AND m.isPinned = true AND m.isDeleted = false " +
+            "ORDER BY m.createdAt DESC")
+    List<ChatMessage> findPinnedByRoomId(@Param("roomId") UUID roomId);
 
     /** Unread count for a user in a room since their last read timestamp */
     @Query(value = """

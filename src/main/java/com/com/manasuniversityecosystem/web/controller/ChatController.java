@@ -1,6 +1,5 @@
 package com.com.manasuniversityecosystem.web.controller;
 
-
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.domain.entity.chat.ChatMessage;
 import com.com.manasuniversityecosystem.domain.entity.chat.ChatRoom;
@@ -11,6 +10,7 @@ import com.com.manasuniversityecosystem.service.UserService;
 import com.com.manasuniversityecosystem.service.chat.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -37,11 +37,11 @@ public class ChatController {
         AppUser user  = userService.getById(principal.getId());
         List<ChatRoom> rooms = chatService.getUserRooms(principal.getId());
 
-        model.addAttribute("currentUser", user);
-        model.addAttribute("rooms",       rooms);
-        model.addAttribute("roomNames",   buildRoomNames(rooms, principal.getId()));
-        model.addAttribute("unreadCounts", buildUnreadCounts(rooms, principal.getId()));
-        model.addAttribute("includeChat", true);
+        model.addAttribute("currentUser",   user);
+        model.addAttribute("rooms",         rooms);
+        model.addAttribute("roomNames",     buildRoomNames(rooms, principal.getId()));
+        model.addAttribute("unreadCounts",  buildUnreadCounts(rooms, principal.getId()));
+        model.addAttribute("includeChat",   true);
         return "chat/chat";
     }
 
@@ -53,21 +53,23 @@ public class ChatController {
         AppUser user = userService.getById(principal.getId());
         List<ChatMessage> history = chatService.getRoomHistory(id, 0);
         chatService.markRoomAsRead(user, id);
-        long unread = chatService.getUnreadCount(id, principal.getId());
 
         ChatRoom currentRoom = chatService.getRoomWithParticipants(id);
+        List<ChatMessage> pinnedMessages = chatService.getPinnedMessages(id);
 
-        model.addAttribute("currentUser",  user);
-        model.addAttribute("currentRoom",  currentRoom);
-        model.addAttribute("roomId",       id);
-        model.addAttribute("history",      history);
-        model.addAttribute("unread",       unread);
+        model.addAttribute("currentUser",    user);
+        model.addAttribute("currentRoom",    currentRoom);
+        model.addAttribute("roomId",         id);
+        model.addAttribute("history",        history);
+        model.addAttribute("pinnedMessages", pinnedMessages);
+        model.addAttribute("unread",         chatService.getUnreadCount(id, principal.getId()));
+
         List<ChatRoom> sidebarRooms = chatService.getUserRooms(principal.getId());
-        model.addAttribute("rooms",        sidebarRooms);
-        model.addAttribute("roomNames",    buildRoomNames(sidebarRooms, principal.getId()));
-        model.addAttribute("unreadCounts", buildUnreadCounts(sidebarRooms, principal.getId()));
-        model.addAttribute("members",      currentRoom != null ? currentRoom.getParticipants() : java.util.List.of());
-        model.addAttribute("includeChat",  true);
+        model.addAttribute("rooms",          sidebarRooms);
+        model.addAttribute("roomNames",      buildRoomNames(sidebarRooms, principal.getId()));
+        model.addAttribute("unreadCounts",   buildUnreadCounts(sidebarRooms, principal.getId()));
+        model.addAttribute("members",        currentRoom != null ? currentRoom.getParticipants() : List.of());
+        model.addAttribute("includeChat",    true);
         return "chat/chat";
     }
 
@@ -107,41 +109,52 @@ public class ChatController {
         return "redirect:/chat/faculty-group/" + room.getId();
     }
 
-    // GET /chat/faculty-group/{roomId}  — Telegram-style faculty group view
+    // GET /chat/faculty-group/{roomId}
     @GetMapping("/faculty-group/{roomId}")
     public String facultyGroup(@PathVariable UUID roomId,
                                @AuthenticationPrincipal UserDetailsImpl principal,
                                Model model) {
         AppUser currentUser = userService.getById(principal.getId());
         ChatRoom room = chatService.getOrCreateFacultyRoom(currentUser);
-
-        // Auto-join if not a member
         chatService.joinRoom(currentUser, room.getId());
 
-        // All users in this faculty
-        java.util.List<AppUser> facultyMembers = currentUser.getFaculty() != null
+        List<AppUser> facultyMembers = currentUser.getFaculty() != null
                 ? userRepo.findByFacultyIdAndStatus(currentUser.getFaculty().getId(), UserStatus.ACTIVE)
-                : java.util.List.of();
+                : List.of();
 
         model.addAttribute("currentUser", currentUser);
-        model.addAttribute("room", room);
-        model.addAttribute("messages", chatService.getRoomHistory(room.getId(), 0));
-        model.addAttribute("members", facultyMembers);
-        model.addAttribute("roomId", room.getId());
+        model.addAttribute("room",        room);
+        model.addAttribute("messages",    chatService.getRoomHistory(room.getId(), 0));
+        model.addAttribute("members",     facultyMembers);
+        model.addAttribute("roomId",      room.getId());
         model.addAttribute("includeChat", true);
         return "chat/faculty-group";
     }
 
-    // DELETE /chat/message/{id}  (HTMX)
+    // DELETE /chat/message/{id}
     @DeleteMapping("/message/{id}")
     @ResponseBody
-    public org.springframework.http.ResponseEntity<Void> deleteMessage(
+    public ResponseEntity<Void> deleteMessage(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl principal) {
         AppUser user = userService.getById(principal.getId());
         chatService.deleteMessage(id, user);
-        return org.springframework.http.ResponseEntity.ok().build();
+        return ResponseEntity.ok().build();
     }
+
+    // POST /chat/message/{id}/pin  — toggle pin
+    @PostMapping("/message/{id}/pin")
+    @ResponseBody
+    public ResponseEntity<Void> pinMessage(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        AppUser user = userService.getById(principal.getId());
+        chatService.togglePin(id, user);
+        return ResponseEntity.ok().build();
+    }
+
+    // ── helpers ───────────────────────────────────────────────
+
     private Map<UUID, String> buildRoomNames(List<ChatRoom> rooms, UUID userId) {
         Map<UUID, String> names = new HashMap<>();
         rooms.forEach(r -> names.put(r.getId(), chatService.getRoomDisplayName(r, userId)));

@@ -7,6 +7,7 @@ import com.com.manasuniversityecosystem.repository.chat.ChatParticipantRepositor
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.service.UserService;
 import com.com.manasuniversityecosystem.service.chat.ChatService;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.*;
@@ -37,12 +38,7 @@ public class ChatWebSocketController {
         throw new IllegalStateException("Unexpected principal type: " + principal.getClass());
     }
 
-    /**
-     * Client publishes to: /app/chat.send/{roomId}
-     * chatService.sendMessage() is @Transactional and commits before returning.
-     * Notifications are pushed HERE after the transaction is done — no lazy-load,
-     * no session state issues, works for every role.
-     */
+    /** Client publishes to: /app/chat.send/{roomId} */
     @MessageMapping("/chat.send/{roomId}")
     public void sendMessage(@DestinationVariable UUID roomId,
                             @Payload SendMessageRequest request,
@@ -50,20 +46,63 @@ public class ChatWebSocketController {
         UserDetailsImpl details = extractPrincipal(principal);
         AppUser sender = userService.getById(details.getId());
 
-        // Fetch room BEFORE sending so we have name+type inside an active session
         ChatRoom room = chatService.getRoomWithParticipants(roomId);
         String msgContent = request.getContent();
 
-        // Transaction commits when this returns
-        chatService.sendMessage(sender, roomId, msgContent, request.getMessageType());
+        chatService.sendMessage(sender, roomId, msgContent, request.getMessageType(),
+                request.getReplyToId(), request.getForwardedFromId());
 
-        // All data gathered from already-loaded objects — no lazy proxy access
         try {
             pushChatNotifications(sender, roomId, room, msgContent);
         } catch (Exception e) {
             log.error("[ChatNotif] push failed room={} sender={}: {}", roomId, sender.getEmail(), e.getMessage(), e);
         }
     }
+
+    /** Client publishes to: /app/chat.edit/{messageId} */
+    @MessageMapping("/chat.edit/{messageId}")
+    public void editMessage(@DestinationVariable UUID messageId,
+                            @Payload EditMessageRequest request,
+                            Principal principal) {
+        UserDetailsImpl details = extractPrincipal(principal);
+        AppUser user = userService.getById(details.getId());
+        chatService.editMessage(messageId, request.getContent(), user);
+    }
+
+    /** Client publishes to: /app/chat.delete/{messageId} */
+    @MessageMapping("/chat.delete/{messageId}")
+    public void deleteMessage(@DestinationVariable UUID messageId,
+                              Principal principal) {
+        UserDetailsImpl details = extractPrincipal(principal);
+        AppUser user = userService.getById(details.getId());
+        chatService.deleteMessage(messageId, user);
+    }
+
+    /** Client publishes to: /app/chat.pin/{messageId} */
+    @MessageMapping("/chat.pin/{messageId}")
+    public void pinMessage(@DestinationVariable UUID messageId,
+                           Principal principal) {
+        UserDetailsImpl details = extractPrincipal(principal);
+        AppUser user = userService.getById(details.getId());
+        chatService.togglePin(messageId, user);
+    }
+
+    @MessageMapping("/chat.typing/{roomId}")
+    public void typingIndicator(@DestinationVariable UUID roomId, Principal principal) {
+        UserDetailsImpl details = extractPrincipal(principal);
+        TypingIndicatorDTO dto = new TypingIndicatorDTO(details.getId(), details.getFullName());
+        messaging.convertAndSend("/topic/typing." + roomId, dto);
+    }
+
+    @MessageMapping("/chat.join/{roomId}")
+    public void joinRoom(@DestinationVariable UUID roomId, Principal principal) {
+        UserDetailsImpl details = extractPrincipal(principal);
+        AppUser user = userService.getById(details.getId());
+        chatService.joinRoom(user, roomId);
+        log.info("WS join: user={} room={}", user.getEmail(), roomId);
+    }
+
+    // ── helpers ───────────────────────────────────────────────
 
     private void pushChatNotifications(AppUser sender, UUID roomId, ChatRoom room, String content) {
         String roomName = room.getName();
@@ -90,29 +129,14 @@ public class ChatWebSocketController {
         notif.put("message",      sender.getFullName() + ": " + preview);
         notif.put("link",         link);
 
-        // Fresh DB query — works for every role
         List<AppUser> recipients = participantRepo.findParticipantsExcluding(roomId, sender.getId());
-        log.info("[ChatNotif] room={} type={} sender={} role={} recipients={}",
-                roomId, type, sender.getEmail(), sender.getRole(), recipients.size());
-
-        recipients.forEach(r -> {
-            messaging.convertAndSend("/topic/user." + r.getId(), notif);
-            log.info("[ChatNotif] -> uid={} ({})", r.getId(), r.getEmail());
-        });
+        recipients.forEach(r -> messaging.convertAndSend("/topic/user." + r.getId(), notif));
     }
 
-    @MessageMapping("/chat.typing/{roomId}")
-    public void typingIndicator(@DestinationVariable UUID roomId, Principal principal) {
-        UserDetailsImpl details = extractPrincipal(principal);
-        TypingIndicatorDTO dto = new TypingIndicatorDTO(details.getId(), details.getFullName());
-        messaging.convertAndSend("/topic/typing." + roomId, dto);
-    }
+    // ── inner DTOs ────────────────────────────────────────────
 
-    @MessageMapping("/chat.join/{roomId}")
-    public void joinRoom(@DestinationVariable UUID roomId, Principal principal) {
-        UserDetailsImpl details = extractPrincipal(principal);
-        AppUser user = userService.getById(details.getId());
-        chatService.joinRoom(user, roomId);
-        log.info("WS join: user={} room={}", user.getEmail(), roomId);
+    @Data
+    public static class EditMessageRequest {
+        private String content;
     }
 }

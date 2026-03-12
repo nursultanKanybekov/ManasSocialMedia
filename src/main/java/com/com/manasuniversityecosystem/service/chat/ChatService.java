@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,15 +37,19 @@ public class ChatService {
     @Transactional
     public ChatMessage sendMessage(AppUser sender, UUID roomId,
                                    String content, String messageTypeStr) {
+        return sendMessage(sender, roomId, content, messageTypeStr, null, null);
+    }
+
+    @Transactional
+    public ChatMessage sendMessage(AppUser sender, UUID roomId,
+                                   String content, String messageTypeStr,
+                                   UUID replyToId, UUID forwardedFromId) {
         ChatRoom room = findRoomWithParticipants(roomId);
 
-        // Authorization check
         boolean isMember = room.getParticipants().stream()
                 .anyMatch(p -> p.getUser().getId().equals(sender.getId()));
         if (!isMember) {
-            // Auto-join GLOBAL and FACULTY rooms
-            if (room.getRoomType() == RoomType.GLOBAL
-                    || room.getRoomType() == RoomType.FACULTY) {
+            if (room.getRoomType() == RoomType.GLOBAL || room.getRoomType() == RoomType.FACULTY) {
                 joinRoom(sender, roomId);
             } else {
                 throw new SecurityException("User is not a member of this chat room.");
@@ -59,20 +65,96 @@ public class ChatService {
             msgType = ChatMessage.MessageType.TEXT;
         }
 
-        ChatMessage msg = ChatMessage.builder()
+        ChatMessage.ChatMessageBuilder builder = ChatMessage.builder()
                 .room(room)
                 .sender(sender)
                 .content(content)
-                .messageType(msgType)
-                .build();
-        messageRepo.save(msg);
+                .messageType(msgType);
 
-        // STOMP broadcast to all room subscribers
-        ChatMessageDTO dto = ChatMessageDTO.from(msg);
+        // Handle reply
+        if (replyToId != null) {
+            messageRepo.findById(replyToId).ifPresent(original -> {
+                builder.replyToId(original.getId())
+                        .replyToContent(original.getContent().length() > 100
+                                ? original.getContent().substring(0, 100) + "…"
+                                : original.getContent())
+                        .replyToSenderName(original.getSender().getFullName());
+            });
+        }
+
+        // Handle forward
+        if (forwardedFromId != null) {
+            messageRepo.findById(forwardedFromId).ifPresent(original -> {
+                builder.forwardedFrom(original.getSender().getFullName())
+                        .content(original.getContent());
+            });
+        }
+
+        ChatMessage msg = messageRepo.save(builder.build());
+        ChatMessageDTO dto = ChatMessageDTO.fromWithAction(msg, "NEW");
         messagingTemplate.convertAndSend("/topic/chat." + roomId, dto);
-
         log.debug("Message sent: room={} sender={}", roomId, sender.getEmail());
         return msg;
+    }
+
+    // ── EDIT ─────────────────────────────────────────────────
+
+    @Transactional
+    public ChatMessage editMessage(UUID messageId, String newContent, AppUser user) {
+        ChatMessage msg = messageRepo.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found."));
+        if (!msg.getSender().getId().equals(user.getId())) {
+            throw new SecurityException("Not authorized to edit this message.");
+        }
+        if (Boolean.TRUE.equals(msg.getIsDeleted())) {
+            throw new IllegalStateException("Cannot edit a deleted message.");
+        }
+        msg.setContent(newContent);
+        msg.setIsEdited(true);
+        msg.setEditedAt(LocalDateTime.now());
+        messageRepo.save(msg);
+
+        ChatMessageDTO dto = ChatMessageDTO.fromWithAction(msg, "EDIT");
+        messagingTemplate.convertAndSend("/topic/chat." + msg.getRoom().getId(), dto);
+        return msg;
+    }
+
+    // ── DELETE ───────────────────────────────────────────────
+
+    @Transactional
+    public void deleteMessage(UUID messageId, AppUser user) {
+        ChatMessage msg = messageRepo.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found."));
+        if (!msg.getSender().getId().equals(user.getId())) {
+            throw new SecurityException("Not authorized to delete this message.");
+        }
+        msg.softDelete();
+        messageRepo.save(msg);
+
+        ChatMessageDTO dto = ChatMessageDTO.fromWithAction(msg, "DELETE");
+        messagingTemplate.convertAndSend("/topic/chat." + msg.getRoom().getId(), dto);
+    }
+
+    // ── PIN ──────────────────────────────────────────────────
+
+    @Transactional
+    public ChatMessage togglePin(UUID messageId, AppUser user) {
+        ChatMessage msg = messageRepo.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found."));
+        // Only room members can pin (no ownership check — anyone in room can pin)
+        boolean nowPinned = !Boolean.TRUE.equals(msg.getIsPinned());
+        msg.setIsPinned(nowPinned);
+        messageRepo.save(msg);
+
+        String action = nowPinned ? "PIN" : "UNPIN";
+        ChatMessageDTO dto = ChatMessageDTO.fromWithAction(msg, action);
+        messagingTemplate.convertAndSend("/topic/chat." + msg.getRoom().getId(), dto);
+        return msg;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatMessage> getPinnedMessages(UUID roomId) {
+        return messageRepo.findPinnedByRoomId(roomId);
     }
 
     // ── ROOMS ─────────────────────────────────────────────────
@@ -137,7 +219,6 @@ public class ChatService {
                             .build();
                     return roomRepo.save(newRoom);
                 });
-        // Auto-join global room on first access
         boolean isMember = room.getParticipants().stream()
                 .anyMatch(p -> p.getUser().getId().equals(user.getId()));
         if (!isMember) {
@@ -156,12 +237,12 @@ public class ChatService {
             room.addParticipant(user);
             roomRepo.save(room);
 
-            // Notify other participants via STOMP
             ChatMessageDTO systemMsg = ChatMessageDTO.builder()
                     .roomId(roomId)
                     .senderName("System")
                     .content(user.getFullName() + " joined the chat.")
                     .messageType("SYSTEM")
+                    .action("NEW")
                     .createdAt(LocalDateTime.now())
                     .build();
             messagingTemplate.convertAndSend("/topic/chat." + roomId, systemMsg);
@@ -193,9 +274,8 @@ public class ChatService {
     public List<ChatMessage> getRoomHistory(UUID roomId, int page) {
         Page<ChatMessage> pageResult = messageRepo.findByRoomIdOrderByCreatedAtDesc(
                 roomId, PageRequest.of(page, 30));
-        // Reverse to show oldest-first for display
-        List<ChatMessage> msgs = new java.util.ArrayList<>(pageResult.getContent());
-        java.util.Collections.reverse(msgs);
+        List<ChatMessage> msgs = new ArrayList<>(pageResult.getContent());
+        Collections.reverse(msgs);
         return msgs;
     }
 
@@ -204,7 +284,6 @@ public class ChatService {
         return roomRepo.findRoomsByUserId(userId);
     }
 
-    /** Resolves the display name for a room — for DIRECT rooms returns the OTHER person's name */
     @Transactional(readOnly = true)
     public String getRoomDisplayName(ChatRoom room, UUID currentUserId) {
         if (room.getRoomType() != RoomType.DIRECT) {
@@ -221,23 +300,6 @@ public class ChatService {
     public long getUnreadCount(UUID roomId, UUID userId) {
         return messageRepo.countUnread(roomId, userId);
     }
-
-    @Transactional
-    public void deleteMessage(UUID messageId, AppUser user) {
-        ChatMessage msg = messageRepo.findById(messageId)
-                .orElseThrow(() -> new IllegalArgumentException("Message not found."));
-        if (!msg.getSender().getId().equals(user.getId())) {
-            throw new SecurityException("Not authorized to delete this message.");
-        }
-        msg.softDelete();
-        messageRepo.save(msg);
-
-        // Broadcast deletion event
-        ChatMessageDTO dto = ChatMessageDTO.from(msg);
-        messagingTemplate.convertAndSend("/topic/chat." + msg.getRoom().getId(), dto);
-    }
-
-    // ── PUBLIC room fetch ─────────────────────────────────────
 
     @Transactional(readOnly = true)
     public ChatRoom getRoomWithParticipants(UUID roomId) {

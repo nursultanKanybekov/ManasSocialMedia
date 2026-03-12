@@ -5,13 +5,233 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
-<main class="main-content" style="padding:0; display:flex; height:calc(100vh - var(--navbar-h)); overflow:hidden;">
-    <div class="chat-layout" style="display:flex;width:100%;height:100%;">
+<style>
+    /* ── Layout ────────────────────────────────────────────────── */
+    .chat-wrap { display:flex; width:100%; height:calc(100vh - var(--navbar-h)); overflow:hidden; }
 
-        <!-- Room List Sidebar -->
-        <aside class="chat-sidebar" style="width:280px;min-width:220px;background:#fff;border-right:1.5px solid #e8eaf6;display:flex;flex-direction:column;overflow:hidden;">
-            <div class="chat-sidebar-header" style="padding:18px 16px 12px;border-bottom:1.5px solid #e8eaf6;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);">
-                <h3 style="color:#fff;font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;margin:0;" th:text="#{chat.messages}">Messages</h3>
+    /* ── Room sidebar ───────────────────────────────────────────── */
+    .chat-rooms { width:280px; min-width:220px; background:#fff; border-right:1.5px solid #e8eaf6;
+        display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; }
+    .chat-rooms-header { padding:18px 16px 12px; border-bottom:1.5px solid #e8eaf6;
+        background:linear-gradient(135deg,#1b2a6b,#2d4a9e); }
+    .chat-rooms-header h3 { color:#fff; font-family:Montserrat,sans-serif; font-weight:800; font-size:16px; margin:0; }
+    .room-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+        text-decoration:none; color:inherit; margin-bottom:4px; transition:background .15s; }
+    .room-item:hover { background:#f0f2f8; }
+    .room-item.active { background:#e8eaf6; }
+    .room-avatar { width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+        color:white; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; position:relative; }
+    .room-unread { position:absolute; top:-4px; right:-4px; background:#25d366; color:white; font-size:10px;
+        font-weight:700; font-family:Montserrat,sans-serif; min-width:18px; height:18px; border-radius:9px;
+        display:flex; align-items:center; justify-content:center; padding:0 4px; border:2px solid #fff; }
+    .room-name { font-family:Montserrat,sans-serif; font-weight:600; font-size:13px; color:#1b2a6b;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .room-type { font-size:11px; color:#8a91a8; }
+
+    /* ── Chat main ──────────────────────────────────────────────── */
+    .chat-main { flex:1; display:flex; flex-direction:column; overflow:hidden; background:#f0f2fb; position:relative; }
+
+    /* ── Chat header ────────────────────────────────────────────── */
+    .chat-header { padding:12px 20px; background:#fff; border-bottom:1.5px solid #e8eaf6;
+        display:flex; align-items:center; gap:12px; flex-shrink:0; position:relative; z-index:10; }
+    .chat-header-icon { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+        color:white; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .chat-header-info { flex:1; min-width:0; }
+    .chat-header-name { font-family:Montserrat,sans-serif; font-weight:700; font-size:15px; color:#1b2a6b; }
+    .chat-header-sub  { font-size:11px; color:#8a91a8; }
+    .header-btn { background:#f0f2f8; border:none; border-radius:10px; padding:7px 13px; cursor:pointer;
+        font-family:Montserrat,sans-serif; font-weight:600; font-size:12px; color:#1b2a6b;
+        display:flex; align-items:center; gap:6px; transition:background .15s; flex-shrink:0; }
+    .header-btn:hover { background:#e8eaf6; }
+
+    /* ── Pinned banner ──────────────────────────────────────────── */
+    #pinned-banner { background:#fff; border-bottom:1.5px solid #e8eaf6; padding:8px 20px;
+        display:flex; align-items:center; gap:10px; cursor:pointer;
+        transition:background .15s; flex-shrink:0; }
+    #pinned-banner:hover { background:#f8f9ff; }
+    .pinned-bar { width:3px; height:36px; background:#1b2a6b; border-radius:3px; flex-shrink:0; }
+    .pinned-label { font-size:10px; font-weight:700; font-family:Montserrat,sans-serif; color:#1b2a6b; text-transform:uppercase; letter-spacing:.05em; }
+    .pinned-text { font-size:12px; color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pinned-close { margin-left:auto; background:none; border:none; color:#aaa; cursor:pointer; font-size:16px; padding:2px 6px; }
+    .pinned-close:hover { color:#555; }
+
+    /* ── Messages area ──────────────────────────────────────────── */
+    #chatMessages { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:4px; }
+    #chatMessages::-webkit-scrollbar { width:5px; }
+    #chatMessages::-webkit-scrollbar-track { background:transparent; }
+    #chatMessages::-webkit-scrollbar-thumb { background:#c0c8e8; border-radius:3px; }
+
+    /* ── Select mode top bar ────────────────────────────────────── */
+    #select-bar { display:none; background:linear-gradient(135deg,#1b2a6b,#2d4a9e); padding:10px 20px;
+        align-items:center; gap:12px; flex-shrink:0; }
+    #select-count { font-family:Montserrat,sans-serif; font-weight:700; font-size:13px; color:#fff; flex:1; }
+    .select-action-btn { background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:7px 14px;
+        cursor:pointer; font-family:Montserrat,sans-serif; font-weight:600; font-size:12px;
+        color:#fff; display:flex; align-items:center; gap:6px; transition:background .15s; }
+    .select-action-btn:hover { background:rgba(255,255,255,0.25); }
+    .select-action-btn.danger:hover { background:rgba(220,50,50,0.4); }
+
+    /* ── Message row ────────────────────────────────────────────── */
+    .msg-row { display:flex; gap:8px; padding:2px 0; position:relative;
+        transition:background .15s; border-radius:12px; }
+    .msg-row:hover { background:rgba(27,42,107,0.04); }
+    .msg-row.own { flex-direction:row-reverse; }
+    .msg-row.selected { background:rgba(27,42,107,0.1) !important; }
+
+    /* Checkbox for select mode */
+    .msg-checkbox { display:none; width:20px; height:20px; border-radius:50%; border:2px solid #1b2a6b;
+        background:#fff; flex-shrink:0; margin-top:14px; cursor:pointer; align-items:center;
+        justify-content:center; transition:.15s; }
+    .msg-checkbox.checked { background:#1b2a6b; }
+    .msg-checkbox.checked::after { content:"✓"; color:#fff; font-size:12px; font-weight:700; }
+    .select-mode .msg-checkbox { display:flex; }
+
+    .msg-avatar-img { width:34px; height:34px; border-radius:50%; object-fit:cover; flex-shrink:0;
+        border:2px solid #e8eaf6; margin-top:4px; }
+    .msg-body { max-width: min(480px, 72%); }
+    .msg-sender-name { font-size:11px; color:#8a91a8; margin-bottom:3px;
+        font-family:Montserrat,sans-serif; font-weight:600; }
+    .msg-row.own .msg-sender-name { text-align:right; }
+
+    /* Forwarded header */
+    .msg-forward-header { font-size:11px; color:#2d4a9e; font-style:italic; margin-bottom:4px;
+        font-family:Montserrat,sans-serif; font-weight:600; display:flex; align-items:center; gap:4px; }
+
+    /* Reply snippet inside bubble */
+    .reply-snippet { background:rgba(0,0,0,0.06); border-left:3px solid rgba(255,255,255,0.5);
+        border-radius:6px; padding:5px 9px; margin-bottom:6px; cursor:pointer; }
+    .msg-row:not(.own) .reply-snippet { background:rgba(27,42,107,0.07); border-left-color:#1b2a6b; }
+    .reply-snippet-name { font-size:10px; font-weight:700; font-family:Montserrat,sans-serif; color:rgba(255,255,255,0.8); }
+    .msg-row:not(.own) .reply-snippet-name { color:#1b2a6b; }
+    .reply-snippet-text { font-size:11px; color:rgba(255,255,255,0.7); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .msg-row:not(.own) .reply-snippet-text { color:#555; }
+
+    /* Bubble */
+    .msg-bubble { padding:8px 12px; border-radius:16px; font-size:14px; line-height:1.5; word-break:break-word;
+        position:relative; }
+    .msg-row:not(.own) .msg-bubble { background:#fff; color:#2c3e50; border:1.5px solid #e8eaf6;
+        border-bottom-left-radius:4px; }
+    .msg-row.own .msg-bubble { background:linear-gradient(135deg,#1b2a6b,#2d4a9e); color:white;
+        border-bottom-right-radius:4px; }
+    .msg-bubble.deleted { opacity:.6; font-style:italic; }
+    .msg-bubble.deleted .msg-text::before { content:"🚫 "; }
+
+    /* Edited label */
+    .msg-edited { font-size:10px; opacity:.6; margin-left:4px; font-style:italic; }
+
+    /* Time + status */
+    .msg-meta { display:flex; align-items:center; gap:4px; margin-top:3px; }
+    .msg-row.own .msg-meta { justify-content:flex-end; }
+    .msg-time { font-size:10px; color:#aaa; }
+    .msg-pin-icon { font-size:10px; color:#1b2a6b; }
+
+    /* Reaction hover zone — three-dot trigger */
+    .msg-actions-trigger { position:absolute; top:50%; transform:translateY(-50%);
+        opacity:0; transition:opacity .15s; display:flex; gap:2px; z-index:5; }
+    .msg-row:not(.own) .msg-actions-trigger { right:-32px; }
+    .msg-row.own .msg-actions-trigger { left:-32px; }
+    .msg-row:hover .msg-actions-trigger { opacity:1; }
+    .trig-btn { width:26px; height:26px; border-radius:50%; background:#fff; border:1.5px solid #e8eaf6;
+        display:flex; align-items:center; justify-content:center; cursor:pointer;
+        font-size:14px; color:#555; box-shadow:0 2px 6px rgba(0,0,0,0.1); transition:.15s; }
+    .trig-btn:hover { background:#f0f2f8; transform:scale(1.1); }
+
+    /* ── Context menu ───────────────────────────────────────────── */
+    #ctx-menu { position:fixed; background:#fff; border-radius:14px; box-shadow:0 12px 48px rgba(0,0,0,0.18);
+        padding:6px 0; min-width:200px; z-index:9999; display:none;
+        animation:ctxIn .15s cubic-bezier(.22,1,.36,1); border:1px solid rgba(0,0,0,0.06); }
+    @keyframes ctxIn { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
+    .ctx-item { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer;
+        font-size:13px; font-family:Montserrat,sans-serif; font-weight:600; color:#2c3e50;
+        transition:background .12s; }
+    .ctx-item:hover { background:#f5f6ff; }
+    .ctx-item.danger { color:#e74c3c; }
+    .ctx-item.danger:hover { background:#fff5f5; }
+    .ctx-item .ctx-icon { width:32px; height:32px; border-radius:50%; display:flex; align-items:center;
+        justify-content:center; font-size:16px; flex-shrink:0; background:#f0f2f8; }
+    .ctx-item.danger .ctx-icon { background:#fff0f0; }
+    .ctx-sep { height:1px; background:#f0f2f8; margin:4px 0; }
+
+    /* ── Reply bar (above input) ────────────────────────────────── */
+    #reply-bar { display:none; background:#fff; border-top:1.5px solid #e8eaf6; padding:8px 16px;
+        align-items:center; gap:10px; flex-shrink:0; }
+    .reply-bar-line { width:3px; height:40px; background:#1b2a6b; border-radius:3px; flex-shrink:0; }
+    .reply-bar-content { flex:1; min-width:0; }
+    .reply-bar-name { font-size:11px; font-weight:700; font-family:Montserrat,sans-serif; color:#1b2a6b; }
+    .reply-bar-text { font-size:12px; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .reply-bar-close { background:none; border:none; color:#aaa; cursor:pointer; font-size:18px; padding:0 4px;
+        transition:.15s; flex-shrink:0; }
+    .reply-bar-close:hover { color:#555; }
+
+    /* ── Edit bar ───────────────────────────────────────────────── */
+    #edit-bar { display:none; background:#fff8e1; border-top:1.5px solid #ffe082; padding:8px 16px;
+        align-items:center; gap:10px; flex-shrink:0; }
+    .edit-bar-icon { font-size:20px; flex-shrink:0; }
+    .edit-bar-label { font-size:11px; font-weight:700; font-family:Montserrat,sans-serif; color:#e65100; }
+    .edit-bar-text { font-size:12px; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .edit-bar-close { background:none; border:none; color:#aaa; cursor:pointer; font-size:18px; padding:0 4px; flex-shrink:0; }
+    .edit-bar-close:hover { color:#555; }
+
+    /* ── Typing indicator ───────────────────────────────────────── */
+    #typingIndicator { padding:5px 20px; font-size:12px; color:#8a91a8; font-style:italic; display:none; flex-shrink:0; }
+
+    /* ── Input area ─────────────────────────────────────────────── */
+    .chat-input-area { padding:12px 16px; background:#fff; border-top:1.5px solid #e8eaf6;
+        display:flex; gap:10px; align-items:flex-end; flex-shrink:0; }
+    #msgInput { flex:1; padding:10px 14px; border:1.5px solid #e0e3ef; border-radius:12px;
+        font-size:14px; font-family:Open Sans,sans-serif; resize:none; min-height:42px;
+        max-height:120px; outline:none; transition:border-color .2s; }
+    #msgInput:focus { border-color:#1b2a6b; }
+    .send-btn { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+        border:none; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center;
+        flex-shrink:0; transition:transform .15s, box-shadow .15s; }
+    .send-btn:hover { transform:scale(1.05); box-shadow:0 4px 14px rgba(27,42,107,.4); }
+
+    /* ── Members panel ──────────────────────────────────────────── */
+    #members-panel { position:absolute; top:0; right:0; width:260px; height:100%; background:#fff;
+        border-left:1.5px solid #e8eaf6; z-index:50; display:none; flex-direction:column;
+        overflow:hidden; box-shadow:-4px 0 20px rgba(0,0,0,.08); }
+
+    /* ── Forward modal ──────────────────────────────────────────── */
+    #forward-modal { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9000;
+        display:none; align-items:center; justify-content:center; animation:fadeIn .2s; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .forward-box { background:#fff; border-radius:18px; width:380px; max-width:95vw;
+        box-shadow:0 24px 72px rgba(0,0,0,.2); overflow:hidden; }
+    .forward-header { padding:18px 20px 14px; border-bottom:1.5px solid #f0f2f8;
+        font-family:Montserrat,sans-serif; font-weight:800; font-size:15px; color:#1b2a6b;
+        display:flex; justify-content:space-between; align-items:center; }
+    .forward-close-btn { background:none; border:none; font-size:20px; cursor:pointer; color:#aaa; }
+    .forward-rooms { max-height:320px; overflow-y:auto; padding:8px; }
+    .forward-room-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+        cursor:pointer; transition:background .15s; }
+    .forward-room-item:hover { background:#f0f2f8; }
+    .forward-room-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+        color:white; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+    .forward-room-name { font-family:Montserrat,sans-serif; font-weight:600; font-size:13px; color:#1b2a6b; }
+
+    /* ── System messages ────────────────────────────────────────── */
+    .msg-system { text-align:center; font-size:11px; color:#8a91a8; padding:4px 0; }
+    .msg-system span { background:rgba(255,255,255,.8); border-radius:10px; padding:3px 12px; }
+
+    /* ── Date separator ─────────────────────────────────────────── */
+    .date-sep { display:flex; align-items:center; gap:8px; margin:8px 0; }
+    .date-sep::before, .date-sep::after { content:''; flex:1; height:1px; background:#e0e3ef; }
+    .date-sep span { font-size:11px; color:#8a91a8; font-family:Montserrat,sans-serif;
+        font-weight:600; white-space:nowrap; background:#f0f2fb; padding:2px 10px; border-radius:10px; }
+
+    /* ── No room placeholder ────────────────────────────────────── */
+    .no-room { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column;
+        gap:12px; color:#8a91a8; background:#f8f9ff; }
+</style>
+
+<main class="main-content" style="padding:0;">
+    <div class="chat-wrap">
+
+        <!-- ── Room List Sidebar ─────────────────────────────────── -->
+        <aside class="chat-rooms">
+            <div class="chat-rooms-header">
+                <h3 th:text="#{chat.messages}">Messages</h3>
             </div>
 
             <!-- Quick links -->
@@ -31,85 +251,95 @@
             </div>
 
             <!-- Room list -->
-            <div class="room-list" style="flex:1;overflow-y:auto;padding:8px;">
-                <div th:if="${#lists.isEmpty(rooms)}" style="padding:20px;text-align:center;color:#8a91a8;font-size:13px;">
-                    No conversations yet
-                </div>
+            <div style="flex:1;overflow-y:auto;padding:8px;">
+                <div th:if="${#lists.isEmpty(rooms)}" style="padding:20px;text-align:center;color:#8a91a8;font-size:13px;">No conversations yet</div>
                 <a th:each="room : ${rooms}"
                    th:href="@{/chat/room/{id}(id=${room.id})}"
-                   style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:inherit;margin-bottom:4px;transition:background .15s;"
-                   th:style="${roomId != null and roomId == room.id} ? 'background:#e8eaf6;' : 'background:transparent;'"
-                   onmouseover="this.style.background='#f0f2f8'" onmouseout="this.style.background=(this.getAttribute('th:style')?.includes('e8eaf6') ? '#e8eaf6' : 'transparent')">
-                    <div style="position:relative;flex-shrink:0;">
-                        <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;">
-                            <span th:text="${room.roomType.name() == 'DIRECT'} ? '👤' : (${room.roomType.name() == 'FACULTY'} ? '🏫' : (${room.roomType.name() == 'GLOBAL'} ? '🌍' : '👥'))">👥</span>
-                        </div>
-                        <!-- Unread badge -->
+                   class="room-item"
+                   th:classappend="${roomId != null and roomId == room.id} ? ' active'">
+                    <div class="room-avatar">
+                        <span th:text="${room.roomType.name() == 'DIRECT'} ? '👤' : (${room.roomType.name() == 'FACULTY'} ? '🏫' : (${room.roomType.name() == 'GLOBAL'} ? '🌍' : '👥'))">👥</span>
                         <span th:if="${unreadCounts != null and unreadCounts[room.id] != null and unreadCounts[room.id] > 0}"
                               th:text="${unreadCounts[room.id] > 99 ? '99+' : unreadCounts[room.id]}"
-                              style="position:absolute;top:-4px;right:-4px;background:#25d366;color:white;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff;">0</span>
+                              class="room-unread"></span>
                     </div>
                     <div style="flex:1;min-width:0;">
-                        <div style="font-family:Montserrat,sans-serif;font-weight:600;font-size:13px;color:#1b2a6b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
-                             th:text="${roomNames != null and roomNames[room.id] != null ? roomNames[room.id] : (room.name != null ? room.name : 'Chat')}">Room</div>
-                        <div style="font-size:11px;color:#8a91a8;" th:text="${room.roomType}">Type</div>
+                        <div class="room-name" th:text="${roomNames != null and roomNames[room.id] != null ? roomNames[room.id] : (room.name != null ? room.name : 'Chat')}">Room</div>
+                        <div class="room-type" th:text="${room.roomType}">Type</div>
                     </div>
                 </a>
             </div>
         </aside>
 
-        <!-- Chat Main Area -->
-        <div th:if="${roomId != null}" style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#f8f9ff;position:relative;">
+        <!-- ── Chat Main Area ────────────────────────────────────── -->
+        <div th:if="${roomId != null}" class="chat-main" id="chatMain">
 
             <!-- Chat Header -->
-            <div style="padding:14px 20px;background:#fff;border-bottom:1.5px solid #e8eaf6;display:flex;align-items:center;gap:12px;min-height:60px;position:relative;">
-                <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💬</div>
-                <div style="flex:1;min-width:0;">
-                    <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:15px;color:#1b2a6b;" th:text="${currentRoom != null ? currentRoom.name : 'Chat'}">Chat Room</div>
-                    <div style="font-size:11px;color:#8a91a8;">
-                        <span th:text="${#lists.size(members)} + ' members'">0 members</span>
-                    </div>
+            <div class="chat-header">
+                <div class="chat-header-icon">💬</div>
+                <div class="chat-header-info">
+                    <div class="chat-header-name" th:text="${currentRoom != null ? currentRoom.name : 'Chat'}">Chat Room</div>
+                    <div class="chat-header-sub" th:text="${#lists.size(members)} + ' members'">0 members</div>
                 </div>
-                <!-- Members toggle button -->
-                <button onclick="toggleMembers()" title="Show members"
-                        style="background:#f0f2f8;border:none;border-radius:10px;padding:7px 13px;cursor:pointer;font-family:Montserrat,sans-serif;font-weight:600;font-size:12px;color:#1b2a6b;display:flex;align-items:center;gap:6px;flex-shrink:0;transition:background .15s;"
-                        onmouseover="this.style.background='#e8eaf6'" onmouseout="this.style.background='#f0f2f8'">
-                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
+                <button onclick="toggleMembers()" class="header-btn">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
                     Members
                 </button>
             </div>
 
-            <!-- Members Panel (slide-in from right) -->
-            <div id="members-panel"
-                 style="position:absolute;top:0;right:0;width:260px;height:100%;background:#fff;border-left:1.5px solid #e8eaf6;z-index:100;display:none;flex-direction:column;overflow:hidden;box-shadow:-4px 0 20px rgba(0,0,0,0.08);">
+            <!-- Pinned Message Banner -->
+            <div id="pinned-banner" style="display:none;" onclick="scrollToPinned()">
+                <div class="pinned-bar"></div>
+                <div style="flex:1;min-width:0;">
+                    <div class="pinned-label">📌 Pinned Message</div>
+                    <div class="pinned-text" id="pinned-text">...</div>
+                </div>
+                <button class="pinned-close" onclick="event.stopPropagation();hidePinnedBanner()">✕</button>
+            </div>
+
+            <!-- Select Mode Bar -->
+            <div id="select-bar" style="display:none;">
+                <span id="select-count">0 selected</span>
+                <button class="select-action-btn" onclick="forwardSelected()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="15,10 20,15 15,20"/><path d="M4 4v7a4 4 0 004 4h12"/>
+                    </svg>
+                    Forward
+                </button>
+                <button class="select-action-btn danger" onclick="deleteSelected()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                    </svg>
+                    Delete
+                </button>
+                <button class="select-action-btn" onclick="exitSelectMode()">✕ Cancel</button>
+            </div>
+
+            <!-- Members Panel -->
+            <div id="members-panel" style="display:none;flex-direction:column;">
                 <div style="padding:16px 16px 12px;border-bottom:1.5px solid #e8eaf6;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);">
-                    <span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;color:#fff;">
-                        Members (<span th:text="${#lists.size(members)}">0</span>)
-                    </span>
-                    <button onclick="toggleMembers()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+                <span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;color:#fff;">
+                    Members (<span th:text="${#lists.size(members)}">0</span>)
+                </span>
+                    <button onclick="toggleMembers()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:14px;">✕</button>
                 </div>
                 <div style="flex:1;overflow-y:auto;padding:8px;">
                     <div th:each="member : ${members}">
                         <a th:href="@{/profile/{id}(id=${member.user.id})}"
                            style="display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;text-decoration:none;color:inherit;transition:background .15s;"
                            onmouseover="this.style.background='#f0f2f8'" onmouseout="this.style.background='transparent'">
-                            <!-- Avatar -->
-                            <div style="position:relative;flex-shrink:0;">
-                                <img th:if="${member.user.profile != null and member.user.profile.avatarUrl != null}"
-                                     th:src="${member.user.profile.avatarUrl}"
-                                     style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #e8eaf6;" alt="avatar"/>
-                                <div th:if="${member.user.profile == null or member.user.profile.avatarUrl == null}"
-                                     style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;font-family:Montserrat,sans-serif;"
-                                     th:text="${#strings.substring(member.user.fullName,0,1)}">A</div>
-                            </div>
-                            <!-- Info -->
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-family:Montserrat,sans-serif;font-weight:600;font-size:13px;color:#1b2a6b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
-                                     th:text="${member.user.fullName}">Name</div>
-                                <div style="font-size:11px;color:#8a91a8;display:flex;align-items:center;gap:4px;">
-                                    <span class="role-badge" style="font-size:10px;padding:1px 6px;"
-                                          th:text="${member.user.role}">STUDENT</span>
-                                </div>
+                            <img th:if="${member.user.profile != null and member.user.profile.avatarUrl != null}"
+                                 th:src="${member.user.profile.avatarUrl}"
+                                 style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #e8eaf6;" alt="av"/>
+                            <div th:if="${member.user.profile == null or member.user.profile.avatarUrl == null}"
+                                 style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;font-family:Montserrat,sans-serif;"
+                                 th:text="${#strings.substring(member.user.fullName,0,1)}">A</div>
+                            <div>
+                                <div style="font-family:Montserrat,sans-serif;font-weight:600;font-size:13px;color:#1b2a6b;" th:text="${member.user.fullName}">Name</div>
+                                <div style="font-size:11px;color:#8a91a8;" th:text="${member.user.role}">STUDENT</div>
                             </div>
                         </a>
                     </div>
@@ -117,42 +347,102 @@
             </div>
 
             <!-- Message History -->
-            <div class="chat-messages" id="chatMessages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;">
+            <div id="chatMessages">
+                <!-- Date separator helper via JS, history rendered via th:each below -->
                 <div th:each="msg : ${history}"
-                     style="display:flex;gap:10px;max-width:75%;"
-                     th:style="${msg.sender.id == currentUser.id} ? 'align-self:flex-end;flex-direction:row-reverse;' : 'align-self:flex-start;'">
-                    <img th:src="${msg.sender.profile != null and msg.sender.profile.avatarUrl != null ? msg.sender.profile.avatarUrl : '/images/default-avatar.svg'}"
-                         style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e8eaf6;" alt="avatar"/>
-                    <div>
-                        <div style="font-size:11px;color:#8a91a8;margin-bottom:3px;font-family:Montserrat,sans-serif;font-weight:600;"
-                             th:style="${msg.sender.id == currentUser.id} ? 'text-align:right;' : ''"
-                             th:text="${msg.sender.fullName}">Sender</div>
-                        <div style="padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;word-break:break-word;"
-                             th:style="${msg.sender.id == currentUser.id} ? 'background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:white;border-bottom-right-radius:4px;' : 'background:white;color:#2c3e50;border:1.5px solid #e8eaf6;border-bottom-left-radius:4px;'"
-                             th:text="${msg.content}">Content</div>
-                        <div style="font-size:10px;color:#aaa;margin-top:3px;"
-                             th:style="${msg.sender.id == currentUser.id} ? 'text-align:right;' : ''"
-                             th:text="${#temporals.format(msg.createdAt, 'HH:mm')}">12:00</div>
+                     th:id="'msg-' + ${msg.id}"
+                     th:data-msg-id="${msg.id}"
+                     th:data-sender-id="${msg.sender.id}"
+                     th:data-own="${msg.sender.id == currentUser.id}"
+                     th:data-pinned="${msg.isPinned}"
+                     th:data-deleted="${msg.isDeleted}"
+                     th:data-content="${msg.content}"
+                     class="msg-row"
+                     th:classappend="${msg.sender.id == currentUser.id} ? ' own'">
+
+                    <!-- Select checkbox -->
+                    <div class="msg-checkbox" th:data-msg-id="${msg.id}" onclick="toggleSelect(this)"></div>
+
+                    <!-- Avatar -->
+                    <img th:src="${msg.sender.profile != null and msg.sender.profile.avatarUrl != null
+                               ? msg.sender.profile.avatarUrl : '/images/default-avatar.svg'}"
+                         class="msg-avatar-img" alt="av"/>
+
+                    <!-- Body -->
+                    <div class="msg-body">
+                        <div class="msg-sender-name" th:text="${msg.sender.fullName}">Sender</div>
+
+                        <!-- Bubble -->
+                        <div class="msg-bubble" th:classappend="${msg.isDeleted} ? ' deleted'">
+
+                            <!-- Forward header -->
+                            <div th:if="${msg.forwardedFrom != null}"
+                                 class="msg-forward-header">
+                                <span>↪</span>
+                                <span th:text="'Forwarded from ' + ${msg.forwardedFrom}">Forwarded</span>
+                            </div>
+
+                            <!-- Reply snippet -->
+                            <div th:if="${msg.replyToId != null}"
+                                 class="reply-snippet"
+                                 th:data-reply-id="${msg.replyToId}"
+                                 onclick="scrollToMessage(this.dataset.replyId)">
+                                <div class="reply-snippet-name" th:text="${msg.replyToSenderName}">Name</div>
+                                <div class="reply-snippet-text" th:text="${msg.replyToContent}">...</div>
+                            </div>
+
+                            <!-- Message text -->
+                            <span class="msg-text" th:text="${msg.content}">Content</span>
+                            <span th:if="${msg.isEdited}" class="msg-edited">edited</span>
+                        </div>
+
+                        <!-- Meta row -->
+                        <div class="msg-meta">
+                            <span th:if="${msg.isPinned}" class="msg-pin-icon">📌</span>
+                            <span class="msg-time" th:text="${#temporals.format(msg.createdAt, 'HH:mm')}">12:00</span>
+                        </div>
+                    </div>
+
+                    <!-- Context menu trigger -->
+                    <div class="msg-actions-trigger">
+                        <button class="trig-btn" onclick="openCtxMenu(event, this.closest('.msg-row'))" title="More">
+                            ···
+                        </button>
                     </div>
                 </div>
             </div>
 
             <!-- Typing Indicator -->
-            <div id="typingIndicator" style="padding:6px 20px;font-size:12px;color:#8a91a8;font-style:italic;display:none;">
-                <span id="typingText"></span>
+            <div id="typingIndicator"><span id="typingText"></span></div>
+
+            <!-- Reply Bar -->
+            <div id="reply-bar" style="display:none;">
+                <div class="reply-bar-line"></div>
+                <div class="reply-bar-content">
+                    <div class="reply-bar-name" id="reply-bar-name">Name</div>
+                    <div class="reply-bar-text" id="reply-bar-text">Message</div>
+                </div>
+                <button class="reply-bar-close" onclick="cancelReply()">✕</button>
             </div>
 
-            <!-- Message Input -->
-            <div style="padding:14px 16px;background:#fff;border-top:1.5px solid #e8eaf6;display:flex;gap:10px;align-items:flex-end;">
-                <textarea id="msgInput"
-                          placeholder="Type a message..."
-                          style="flex:1;padding:10px 14px;border:1.5px solid #e0e3ef;border-radius:12px;font-size:14px;font-family:Open Sans,sans-serif;resize:none;min-height:42px;max-height:120px;outline:none;transition:border-color .2s;"
-                          rows="1"
-                          onfocus="this.style.borderColor='#1b2a6b'"
-                          onblur="this.style.borderColor='#e0e3ef'"
-                          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
-                <button onclick="sendMessage()"
-                        style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);border:none;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <!-- Edit Bar -->
+            <div id="edit-bar" style="display:none;">
+                <span class="edit-bar-icon">✏️</span>
+                <div style="flex:1;min-width:0;">
+                    <div class="edit-bar-label">Edit message</div>
+                    <div class="edit-bar-text" id="edit-bar-text">Original text</div>
+                </div>
+                <button class="edit-bar-close" onclick="cancelEdit()">✕</button>
+            </div>
+
+            <!-- Input -->
+            <div class="chat-input-area">
+            <textarea id="msgInput"
+                      placeholder="Type a message..."
+                      rows="1"
+                      onkeydown="handleKey(event)"
+                      oninput="autoGrow(this);handleTyping();"></textarea>
+                <button class="send-btn" onclick="sendOrEdit()">
                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/>
                     </svg>
@@ -161,7 +451,7 @@
         </div>
 
         <!-- No room selected -->
-        <div th:if="${roomId == null}" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#8a91a8;background:#f8f9ff;">
+        <div th:if="${roomId == null}" class="no-room">
             <div style="font-size:56px;">💬</div>
             <h3 style="font-family:Montserrat,sans-serif;font-weight:700;color:#1b2a6b;">Select a conversation</h3>
             <p style="font-size:14px;">Choose a chat room from the left panel to start messaging</p>
@@ -169,75 +459,552 @@
     </div>
 </main>
 
+<!-- ── Context Menu ──────────────────────────────────────────── -->
+<div id="ctx-menu">
+    <div class="ctx-item" id="ctx-reply"    onclick="ctxReply()">    <span class="ctx-icon">↩️</span> Reply</div>
+    <div class="ctx-item" id="ctx-edit"     onclick="ctxEdit()">     <span class="ctx-icon">✏️</span> Edit</div>
+    <div class="ctx-item"                   onclick="ctxCopy()">     <span class="ctx-icon">📋</span> Copy</div>
+    <div class="ctx-item"                   onclick="ctxPin()">      <span class="ctx-icon" id="ctx-pin-icon">📌</span> <span id="ctx-pin-label">Pin</span></div>
+    <div class="ctx-item"                   onclick="ctxForward()">  <span class="ctx-icon">↪️</span> Forward</div>
+    <div class="ctx-item"                   onclick="ctxSelect()">   <span class="ctx-icon">☑️</span> Select</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item danger" id="ctx-delete" onclick="ctxDelete()"><span class="ctx-icon">🗑️</span> Delete</div>
+</div>
+
+<!-- ── Forward Modal ─────────────────────────────────────────── -->
+<div id="forward-modal">
+    <div class="forward-box">
+        <div class="forward-header">
+            Forward message
+            <button class="forward-close-btn" onclick="closeForwardModal()">✕</button>
+        </div>
+        <div class="forward-rooms" id="forward-rooms-list">
+            <!-- filled by JS -->
+        </div>
+    </div>
+</div>
+
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script th:inline="javascript">
-    const roomId = /*[[${roomId}]]*/ null;
-    const currentUserId = /*[[${currentUser != null ? currentUser.id : null}]]*/ null;
+    /*<![CDATA[*/
+    const ROOM_ID      = /*[[${roomId}]]*/ null;
+    const CUR_USER_ID  = /*[[${currentUser != null ? currentUser.id : null}]]*/ null;
+    const CSRF_TOKEN   = /*[[${_csrf != null ? _csrf.token : ''}]]*/ '';
+    const CSRF_HEADER  = /*[[${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}]]*/ 'X-CSRF-TOKEN';
 
-    // Auto-scroll to bottom
+    // Rooms for forward modal
+    const ALL_ROOMS = /*[[${rooms != null ? rooms.![{id: id, name: name, roomType: roomType}] : {}}]]*/ [];
+    const ROOM_NAMES = /*[[${roomNames}]]*/ {};
+
+    // Pinned messages from server
+    const PINNED_INIT = /*[[${pinnedMessages != null ? pinnedMessages.![{id: id, content: content}] : {}}]]*/ [];
+
+    // ── STATE ─────────────────────────────────────────────────────
+    let stompClient   = null;
+    let replyToId     = null;
+    let replyToName   = null;
+    let replyToText   = null;
+    let editingMsgId  = null;
+    let ctxMsgRow     = null;  // current context-menu target row
+    let selectMode    = false;
+    let selectedIds   = new Set();
+    let forwardMsgIds = []; // IDs to forward
+    let typingTimer;
+    let currentPinnedMsgId = null;
+
+    // ── INIT ──────────────────────────────────────────────────────
     const chatMessages = document.getElementById('chatMessages');
     if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    // WebSocket setup
-    let stompClient = null;
-    if (roomId) {
+    // Init pinned banner
+    if (PINNED_INIT.length > 0) {
+        showPinnedBanner(PINNED_INIT[0].id, PINNED_INIT[0].content);
+    }
+
+    // ── WEBSOCKET ─────────────────────────────────────────────────
+    if (ROOM_ID) {
         const socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
         stompClient.debug = null;
         stompClient.connect({}, function() {
-            stompClient.subscribe('/topic/chat.' + roomId, function(msg) {
-                const data = JSON.parse(msg.body);
-                appendMessage(data);
+            stompClient.subscribe('/topic/chat.' + ROOM_ID, function(frame) {
+                const data = JSON.parse(frame.body);
+                handleWsMessage(data);
             });
-            stompClient.subscribe('/topic/typing.' + roomId, function(msg) {
-                const data = JSON.parse(msg.body);
-                if (data.userId !== currentUserId) showTyping(data.userName);
+            stompClient.subscribe('/topic/typing.' + ROOM_ID, function(frame) {
+                const data = JSON.parse(frame.body);
+                if (data.userId !== CUR_USER_ID) showTyping(data.userName);
             });
         });
     }
 
-    function appendMessage(msg) {
+    function handleWsMessage(data) {
+        const action = data.action || 'NEW';
+        if (action === 'NEW')   appendMessage(data);
+        else if (action === 'EDIT')   updateMessage(data);
+        else if (action === 'DELETE') markDeleted(data);
+        else if (action === 'PIN')    handlePin(data, true);
+        else if (action === 'UNPIN')  handlePin(data, false);
+    }
+
+    // ── RENDER NEW MESSAGE ─────────────────────────────────────────
+    function appendMessage(data) {
         if (!chatMessages) return;
-        const isOwn = msg.senderId === currentUserId;
-        const div = document.createElement('div');
-        div.style.cssText = `display:flex;gap:10px;max-width:75%;${isOwn ? 'align-self:flex-end;flex-direction:row-reverse;' : 'align-self:flex-start;'}`;
-        div.innerHTML = `
-            <img src="${msg.senderAvatarUrl || '/images/default-avatar.svg'}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e8eaf6;" />
-            <div>
-                <div style="font-size:11px;color:#8a91a8;margin-bottom:3px;font-family:Montserrat,sans-serif;font-weight:600;${isOwn?'text-align:right;':''}">${msg.senderName}</div>
-                <div style="padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;word-break:break-word;${isOwn?'background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:white;border-bottom-right-radius:4px;':'background:white;color:#2c3e50;border:1.5px solid #e8eaf6;border-bottom-left-radius:4px;'}">${msg.content}</div>
-                <div style="font-size:10px;color:#aaa;margin-top:3px;${isOwn?'text-align:right;':''}">${msg.time || ''}</div>
-            </div>`;
+        const isOwn = data.senderId === CUR_USER_ID;
+        const div = buildMsgRow(data, isOwn);
         chatMessages.appendChild(div);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    let typingTimer;
-    function showTyping(name) {
-        const ind = document.getElementById('typingIndicator');
-        document.getElementById('typingText').textContent = name + ' is typing...';
-        if (ind) ind.style.display = 'block';
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => { if (ind) ind.style.display = 'none'; }, 3000);
+    function buildMsgRow(data, isOwn) {
+        const div = document.createElement('div');
+        div.id = 'msg-' + data.id;
+        div.className = 'msg-row' + (isOwn ? ' own' : '');
+        div.dataset.msgId    = data.id;
+        div.dataset.senderId = data.senderId;
+        div.dataset.own      = isOwn ? 'true' : 'false';
+        div.dataset.pinned   = data.isPinned ? 'true' : 'false';
+        div.dataset.deleted  = data.isDeleted ? 'true' : 'false';
+        div.dataset.content  = data.content || '';
+
+        const avatar = data.senderAvatarUrl || '/images/default-avatar.svg';
+        const time   = data.time || formatTime(data.createdAt);
+
+        let forwardHtml = '';
+        if (data.forwardedFrom) {
+            forwardHtml = `<div class="msg-forward-header"><span>↪</span><span>Forwarded from ${esc(data.forwardedFrom)}</span></div>`;
+        }
+
+        let replyHtml = '';
+        if (data.replyToId) {
+            replyHtml = `<div class="reply-snippet" data-reply-id="${data.replyToId}" onclick="scrollToMessage('${data.replyToId}')">
+            <div class="reply-snippet-name">${esc(data.replyToSenderName || '')}</div>
+            <div class="reply-snippet-text">${esc(data.replyToContent || '')}</div>
+        </div>`;
+        }
+
+        const editedLabel = data.isEdited ? '<span class="msg-edited">edited</span>' : '';
+        const pinIcon = data.isPinned ? '<span class="msg-pin-icon">📌</span>' : '';
+        const isSystem = data.messageType === 'SYSTEM';
+
+        if (isSystem) {
+            div.className = 'msg-system';
+            div.innerHTML = `<span>${esc(data.content)}</span>`;
+            return div;
+        }
+
+        div.innerHTML = `
+        <div class="msg-checkbox" data-msg-id="${data.id}" onclick="toggleSelect(this)"></div>
+        <img src="${esc(avatar)}" class="msg-avatar-img" alt="av"/>
+        <div class="msg-body">
+            <div class="msg-sender-name">${esc(data.senderName || '')}</div>
+            <div class="msg-bubble${data.isDeleted ? ' deleted' : ''}">
+                ${forwardHtml}${replyHtml}
+                <span class="msg-text">${esc(data.content || '')}</span>${editedLabel}
+            </div>
+            <div class="msg-meta">${pinIcon}<span class="msg-time">${esc(time)}</span></div>
+        </div>
+        <div class="msg-actions-trigger">
+            <button class="trig-btn" onclick="openCtxMenu(event,this.closest('.msg-row'))" title="More">···</button>
+        </div>`;
+        return div;
+    }
+
+    // ── UPDATE / DELETE / PIN ──────────────────────────────────────
+    function updateMessage(data) {
+        const row = document.getElementById('msg-' + data.id);
+        if (!row) return;
+        const textEl = row.querySelector('.msg-text');
+        if (textEl) textEl.textContent = data.content;
+        const bubble = row.querySelector('.msg-bubble');
+        if (bubble) {
+            let edited = bubble.querySelector('.msg-edited');
+            if (!edited) {
+                edited = document.createElement('span');
+                edited.className = 'msg-edited';
+                edited.textContent = 'edited';
+                bubble.appendChild(edited);
+            }
+        }
+        row.dataset.content = data.content;
+        row.dataset.edited  = 'true';
+    }
+
+    function markDeleted(data) {
+        const row = document.getElementById('msg-' + data.id);
+        if (!row) return;
+        const bubble = row.querySelector('.msg-bubble');
+        if (bubble) {
+            bubble.classList.add('deleted');
+            const t = bubble.querySelector('.msg-text');
+            if (t) t.textContent = 'This message was deleted';
+        }
+        row.dataset.deleted = 'true';
+        // Remove context trigger
+        const trig = row.querySelector('.msg-actions-trigger');
+        if (trig) trig.remove();
+    }
+
+    function handlePin(data, pinned) {
+        const row = document.getElementById('msg-' + data.id);
+        if (row) {
+            row.dataset.pinned = pinned ? 'true' : 'false';
+            const meta = row.querySelector('.msg-meta');
+            if (meta) {
+                const existing = meta.querySelector('.msg-pin-icon');
+                if (pinned && !existing) {
+                    const s = document.createElement('span');
+                    s.className = 'msg-pin-icon'; s.textContent = '📌';
+                    meta.insertBefore(s, meta.firstChild);
+                } else if (!pinned && existing) {
+                    existing.remove();
+                }
+            }
+        }
+        if (pinned) {
+            showPinnedBanner(data.id, data.content);
+        } else if (currentPinnedMsgId === data.id) {
+            hidePinnedBanner();
+        }
+    }
+
+    // ── PINNED BANNER ─────────────────────────────────────────────
+    function showPinnedBanner(msgId, content) {
+        currentPinnedMsgId = msgId;
+        document.getElementById('pinned-text').textContent = content;
+        document.getElementById('pinned-banner').style.display = 'flex';
+    }
+    function hidePinnedBanner() {
+        document.getElementById('pinned-banner').style.display = 'none';
+        currentPinnedMsgId = null;
+    }
+    function scrollToPinned() {
+        if (currentPinnedMsgId) scrollToMessage(currentPinnedMsgId);
+    }
+
+    // ── SEND / EDIT ────────────────────────────────────────────────
+    function sendOrEdit() {
+        if (editingMsgId) { commitEdit(); } else { sendMessage(); }
     }
 
     function sendMessage() {
         const input = document.getElementById('msgInput');
         const content = input ? input.value.trim() : '';
         if (!content || !stompClient) return;
-        stompClient.send('/app/chat.send/' + roomId, {}, JSON.stringify({ content, messageType: 'TEXT' }));
+
+        const payload = { content, messageType: 'TEXT' };
+        if (replyToId) {
+            payload.replyToId = replyToId;
+        }
+        stompClient.send('/app/chat.send/' + ROOM_ID, {}, JSON.stringify(payload));
         input.value = '';
         input.style.height = 'auto';
+        cancelReply();
     }
-</script>
-<script>
+
+    function commitEdit() {
+        const input = document.getElementById('msgInput');
+        const content = input ? input.value.trim() : '';
+        if (!content || !stompClient || !editingMsgId) return;
+        stompClient.send('/app/chat.edit/' + editingMsgId, {}, JSON.stringify({ content }));
+        input.value = '';
+        input.style.height = 'auto';
+        cancelEdit();
+    }
+
+    // ── REPLY ──────────────────────────────────────────────────────
+    function startReply(msgId, senderName, text) {
+        cancelEdit();
+        replyToId   = msgId;
+        replyToName = senderName;
+        replyToText = text;
+        document.getElementById('reply-bar-name').textContent = senderName;
+        document.getElementById('reply-bar-text').textContent = text;
+        document.getElementById('reply-bar').style.display = 'flex';
+        document.getElementById('msgInput').focus();
+    }
+    function cancelReply() {
+        replyToId = replyToName = replyToText = null;
+        document.getElementById('reply-bar').style.display = 'none';
+    }
+
+    // ── EDIT ───────────────────────────────────────────────────────
+    function startEdit(msgId, content) {
+        cancelReply();
+        editingMsgId = msgId;
+        document.getElementById('edit-bar-text').textContent = content;
+        document.getElementById('edit-bar').style.display = 'flex';
+        const input = document.getElementById('msgInput');
+        input.value = content;
+        input.focus();
+        autoGrow(input);
+    }
+    function cancelEdit() {
+        editingMsgId = null;
+        document.getElementById('edit-bar').style.display = 'none';
+        document.getElementById('msgInput').value = '';
+    }
+
+    // ── CONTEXT MENU ──────────────────────────────────────────────
+    const ctxMenu = document.getElementById('ctx-menu');
+    document.addEventListener('click', () => closeCtxMenu());
+    document.addEventListener('contextmenu', e => {
+        const row = e.target.closest('.msg-row');
+        if (row && !row.dataset.deleted?.includes('true') && !row.classList.contains('msg-system')) {
+            e.preventDefault();
+            openCtxMenu(e, row);
+        }
+    });
+
+    function openCtxMenu(e, row) {
+        e.stopPropagation();
+        ctxMsgRow = row;
+        const isOwn     = row.dataset.own === 'true';
+        const isPinned  = row.dataset.pinned === 'true';
+        const isDeleted = row.dataset.deleted === 'true';
+
+        document.getElementById('ctx-edit').style.display   = isOwn && !isDeleted ? 'flex' : 'none';
+        document.getElementById('ctx-delete').style.display = isOwn && !isDeleted ? 'flex' : 'none';
+        document.getElementById('ctx-pin-icon').textContent = isPinned ? '📌' : '📌';
+        document.getElementById('ctx-pin-label').textContent = isPinned ? 'Unpin' : 'Pin';
+
+        const x = e.clientX, y = e.clientY;
+        const mw = 210, mh = ctxMenu.offsetHeight || 280;
+        ctxMenu.style.left = (x + mw > window.innerWidth  ? x - mw : x) + 'px';
+        ctxMenu.style.top  = (y + mh > window.innerHeight ? y - mh : y) + 'px';
+        ctxMenu.style.display = 'block';
+
+        // Pulse the row
+        row.style.background = 'rgba(27,42,107,0.06)';
+        setTimeout(() => { if (ctxMsgRow !== row) row.style.background = ''; }, 600);
+    }
+    function closeCtxMenu() {
+        ctxMenu.style.display = 'none';
+        if (ctxMsgRow) { ctxMsgRow.style.background = ''; ctxMsgRow = null; }
+    }
+
+    function ctxReply() {
+        closeCtxMenu();
+        if (!ctxMsgRow) return;
+        const row     = ctxMsgRow;
+        const msgId   = row.dataset.msgId;
+        const name    = row.querySelector('.msg-sender-name')?.textContent?.trim() || '';
+        const content = row.dataset.content || '';
+        startReply(msgId, name, content.length > 80 ? content.substring(0, 80) + '…' : content);
+        ctxMsgRow = null;
+    }
+
+    function ctxEdit() {
+        closeCtxMenu();
+        if (!ctxMsgRow) return;
+        const row = ctxMsgRow;
+        startEdit(row.dataset.msgId, row.dataset.content || '');
+        ctxMsgRow = null;
+    }
+
+    function ctxCopy() {
+        closeCtxMenu();
+        const content = ctxMsgRow?.dataset.content || '';
+        navigator.clipboard.writeText(content).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = content; document.body.appendChild(ta);
+            ta.select(); document.execCommand('copy'); ta.remove();
+        });
+        showToast('Copied!', '📋');
+        ctxMsgRow = null;
+    }
+
+    function ctxPin() {
+        closeCtxMenu();
+        if (!ctxMsgRow || !stompClient) return;
+        const msgId = ctxMsgRow.dataset.msgId;
+        stompClient.send('/app/chat.pin/' + msgId, {}, '{}');
+        ctxMsgRow = null;
+    }
+
+    function ctxForward() {
+        closeCtxMenu();
+        if (!ctxMsgRow) return;
+        forwardMsgIds = [ctxMsgRow.dataset.msgId];
+        ctxMsgRow = null;
+        openForwardModal();
+    }
+
+    function ctxSelect() {
+        closeCtxMenu();
+        if (!ctxMsgRow) return;
+        enterSelectMode();
+        const cb = ctxMsgRow.querySelector('.msg-checkbox');
+        if (cb) toggleSelect(cb);
+        ctxMsgRow = null;
+    }
+
+    function ctxDelete() {
+        closeCtxMenu();
+        if (!ctxMsgRow || !stompClient) return;
+        const msgId = ctxMsgRow.dataset.msgId;
+        ctxMsgRow = null;
+        if (!confirm('Delete this message?')) return;
+        stompClient.send('/app/chat.delete/' + msgId, {}, '{}');
+    }
+
+    // ── SELECT MODE ───────────────────────────────────────────────
+    function enterSelectMode() {
+        selectMode = true;
+        selectedIds.clear();
+        document.getElementById('chatMessages').classList.add('select-mode');
+        document.getElementById('select-bar').style.display = 'flex';
+        updateSelectCount();
+    }
+    function exitSelectMode() {
+        selectMode = false;
+        selectedIds.clear();
+        document.getElementById('chatMessages').classList.remove('select-mode');
+        document.getElementById('select-bar').style.display = 'none';
+        document.querySelectorAll('.msg-row.selected').forEach(r => r.classList.remove('selected'));
+        document.querySelectorAll('.msg-checkbox.checked').forEach(c => c.classList.remove('checked'));
+    }
+    function toggleSelect(cb) {
+        if (!selectMode) { enterSelectMode(); }
+        const msgId = cb.dataset.msgId;
+        const row = cb.closest('.msg-row');
+        if (selectedIds.has(msgId)) {
+            selectedIds.delete(msgId);
+            cb.classList.remove('checked');
+            row.classList.remove('selected');
+        } else {
+            selectedIds.add(msgId);
+            cb.classList.add('checked');
+            row.classList.add('selected');
+        }
+        updateSelectCount();
+    }
+    function updateSelectCount() {
+        document.getElementById('select-count').textContent = selectedIds.size + ' selected';
+    }
+    function deleteSelected() {
+        if (selectedIds.size === 0) return;
+        if (!confirm('Delete ' + selectedIds.size + ' message(s)?')) return;
+        selectedIds.forEach(id => {
+            if (stompClient) stompClient.send('/app/chat.delete/' + id, {}, '{}');
+        });
+        exitSelectMode();
+    }
+    function forwardSelected() {
+        if (selectedIds.size === 0) return;
+        forwardMsgIds = Array.from(selectedIds);
+        exitSelectMode();
+        openForwardModal();
+    }
+
+    // ── FORWARD MODAL ─────────────────────────────────────────────
+    function openForwardModal() {
+        const list = document.getElementById('forward-rooms-list');
+        list.innerHTML = '';
+        const rooms = ALL_ROOMS.length ? ALL_ROOMS : [];
+        if (!rooms.length) {
+            list.innerHTML = '<div style="padding:20px;text-align:center;color:#8a91a8;">No rooms available</div>';
+        } else {
+            rooms.forEach(room => {
+                const name  = ROOM_NAMES[room.id] || room.name || 'Chat';
+                const emoji = room.roomType === 'DIRECT' ? '👤' : (room.roomType === 'FACULTY' ? '🏫' : (room.roomType === 'GLOBAL' ? '🌍' : '👥'));
+                const div = document.createElement('div');
+                div.className = 'forward-room-item';
+                div.innerHTML = `<div class="forward-room-avatar">${emoji}</div>
+                <div class="forward-room-name">${esc(name)}</div>`;
+                div.onclick = () => doForward(room.id);
+                list.appendChild(div);
+            });
+        }
+        document.getElementById('forward-modal').style.display = 'flex';
+    }
+    function closeForwardModal() {
+        document.getElementById('forward-modal').style.display = 'none';
+        forwardMsgIds = [];
+    }
+    function doForward(targetRoomId) {
+        closeForwardModal();
+        if (!stompClient || !forwardMsgIds.length) return;
+        forwardMsgIds.forEach(msgId => {
+            stompClient.send('/app/chat.send/' + targetRoomId, {}, JSON.stringify({
+                content: '(forwarded)',
+                messageType: 'TEXT',
+                forwardedFromId: msgId
+            }));
+        });
+        showToast('Forwarded!', '↪️');
+        if (targetRoomId !== ROOM_ID) {
+            setTimeout(() => window.location.href = '/chat/room/' + targetRoomId, 400);
+        }
+    }
+
+    // ── SCROLL TO MESSAGE ──────────────────────────────────────────
+    function scrollToMessage(msgId) {
+        const el = document.getElementById('msg-' + msgId);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.transition = 'background .2s';
+        el.style.background = 'rgba(27,42,107,0.12)';
+        setTimeout(() => { el.style.background = ''; }, 1400);
+    }
+
+    // ── TYPING ────────────────────────────────────────────────────
+    function handleTyping() {
+        if (!stompClient) return;
+        clearTimeout(typingTimer);
+        stompClient.send('/app/chat.typing/' + ROOM_ID, {}, '{}');
+        typingTimer = setTimeout(() => {}, 3000);
+    }
+    let hideTypingTimer;
+    function showTyping(name) {
+        const ind  = document.getElementById('typingIndicator');
+        const text = document.getElementById('typingText');
+        text.textContent = name + ' is typing…';
+        ind.style.display = 'block';
+        clearTimeout(hideTypingTimer);
+        hideTypingTimer = setTimeout(() => { ind.style.display = 'none'; }, 3000);
+    }
+
+    // ── KEY HANDLER ───────────────────────────────────────────────
+    function handleKey(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendOrEdit(); }
+        if (e.key === 'Escape') { cancelEdit(); cancelReply(); }
+    }
+
+    // ── UI HELPERS ─────────────────────────────────────────────────
+    function autoGrow(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
     function toggleMembers() {
-        var panel = document.getElementById('members-panel');
-        if (!panel) return;
-        var isOpen = panel.style.display === 'flex';
-        panel.style.display = isOpen ? 'none' : 'flex';
+        const p = document.getElementById('members-panel');
+        if (!p) return;
+        p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
     }
+    function esc(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function formatTime(dt) {
+        if (!dt) return '';
+        const d = new Date(dt);
+        return (d.getHours()+'').padStart(2,'0') + ':' + (d.getMinutes()+'').padStart(2,'0');
+    }
+
+    // ── MINI TOAST ────────────────────────────────────────────────
+    function showToast(msg, icon) {
+        const t = document.createElement('div');
+        t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(27,42,107,.92);color:#fff;padding:8px 20px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;z-index:9999;display:flex;align-items:center;gap:7px;box-shadow:0 6px 20px rgba(0,0,0,.25);animation:ctxIn .2s;pointer-events:none;';
+        t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 1800);
+    }
+
+    // Close forward modal on backdrop click
+    document.getElementById('forward-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeForwardModal();
+    });
+    /*]]>*/
 </script>
 </body>
 </html>
