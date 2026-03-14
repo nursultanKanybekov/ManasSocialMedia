@@ -39,6 +39,37 @@
                     <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
                 </svg>
             </button>
+            <!-- Video Meet button — shows "Join" with pulse when meeting is live -->
+            <a th:href="@{/channels/{id}/meet(id=${room.id})}"
+               id="meet-btn"
+               th:data-active="${meetingActive}"
+               th:title="${meetingActive} ? 'Join ongoing meeting (' + ${meetingCount} + ' in call)' : 'Start video meeting'"
+               th:style="${meetingActive}
+                   ? 'background:#059669;animation:meetPulse 2s infinite;'
+                   : 'background:rgba(255,255,255,0.18);'"
+               style="border:none;color:#fff;border-radius:10px;padding:0 16px;height:36px;
+                      cursor:pointer;display:flex;align-items:center;gap:7px;
+                      font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;
+                      text-decoration:none;transition:background .15s;flex-shrink:0;"
+               onmouseover="this.style.background=(this.dataset.active==='true'?'#047857':'rgba(255,255,255,0.28)')"
+               onmouseout="this.style.background=(this.dataset.active==='true'?'#059669':'rgba(255,255,255,0.18)')">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                    <polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                </svg>
+                <span id="meet-btn-label" th:text="${meetingActive} ? 'Join Meeting' : 'Meet'">Meet</span>
+                <span id="chat-meet-badge"
+                      th:if="${meetingActive}" th:text="${meetingCount}"
+                      style="background:rgba(255,255,255,.25);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800;"></span>
+                <span id="chat-meet-badge-hidden" th:unless="${meetingActive}"
+                      style="display:none;background:rgba(255,255,255,.25);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800;"></span>
+            </a>
+            <style>
+                @keyframes meetPulse {
+                    0%   { box-shadow: 0 0 0 0   rgba(5,150,105,.7); }
+                    70%  { box-shadow: 0 0 0 10px rgba(5,150,105,0); }
+                    100% { box-shadow: 0 0 0 0   rgba(5,150,105,0); }
+                }
+            </style>
             <!-- Add member (canManage) -->
             <button th:if="${canManage}" onclick="openAddMemberPanel()" title="Add member"
                     style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;"
@@ -60,6 +91,17 @@
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <button type="submit" style="background:#27ae60;color:white;border:none;padding:7px 16px;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">Join</button>
             </form>
+            <!-- Delete channel — owner only -->
+            <button th:if="${isOwner}" onclick="openDeleteModal()"
+                    title="Delete channel"
+                    style="background:rgba(192,57,43,0.85);border:none;color:#fff;border-radius:8px;
+                           padding:0 14px;height:34px;cursor:pointer;display:flex;align-items:center;gap:6px;
+                           font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;
+                           transition:background .15s;flex-shrink:0;"
+                    onmouseover="this.style.background='rgba(192,57,43,1)'"
+                    onmouseout="this.style.background='rgba(192,57,43,0.85)'">
+                🗑 Delete
+            </button>
         </div>
     </div>
 
@@ -243,6 +285,42 @@
     </style>
     <!-- Toast -->
     <div id="ch-toast" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(27,42,107,.92);color:#fff;padding:9px 22px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none;"></div>
+
+    <!-- ── Delete Channel Modal ──────────────────────────────── -->
+    <div id="delete-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;
+                                   align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:18px;padding:32px;max-width:400px;width:92vw;
+                    box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center;">
+            <div style="font-size:44px;margin-bottom:12px;">🗑</div>
+            <div style="font-family:Montserrat,sans-serif;font-size:18px;font-weight:800;
+                        color:#0d1b4b;margin-bottom:10px;">Delete Channel?</div>
+            <div style="font-size:13px;color:#6b7280;margin-bottom:6px;">
+                You are about to permanently delete
+            </div>
+            <div style="font-family:Montserrat,sans-serif;font-size:15px;font-weight:700;
+                        color:#ef4444;margin-bottom:6px;" th:text="|&quot;${room.name}&quot;|"></div>
+            <div style="font-size:12px;color:#9ca3af;margin-bottom:24px;">
+                All messages and history will be erased. This cannot be undone.
+            </div>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button onclick="closeDeleteModal()"
+                        style="background:#f3f4f6;border:none;color:#374151;border-radius:10px;
+                               padding:10px 24px;font-family:Montserrat,sans-serif;font-weight:700;
+                               font-size:13px;cursor:pointer;transition:background .15s;"
+                        onmouseover="this.style.background='#e5e7eb'"
+                        onmouseout="this.style.background='#f3f4f6'">Cancel</button>
+                <form th:action="@{/channels/{id}/delete(id=${room.id})}" method="post" style="margin:0;">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit"
+                            style="background:#ef4444;border:none;color:#fff;border-radius:10px;
+                                   padding:10px 24px;font-family:Montserrat,sans-serif;font-weight:700;
+                                   font-size:13px;cursor:pointer;transition:background .15s;"
+                            onmouseover="this.style.background='#dc2626'"
+                            onmouseout="this.style.background='#ef4444'">Yes, Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </main>
 
 <script th:inline="javascript">
@@ -422,6 +500,23 @@
         setTimeout(() => t.style.display = 'none', 2000);
     }
 
+    // Assign to window so onclick attributes always find them
+    window.openDeleteModal = function() {
+        const m = document.getElementById('delete-modal');
+        if (m) m.style.display = 'flex';
+    };
+    window.closeDeleteModal = function() {
+        const m = document.getElementById('delete-modal');
+        if (m) m.style.display = 'none';
+    };
+    // Close modal on backdrop click — null-safe
+    const _delModal = document.getElementById('delete-modal');
+    if (_delModal) {
+        _delModal.addEventListener('click', function(e) {
+            if (e.target === this) window.closeDeleteModal();
+        });
+    }
+
     function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
     // ── ATTACH MENU ───────────────────────────────────────────────
@@ -574,6 +669,73 @@
     });
 
     /*]]>*/
+
+    /* ── Live meeting status via WebSocket ────────────────────────────
+       Subscribes to /topic/meet.{roomId} to detect when a meeting
+       starts or ends, then updates the Meet button in real time.
+    ────────────────────────────────────────────────────────────────── */
+    (function() {
+        function updateMeetBtn(active, count) {
+            const btn   = document.getElementById('meet-btn');
+            const label = document.getElementById('meet-btn-label');
+            if (!btn) return;
+            btn.dataset.active = active ? 'true' : 'false';
+
+            if (active) {
+                btn.style.background = '#059669';
+                btn.style.animation  = 'meetPulse 2s infinite';
+                btn.title = 'Join ongoing meeting (' + count + ' in call)';
+                if (label) label.textContent = 'Join Meeting';
+                let b = document.getElementById('chat-meet-badge');
+                if (!b) { b = document.getElementById('chat-meet-badge-hidden'); if (b) b.id = 'chat-meet-badge'; }
+                if (b) { b.style.display = ''; b.textContent = count; }
+            } else {
+                btn.style.background = 'rgba(255,255,255,0.18)';
+                btn.style.animation  = 'none';
+                btn.title = 'Start video meeting';
+                if (label) label.textContent = 'Meet';
+                const b = document.getElementById('chat-meet-badge');
+                if (b) b.style.display = 'none';
+            }
+        }
+
+        function connectMeetStatus() {
+            if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                setTimeout(connectMeetStatus, 500); return;
+            }
+            const client = Stomp.over(new SockJS('/ws'));
+            client.debug = null;
+            client.connect({}, function() {
+                // Listen to meeting room broadcasts
+                client.subscribe('/topic/meet.' + roomId, function(frame) {
+                    try {
+                        const msg = JSON.parse(frame.body);
+                        if (msg.type === 'JOINED' || msg.type === 'LEFT') {
+                            const count = msg.totalCount || 0;
+                            updateMeetBtn(count > 0, count);
+                        }
+                    } catch(e) {}
+                });
+
+                // Also catch MEET_STARTED from user-level notifications
+                // (already handled by global header WS, but keep btn in sync)
+                client.subscribe('/topic/meet.status.' + roomId, function(frame) {
+                    try {
+                        const msg = JSON.parse(frame.body);
+                        updateMeetBtn(msg.active, msg.count);
+                    } catch(e) {}
+                });
+            }, function() { setTimeout(connectMeetStatus, 5000); });
+        }
+
+        // Poll once on page load to sync with any in-progress meeting
+        fetch('/channels/' + roomId + '/meet/status')
+            .then(r => r.json())
+            .then(d => updateMeetBtn(d.active, d.count))
+            .catch(() => {});
+
+        connectMeetStatus();
+    })();
 </script>
 </body>
 </html>

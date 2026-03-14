@@ -129,6 +129,7 @@
             .mn-toast-progress-inner.like    { background: #f43f5e; }
             .mn-toast-progress-inner.comment { background: #3b82f6; }
             .mn-toast-progress-inner.reg     { background: #8b5cf6; }
+            .mn-toast-progress-inner.meet    { background: #0d9488; }
             .mn-toast-progress-inner.default { background: #6366f1; }
 
             /* ── Body ── */
@@ -187,6 +188,7 @@
             .mn-toast-label.chat    { color: #34d399; }
             .mn-toast-label.like    { color: #fb7185; }
             .mn-toast-label.comment { color: #60a5fa; }
+            .mn-toast-label.meet    { color: #2dd4bf; }
             .mn-toast-label.reg     { color: #a78bfa; }
             .mn-toast-label.default { color: #818cf8; }
 
@@ -461,6 +463,20 @@
                             link:        link,
                             btnText:     'Open chat',
                             autoDismiss: 7000
+                        };
+                    }
+                    if (type === 'MEET_STARTED') {
+                        return {
+                            type:        'meet',
+                            label:       '📹 Meeting Started',
+                            title:       d.senderName || 'Someone',
+                            sub:         d.roomName ? 'started a meeting in ' + d.roomName : 'started a meeting',
+                            avatarUrl:   d.senderAvatar || '',
+                            avatarEmoji: '📹',
+                            badgeEmoji:  '📹',
+                            link:        link,
+                            btnText:     'Join Meeting',
+                            autoDismiss: 30000
                         };
                     }
                     if (type === 'POST_LIKED') {

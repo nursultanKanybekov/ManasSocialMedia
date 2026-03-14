@@ -256,6 +256,22 @@ public class ChatService {
         roomRepo.save(room);
     }
 
+    /**
+     * Fully deletes a channel and all its data.
+     * Deletes in FK-safe order: messages → participants → room.
+     */
+    @Transactional
+    public void deleteChannel(UUID roomId) {
+        // Delete via entity to let Hibernate manage cascades properly
+        roomRepo.findById(roomId).ifPresent(room -> {
+            // Clear collections so orphanRemoval triggers for all children
+            room.getMessages().clear();
+            room.getParticipants().clear();
+            roomRepo.saveAndFlush(room);   // flush clears messages + participants
+            roomRepo.delete(room);         // now delete the room itself
+        });
+    }
+
     @Transactional
     public void markRoomAsRead(AppUser user, UUID roomId) {
         ChatRoom room = findRoomWithParticipants(roomId);
@@ -282,6 +298,30 @@ public class ChatService {
     @Transactional(readOnly = true)
     public List<ChatRoom> getUserRooms(UUID userId) {
         return roomRepo.findRoomsByUserId(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatRoom> getUserRoomsOrderedByActivity(UUID userId) {
+        return roomRepo.findRoomsByUserIdOrderedByActivity(userId);
+    }
+
+    /** Returns last message preview text for each room (truncated to 50 chars) */
+    @Transactional(readOnly = true)
+    public java.util.Map<UUID, String> buildLastMessagePreviews(List<ChatRoom> rooms) {
+        java.util.Map<UUID, String> result = new java.util.HashMap<>();
+        for (ChatRoom room : rooms) {
+            org.springframework.data.domain.Page<ChatMessage> page =
+                    messageRepo.findLastMessageByRoomId(room.getId(),
+                            org.springframework.data.domain.PageRequest.of(0, 1));
+            if (!page.isEmpty()) {
+                ChatMessage last = page.getContent().get(0);
+                String preview = last.getContent();
+                if (preview == null) preview = "📎 Attachment";
+                else if (preview.length() > 48) preview = preview.substring(0, 48) + "…";
+                result.put(room.getId(), last.getSender().getFullName().split(" ")[0] + ": " + preview);
+            }
+        }
+        return result;
     }
 
     @Transactional(readOnly = true)

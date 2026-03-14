@@ -20,6 +20,16 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, UUID> {
             "ORDER BY cr.createdAt DESC")
     List<ChatRoom> findRoomsByUserId(@Param("userId") UUID userId);
 
+    /** Rooms ordered by the most recent message (for sidebar) */
+    @Query(value = """
+        SELECT cr.* FROM chat_room cr
+        JOIN chat_participant cp ON cp.room_id = cr.id AND cp.user_id = :userId
+        LEFT JOIN chat_message cm ON cm.room_id = cr.id
+        GROUP BY cr.id
+        ORDER BY COALESCE(MAX(cm.created_at), cr.created_at) DESC
+        """, nativeQuery = true)
+    List<ChatRoom> findRoomsByUserIdOrderedByActivity(@Param("userId") UUID userId);
+
     @Query(value = """
         SELECT cr.* FROM chat_room cr
         JOIN chat_participant cp1 ON cp1.room_id = cr.id AND cp1.user_id = :userAId

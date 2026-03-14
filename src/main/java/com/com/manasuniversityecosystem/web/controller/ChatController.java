@@ -13,6 +13,7 @@ import com.com.manasuniversityecosystem.service.CloudinaryService;
 import com.com.manasuniversityecosystem.service.UserService;
 import com.com.manasuniversityecosystem.service.chat.ChatService;
 import com.com.manasuniversityecosystem.service.social.PostService;
+import com.com.manasuniversityecosystem.web.ws.GroupCallSignalController;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -37,15 +38,17 @@ public class ChatController {
     private final UserRepository userRepo;
     private final CloudinaryService cloudinaryService;
     private final PostService postService;
+    private final GroupCallSignalController groupCallSignalController;
 
     @GetMapping
     public String chatLobby(@AuthenticationPrincipal UserDetailsImpl principal, Model model) {
         AppUser user = userService.getById(principal.getId());
-        List<ChatRoom> rooms = chatService.getUserRooms(principal.getId());
+        List<ChatRoom> rooms = chatService.getUserRoomsOrderedByActivity(principal.getId());
         model.addAttribute("currentUser",  user);
         model.addAttribute("rooms",        rooms);
         model.addAttribute("roomNames",    buildRoomNames(rooms, principal.getId()));
         model.addAttribute("unreadCounts", buildUnreadCounts(rooms, principal.getId()));
+        model.addAttribute("lastMessages", chatService.buildLastMessagePreviews(rooms));
         model.addAttribute("includeChat",  true);
         model.addAttribute("roomType",      "NONE");
         model.addAttribute("otherUserId",   (Object) null);
@@ -68,10 +71,11 @@ public class ChatController {
         model.addAttribute("history",        history);
         model.addAttribute("pinnedMessages", pinnedMessages);
         model.addAttribute("unread",         chatService.getUnreadCount(id, principal.getId()));
-        List<ChatRoom> sidebarRooms = chatService.getUserRooms(principal.getId());
+        List<ChatRoom> sidebarRooms = chatService.getUserRoomsOrderedByActivity(principal.getId());
         model.addAttribute("rooms",        sidebarRooms);
         model.addAttribute("roomNames",    buildRoomNames(sidebarRooms, principal.getId()));
         model.addAttribute("unreadCounts", buildUnreadCounts(sidebarRooms, principal.getId()));
+        model.addAttribute("lastMessages", chatService.buildLastMessagePreviews(sidebarRooms));
         model.addAttribute("members",      currentRoom != null ? currentRoom.getParticipants() : List.of());
         model.addAttribute("includeChat",  true);
         String roomTypeStr = currentRoom != null ? currentRoom.getRoomType().name() : "NONE";
@@ -91,6 +95,12 @@ public class ChatController {
             model.addAttribute("otherUserId",   (Object) null);
             model.addAttribute("otherUserName", "");
         }
+        // If this is a CHANNEL room, expose meeting status for the Meet button
+        boolean isChannel = currentRoom != null && currentRoom.getRoomType() == RoomType.CHANNEL;
+        model.addAttribute("isChannelRoom",  isChannel);
+        model.addAttribute("channelRoomId",  isChannel ? id.toString() : "");
+        model.addAttribute("meetingActive",  isChannel && groupCallSignalController.isActive(id.toString()));
+        model.addAttribute("meetingCount",   isChannel ? groupCallSignalController.getParticipantCount(id.toString()) : 0);
         return "chat/chat";
     }
 

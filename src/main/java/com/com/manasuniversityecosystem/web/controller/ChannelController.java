@@ -12,6 +12,7 @@ import com.com.manasuniversityecosystem.repository.chat.ChatRoomRepository;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.service.UserService;
 import com.com.manasuniversityecosystem.service.chat.ChatService;
+import com.com.manasuniversityecosystem.web.ws.GroupCallSignalController;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -34,6 +35,7 @@ public class ChannelController {
     private final SimpMessagingTemplate messaging;
     private final UserService userService;
     private final UserRepository userRepo;
+    private final GroupCallSignalController groupCallSignalController;
 
     @GetMapping
     public String list(@AuthenticationPrincipal UserDetailsImpl principal, Model model) {
@@ -117,7 +119,47 @@ public class ChannelController {
         model.addAttribute("canManage",      canManage);
         model.addAttribute("memberCount",    room.getParticipants().size());
         model.addAttribute("members",        room.getParticipants());
+        model.addAttribute("meetingActive",  groupCallSignalController.isActive(roomId.toString()));
+        model.addAttribute("meetingCount",   groupCallSignalController.getParticipantCount(roomId.toString()));
         return "channels/view";
+    }
+
+    /** Zoom-like group video conference for a channel */
+    @GetMapping("/{roomId}/meet")
+    public String meet(@PathVariable UUID roomId,
+                       @AuthenticationPrincipal UserDetailsImpl principal,
+                       Model model) {
+        AppUser currentUser = userService.getById(principal.getId());
+        ChatRoom room = chatRoomRepo.findByIdWithParticipants(roomId)
+                .orElseThrow(() -> new RuntimeException("Channel not found"));
+
+        boolean isMember = room.getParticipants().stream()
+                .anyMatch(p -> p.getUser().getId().equals(principal.getId()));
+        boolean isSystemAdmin = isAdmin(principal);
+        if (room.getIsPrivate() && !isMember && !isSystemAdmin) return "redirect:/channels/" + roomId;
+
+        boolean isOwner = room.getCreatedBy().getId().equals(principal.getId());
+
+        String avatarUrl = (currentUser.getProfile() != null && currentUser.getProfile().getAvatarUrl() != null)
+                ? currentUser.getProfile().getAvatarUrl() : "";
+
+        model.addAttribute("currentUser",  currentUser);
+        model.addAttribute("currentAvatar", avatarUrl);
+        model.addAttribute("room",          room);
+        model.addAttribute("isMember",      isMember);
+        model.addAttribute("isOwner",       isOwner);
+        model.addAttribute("members",       room.getParticipants());
+        model.addAttribute("memberCount",   room.getParticipants().size());
+        return "channels/meet";
+    }
+
+    /** Live meeting status — polled by channel view page via fetch */
+    @GetMapping("/{roomId}/meet/status")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> meetStatus(@PathVariable UUID roomId) {
+        boolean active = groupCallSignalController.isActive(roomId.toString());
+        int count      = groupCallSignalController.getParticipantCount(roomId.toString());
+        return ResponseEntity.ok(Map.of("active", active, "count", count));
     }
 
     @GetMapping("/{roomId}/users/search")
@@ -225,6 +267,33 @@ public class ChannelController {
     public String leaveChannel(@PathVariable UUID roomId,
                                @AuthenticationPrincipal UserDetailsImpl principal) {
         chatService.leaveRoom(userService.getById(principal.getId()), roomId);
+        return "redirect:/channels";
+    }
+
+    /** DELETE channel — only owner or system admin */
+    @PostMapping("/{roomId}/delete")
+    public String deleteChannel(@PathVariable UUID roomId,
+                                @AuthenticationPrincipal UserDetailsImpl principal,
+                                org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        ChatRoom room = chatRoomRepo.findByIdWithParticipants(roomId).orElse(null);
+        if (room == null) {
+            ra.addFlashAttribute("error", "Channel not found");
+            return "redirect:/channels";
+        }
+        boolean isOwner    = room.getCreatedBy().getId().equals(principal.getId());
+        boolean isSysAdmin = isAdmin(principal);
+        if (!isOwner && !isSysAdmin) {
+            ra.addFlashAttribute("error", "Only the channel owner can delete this channel.");
+            return "redirect:/channels/" + roomId;
+        }
+        String name = room.getName();
+        try {
+            chatService.deleteChannel(roomId);
+            ra.addFlashAttribute("success", "Channel \"" + name + "\" has been deleted.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Failed to delete channel: " + e.getMessage());
+            return "redirect:/channels/" + roomId;
+        }
         return "redirect:/channels";
     }
 

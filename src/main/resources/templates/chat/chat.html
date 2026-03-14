@@ -336,14 +336,17 @@
                    class="room-item"
                    th:classappend="${roomId != null and roomId == room.id} ? ' active'">
                     <div class="room-avatar">
-                        <span th:text="${room.roomType.name() == 'DIRECT'} ? '👤' : (${room.roomType.name() == 'FACULTY'} ? '🏫' : (${room.roomType.name() == 'GLOBAL'} ? '🌍' : '👥'))">👥</span>
+                        <span th:text="${room.roomType.name() == 'DIRECT'} ? '👤' : (${room.roomType.name() == 'FACULTY'} ? '🏫' : (${room.roomType.name() == 'GLOBAL'} ? '🌍' : '📢'))">👥</span>
                         <span th:if="${unreadCounts != null and unreadCounts[room.id] != null and unreadCounts[room.id] > 0}"
                               th:text="${unreadCounts[room.id] > 99 ? '99+' : unreadCounts[room.id]}"
                               class="room-unread"></span>
                     </div>
                     <div style="flex:1;min-width:0;">
                         <div class="room-name" th:text="${roomNames != null and roomNames[room.id] != null ? roomNames[room.id] : (room.name != null ? room.name : 'Chat')}">Room</div>
-                        <div class="room-type" th:text="${room.roomType}">Type</div>
+                        <!-- Last message preview or room type label -->
+                        <div class="room-type"
+                             th:text="${lastMessages != null and lastMessages[room.id] != null} ? ${lastMessages[room.id]} : ${room.roomType}"
+                             style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">Type</div>
                     </div>
                 </a>
             </div>
@@ -360,8 +363,36 @@
                     <div class="chat-header-sub" th:text="${#lists.size(members)} + ' members'">0 members</div>
                 </div>
                 <button class="chat-menu-btn" onclick="openRoomsSidebar()" title="Chats">&#9776;</button>
-                <!-- Audio call button — shown only for DM rooms via JS -->
-                <!-- Call button — only shown in DM rooms -->
+
+                <!-- Meet button — CHANNEL rooms only -->
+                <a th:if="${isChannelRoom}"
+                   th:href="@{/channels/{id}/meet(id=${channelRoomId})}"
+                   id="chat-meet-btn"
+                   th:data-active="${meetingActive}"
+                   th:data-room-id="${channelRoomId}"
+                   th:title="${meetingActive} ? 'Join ongoing meeting (' + ${meetingCount} + ' in call)' : 'Start video meeting'"
+                   th:style="${meetingActive}
+                       ? 'background:#059669;animation:chatMeetPulse 2s infinite;'
+                       : 'background:rgba(16,185,129,0.85);'"
+                   style="border:none;color:#fff;border-radius:10px;padding:8px 14px;cursor:pointer;
+                          display:flex;align-items:center;gap:7px;font-family:Montserrat,sans-serif;
+                          font-size:12px;font-weight:700;text-decoration:none;transition:background .15s;
+                          flex-shrink:0;"
+                   onmouseover="this.style.background=(this.dataset.active==='true'?'#047857':'rgba(16,185,129,1)')"
+                   onmouseout="this.style.background=(this.dataset.active==='true'?'#059669':'rgba(16,185,129,0.85)')">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                    </svg>
+                    <span id="chat-meet-label" th:text="${meetingActive} ? 'Join Meeting' : 'Meet'">Meet</span>
+                    <span id="chat-meet-badge"
+                          th:if="${meetingActive}" th:text="${meetingCount}"
+                          style="background:rgba(255,255,255,.28);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800;"></span>
+                    <span id="chat-meet-badge-hidden" th:unless="${meetingActive}"
+                          style="display:none;background:rgba(255,255,255,.28);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800;"></span>
+                </a>
+                <style>@keyframes chatMeetPulse{0%{box-shadow:0 0 0 0 rgba(5,150,105,.7)}70%{box-shadow:0 0 0 10px rgba(5,150,105,0)}100%{box-shadow:0 0 0 0 rgba(5,150,105,0)}}</style>
+
+                <!-- Call buttons — DM rooms only -->
                 <button th:if="${roomType == 'DIRECT' and otherUserId != null}"
                         id="call-btn" onclick="startCall(false)"
                         style="background:rgba(255,255,255,0.15);border:none;border-radius:10px;
@@ -1410,6 +1441,61 @@
         document.body.appendChild(m);
     }
     /*]]>*/
+
+    /* ── Live meet-button status for CHANNEL rooms ──────────────────── */
+    (function() {
+        const meetBtn = document.getElementById('chat-meet-btn');
+        if (!meetBtn) return;   // not a channel room — skip
+        const channelId = meetBtn.dataset.roomId;
+        if (!channelId) return;
+
+        function updateChatMeetBtn(active, count) {
+            meetBtn.dataset.active = active ? 'true' : 'false';
+            const label = document.getElementById('chat-meet-label');
+            let badge = document.getElementById('chat-meet-badge') ||
+                document.getElementById('chat-meet-badge-hidden');
+
+            if (active) {
+                meetBtn.style.background = '#059669';
+                meetBtn.style.animation  = 'chatMeetPulse 2s infinite';
+                meetBtn.title = 'Join ongoing meeting (' + count + ' in call)';
+                if (label) label.textContent = 'Join Meeting';
+                if (badge) { badge.id = 'chat-meet-badge'; badge.style.display = ''; badge.textContent = count; }
+            } else {
+                meetBtn.style.background = 'rgba(16,185,129,0.85)';
+                meetBtn.style.animation  = 'none';
+                meetBtn.title = 'Start video meeting';
+                if (label) label.textContent = 'Meet';
+                if (badge) badge.style.display = 'none';
+            }
+        }
+
+        function connectChatMeetWs() {
+            if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                setTimeout(connectChatMeetWs, 500); return;
+            }
+            const client = Stomp.over(new SockJS('/ws'));
+            client.debug = null;
+            client.connect({}, function() {
+                client.subscribe('/topic/meet.' + channelId, function(frame) {
+                    try {
+                        const msg = JSON.parse(frame.body);
+                        if (msg.type === 'JOINED' || msg.type === 'LEFT') {
+                            updateChatMeetBtn(msg.totalCount > 0, msg.totalCount || 0);
+                        }
+                    } catch(e) {}
+                });
+            }, function() { setTimeout(connectChatMeetWs, 5000); });
+        }
+
+        // Sync once on load
+        fetch('/channels/' + channelId + '/meet/status')
+            .then(r => r.json())
+            .then(d => updateChatMeetBtn(d.active, d.count))
+            .catch(() => {});
+
+        connectChatMeetWs();
+    })();
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════

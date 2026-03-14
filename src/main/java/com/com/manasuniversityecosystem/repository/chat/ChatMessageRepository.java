@@ -41,4 +41,11 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> 
             @Param("userId") UUID userId);
 
     long countByRoomId(UUID roomId);
+
+    /** Single latest message per room — for sidebar preview */
+    @Query("SELECT m FROM ChatMessage m JOIN FETCH m.sender s " +
+            "WHERE m.room.id = :roomId AND m.isDeleted = false " +
+            "ORDER BY m.createdAt DESC")
+    Page<ChatMessage> findLastMessageByRoomId(
+            @Param("roomId") UUID roomId, Pageable pageable);
 }
