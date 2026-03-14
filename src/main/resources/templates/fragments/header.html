@@ -515,6 +515,46 @@
                                 document.dispatchEvent(new CustomEvent('manasNotification', { detail: d }));
                             } catch(e) { console.error('[NotifWS]', e); }
                         });
+
+                        /* ── Send browser geolocation to server ────────────────
+                           1. Ask browser for position (most accurate)
+                           2. Reverse-geocode with Nominatim (free, no API key)
+                           3. Send result to /app/user.geo via STOMP
+                           4. Fallback: server already did IP lookup — nothing to do
+                        ──────────────────────────────────────────────────────── */
+                        if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                                function(pos) {
+                                    var lat = pos.coords.latitude;
+                                    var lng = pos.coords.longitude;
+                                    // Reverse-geocode using OpenStreetMap Nominatim (free)
+                                    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng, {
+                                        headers: { 'Accept-Language': 'en', 'User-Agent': 'ManasUniversity/1.0' }
+                                    })
+                                        .then(function(r) { return r.json(); })
+                                        .then(function(data) {
+                                            var addr    = data.address || {};
+                                            var city    = addr.city || addr.town || addr.village || addr.county || 'Unknown';
+                                            var region  = addr.state || '';
+                                            var country = addr.country || 'Unknown';
+                                            var cc      = (addr.country_code || '').toUpperCase();
+                                            client.send('/app/user.geo', {}, JSON.stringify({
+                                                city: city, region: region,
+                                                country: country, countryCode: cc,
+                                                lat: lat, lng: lng
+                                            }));
+                                        })
+                                        .catch(function() {
+                                            // Nominatim failed — send coordinates only, let server keep IP geo
+                                            client.send('/app/user.geo', {}, JSON.stringify({ lat: lat, lng: lng }));
+                                        });
+                                },
+                                function() {
+                                    // User denied geolocation — server-side IP lookup already ran, nothing to do
+                                }
+                            );
+                        }
+
                     }, function() {
                         setTimeout(connectUserWS, retryDelay);
                         retryDelay = Math.min(retryDelay * 2, 30000);

@@ -3,6 +3,7 @@ package com.com.manasuniversityecosystem.web.controller;
 import com.com.manasuniversityecosystem.domain.entity.Faculty;
 import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.repository.UserRepository;
+import com.com.manasuniversityecosystem.service.OnlineUserTracker;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class SuperAdminController {
 
     private final FacultyRepository facultyRepository;
     private final UserRepository userRepository;
+    private final OnlineUserTracker onlineUserTracker;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -32,17 +34,27 @@ public class SuperAdminController {
     // ─── Dashboard ────────────────────────────────────────────
     @GetMapping
     public String dashboard(Model model) {
-        model.addAttribute("faculties", facultyRepository.findAllByOrderByNameAsc());
-        model.addAttribute("totalUsers", userRepository.count());
-        model.addAttribute("totalFaculties", facultyRepository.count());
+        model.addAttribute("faculties",     facultyRepository.findAllByOrderByNameAsc());
+        model.addAttribute("totalUsers",    userRepository.count());
+        model.addAttribute("totalFaculties",facultyRepository.count());
+        model.addAttribute("onlineCount",   onlineUserTracker.countOnline());
         return "super-admin/dashboard";
+    }
+
+    // ─── Online Users Live Dashboard ──────────────────────────
+    @GetMapping("/online")
+    public String onlineDashboard(Model model) {
+        model.addAttribute("onlineUsers",      onlineUserTracker.getOnlineUsers());
+        model.addAttribute("onlineCount",      onlineUserTracker.countOnline());
+        model.addAttribute("countryBreakdown", onlineUserTracker.getCountryBreakdown());
+        return "super-admin/online";
     }
 
     // ─── Faculty: Add ─────────────────────────────────────────
     @PostMapping("/faculties/add")
     public String addFaculty(@RequestParam String name,
-                              @RequestParam String code,
-                              RedirectAttributes ra) {
+                             @RequestParam String code,
+                             RedirectAttributes ra) {
         String cleanCode = code.trim().toUpperCase();
         if (facultyRepository.existsByCode(cleanCode)) {
             ra.addFlashAttribute("errorMsg", "Faculty with code '" + cleanCode + "' already exists.");
@@ -90,15 +102,15 @@ public class SuperAdminController {
             entityManager.createNativeQuery("SET session_replication_role = replica").executeUpdate();
 
             entityManager.createNativeQuery("TRUNCATE TABLE " +
-                "post_like, comment, post, " +
-                "chat_message, chat_participant, chat_room, " +
-                "job_application, job_listing, mentorship_request, " +
-                "competition_registration, competition, " +
-                "event_registration, meeting_event, " +
-                "quiz_attempt, quiz_question, quiz, tutorial, " +
-                "user_badge, point_transaction, badge, " +
-                "notification, secretary_validation, " +
-                "profile, app_user, faculty CASCADE"
+                    "post_like, comment, post, " +
+                    "chat_message, chat_participant, chat_room, " +
+                    "job_application, job_listing, mentorship_request, " +
+                    "competition_registration, competition, " +
+                    "event_registration, meeting_event, " +
+                    "quiz_attempt, quiz_question, quiz, tutorial, " +
+                    "user_badge, point_transaction, badge, " +
+                    "notification, secretary_validation, " +
+                    "profile, app_user, faculty CASCADE"
             ).executeUpdate();
 
             entityManager.createNativeQuery("SET session_replication_role = DEFAULT").executeUpdate();

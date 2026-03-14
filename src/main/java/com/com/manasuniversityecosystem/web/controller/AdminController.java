@@ -10,6 +10,7 @@ import com.com.manasuniversityecosystem.service.social.PostService;
 import com.com.manasuniversityecosystem.web.dto.social.CreatePostRequest;
 import com.com.manasuniversityecosystem.domain.enums.PostType;
 import com.com.manasuniversityecosystem.service.UserService;
+import com.com.manasuniversityecosystem.service.OnlineUserTracker;
 import com.com.manasuniversityecosystem.service.gamification.GamificationService;
 import com.com.manasuniversityecosystem.service.admin.ExcelImportService;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class AdminController {
     private final PostRepository postRepo;
     private final ExcelImportService excelImportService;
     private final PostService postService;
+    private final OnlineUserTracker onlineUserTracker;
 
     @GetMapping
     public String dashboard(Model model) {
@@ -46,6 +48,7 @@ public class AdminController {
         model.addAttribute("suspendedUsers",userRepo.findByStatus(UserStatus.SUSPENDED).size());
         model.addAttribute("totalPosts",    postRepo.count());
         model.addAttribute("globalTop10",   gamificationService.getGlobalTop(10));
+        model.addAttribute("onlineCount",   onlineUserTracker.countOnline());
         return "admin/dashboard";
     }
 

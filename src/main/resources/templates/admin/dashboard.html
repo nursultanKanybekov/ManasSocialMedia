@@ -58,7 +58,7 @@
   /* ── STAT CARDS ─────────────────────────────────── */
   .adm-stats {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 16px;
     margin-bottom: 28px;
   }
@@ -88,6 +88,7 @@
   .adm-stat.green::before { background: linear-gradient(90deg,#10b981,#34d399); }
   .adm-stat.red::before   { background: linear-gradient(90deg,#ef4444,#f87171); }
   .adm-stat.indigo::before{ background: linear-gradient(90deg,#6366f1,#a5b4fc); }
+  .adm-stat.teal::before  { background: linear-gradient(90deg,#0d9488,#2dd4bf); }
 
   .adm-stat-icon {
     width: 40px; height: 40px;
@@ -102,6 +103,7 @@
   .red   .adm-stat-icon { background: #fef2f2; }
   .indigo.adm-stat-icon { background: #eef2ff; }
   .indigo .adm-stat-icon { background: #eef2ff; }
+  .teal  .adm-stat-icon { background: #f0fdfa; }
 
   .adm-stat-num {
     font-family: Montserrat, sans-serif;
@@ -340,6 +342,10 @@
   }
 
   /* ── RESPONSIVE ──────────────────────────────────── */
+  @media(max-width:1300px){
+    .adm-stats { grid-template-columns: repeat(3,1fr); }
+    .adm-main-grid { grid-template-columns: 1fr; }
+  }
   @media(max-width:1100px){
     .adm-stats { grid-template-columns: repeat(3,1fr); }
     .adm-main-grid { grid-template-columns: 1fr; }
@@ -358,6 +364,7 @@
   .adm-stat:nth-child(3){animation-delay:.12s}
   .adm-stat:nth-child(4){animation-delay:.16s}
   .adm-stat:nth-child(5){animation-delay:.20s}
+  .adm-stat:nth-child(6){animation-delay:.24s}
   @keyframes adSlideUp {
     from { opacity:0; transform:translateY(16px); }
     to   { opacity:1; transform:translateY(0); }
@@ -409,6 +416,24 @@
       <div class="adm-stat-icon">📝</div>
       <span class="adm-stat-num" th:text="${totalPosts}">0</span>
       <div class="adm-stat-label" th:text="#{admin.total_posts}">Total Posts</div>
+    </div>
+
+    <!-- Online Now — live via WebSocket -->
+    <div class="adm-stat teal" id="online-card">
+      <div class="adm-stat-icon" style="position:relative;">
+        🟢
+        <span id="online-pulse"
+              style="position:absolute;top:-2px;right:-2px;width:9px;height:9px;
+                     border-radius:50%;background:#0d9488;
+                     animation:adPulse 1.8s infinite;display:block;"></span>
+      </div>
+      <span class="adm-stat-num" id="online-count-num" th:text="${onlineCount}">0</span>
+      <div class="adm-stat-label">Online Now</div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:5px;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#0d9488;
+                     animation:adPulse 1.5s infinite;display:inline-block;"></span>
+        <span style="font-size:10px;font-weight:600;color:#0d9488;">Live</span>
+      </div>
     </div>
 
   </div>
@@ -576,7 +601,7 @@
 </main>
 
 <script>
-  // Animated number counters
+  // Animated number counters on page load
   document.querySelectorAll('.adm-stat-num').forEach(el => {
     const target = parseInt(el.textContent) || 0;
     if (target === 0) return;
@@ -588,6 +613,46 @@
       if (current >= target) clearInterval(interval);
     }, 20);
   });
+
+  // ── Live online count via WebSocket ──────────────────────────────
+  // Reuse the existing STOMP connection from app.js if available,
+  // or open a dedicated one for the admin dashboard.
+  (function() {
+    let adminStomp = null;
+
+    function connectAdminWs() {
+      const socket = new SockJS('/ws');
+      adminStomp = Stomp.over(socket);
+      adminStomp.debug = null; // silence console noise
+
+      adminStomp.connect({}, function() {
+        adminStomp.subscribe('/topic/admin.online', function(frame) {
+          try {
+            const data = JSON.parse(frame.body);
+            updateOnlineCount(data.onlineCount);
+          } catch(e) {}
+        });
+      }, function(err) {
+        // On error / disconnect, retry after 5s
+        setTimeout(connectAdminWs, 5000);
+      });
+    }
+
+    function updateOnlineCount(count) {
+      const el = document.getElementById('online-count-num');
+      if (!el) return;
+      const prev = parseInt(el.textContent) || 0;
+      if (prev === count) return;
+
+      // Brief flash animation on change
+      el.style.transition = 'color .3s';
+      el.style.color = count > prev ? '#0d9488' : '#ef4444';
+      el.textContent = count;
+      setTimeout(() => { el.style.color = ''; }, 800);
+    }
+
+    connectAdminWs();
+  })();
 </script>
 
 <div th:replace="~{fragments/footer :: footer}"></div>

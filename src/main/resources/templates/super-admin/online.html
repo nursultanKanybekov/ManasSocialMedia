@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Online Users | Super Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <!-- Leaflet map -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <!-- SockJS + STOMP -->
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0f172a;min-height:100vh;font-family:'Open Sans',sans-serif;color:#e2e8f0}
+    .sa-layout{display:flex;min-height:100vh}
+
+    /* Sidebar */
+    .sa-sidebar{width:260px;background:#1e293b;padding:28px 20px;display:flex;flex-direction:column;gap:6px;border-right:1px solid #334155;flex-shrink:0}
+    .sa-brand{display:flex;align-items:center;gap:10px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #334155}
+    .sa-brand-icon{width:40px;height:40px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:white}
+    .sa-brand-text{font-family:'Montserrat',sans-serif;font-weight:800;font-size:15px;color:white;line-height:1.2}
+    .sa-brand-text span{display:block;font-size:11px;font-weight:500;color:#94a3b8}
+    .sa-nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;color:#94a3b8;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+    .sa-nav-item:hover,.sa-nav-item.active{background:#334155;color:white}
+    .sa-nav-item .icon{font-size:16px;width:20px;text-align:center}
+    .sa-nav-section{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.08em;padding:14px 14px 4px}
+    .sa-logout{margin-top:auto}
+
+    /* Main */
+    .sa-main{flex:1;padding:32px;overflow-y:auto}
+
+    /* Header */
+    .ol-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+    .ol-title{font-family:'Montserrat',sans-serif;font-weight:800;font-size:24px;color:white}
+    .ol-sub{font-size:13px;color:#64748b;margin-top:4px}
+    .live-pill{display:flex;align-items:center;gap:7px;background:rgba(13,148,136,.18);border:1px solid rgba(13,148,136,.4);color:#2dd4bf;font-size:12px;font-weight:700;padding:7px 16px;border-radius:30px}
+    .live-dot{width:8px;height:8px;border-radius:50%;background:#0d9488;animation:livePulse 1.5s infinite}
+    @keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.6)}}
+
+    /* Stat strip */
+    .ol-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+    .ol-stat{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:18px 20px}
+    .ol-stat-val{font-family:'Montserrat',sans-serif;font-weight:800;font-size:32px;line-height:1}
+    .ol-stat-label{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+    .c-teal{color:#2dd4bf} .c-purple{color:#a78bfa} .c-amber{color:#fbbf24} .c-blue{color:#60a5fa}
+
+    /* Layout grid */
+    .ol-grid{display:grid;grid-template-columns:1fr 340px;gap:20px}
+    @media(max-width:1150px){.ol-grid{grid-template-columns:1fr}}
+
+    /* Card */
+    .ol-card{background:#1e293b;border:1px solid #334155;border-radius:16px;overflow:hidden}
+    .ol-card-head{padding:16px 20px 14px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between}
+    .ol-card-title{font-family:'Montserrat',sans-serif;font-weight:700;font-size:15px;color:white}
+    .ol-card-sub{font-size:11px;color:#475569;margin-top:2px}
+
+    /* Map */
+    #geo-map{height:340px;width:100%;background:#0f172a}
+    .leaflet-container{background:#162032 !important}
+    /* Custom dark tile via CartoDB dark_all */
+
+    /* User table */
+    .ol-table-wrap{overflow-x:auto}
+    table.ol-table{width:100%;border-collapse:collapse}
+    table.ol-table th{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;padding:10px 16px;border-bottom:1px solid #334155;text-align:left;white-space:nowrap}
+    table.ol-table td{padding:12px 16px;border-bottom:1px solid rgba(51,65,85,.4);font-size:13px;vertical-align:middle}
+    table.ol-table tr:last-child td{border-bottom:none}
+    table.ol-table tr:hover td{background:rgba(255,255,255,.02)}
+    .ol-user-cell{display:flex;align-items:center;gap:10px}
+    .ol-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #334155}
+    .ol-avatar-init{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+    .ol-name{font-weight:600;color:#e2e8f0;font-size:13px}
+    .ol-role-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(124,58,237,.2);color:#a78bfa;white-space:nowrap}
+    .ol-geo-cell{display:flex;align-items:center;gap:7px}
+    .ol-flag{font-size:18px;flex-shrink:0}
+    .ol-city{color:#cbd5e1;font-size:12px}
+    .ol-country{font-size:11px;color:#475569}
+    .ol-duration{font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;color:#2dd4bf;white-space:nowrap}
+    .ol-ip{font-size:10px;color:#475569;font-family:monospace}
+    .geo-src-browser{display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981;margin-left:4px;title:"From browser"}
+    .geo-src-ip{display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin-left:4px;title:"From IP"}
+
+    /* Empty state */
+    .ol-empty{padding:48px 24px;text-align:center;color:#475569}
+    .ol-empty-icon{font-size:44px;margin-bottom:12px}
+
+    /* Country list */
+    .country-list{padding:4px 18px 14px}
+    .country-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(51,65,85,.35)}
+    .country-row:last-child{border-bottom:none}
+    .country-flag{font-size:20px;flex-shrink:0;width:28px;text-align:center}
+    .country-name{flex:1;font-size:13px;color:#cbd5e1;font-weight:500}
+    .country-bar-wrap{width:80px;height:5px;background:#334155;border-radius:3px;overflow:hidden}
+    .country-bar{height:100%;background:linear-gradient(90deg,#0d9488,#2dd4bf);border-radius:3px;transition:width .6s}
+    .country-count{font-family:'Montserrat',sans-serif;font-weight:800;font-size:13px;color:#2dd4bf;min-width:22px;text-align:right}
+
+    /* Log */
+    .ol-log{padding:10px 18px;max-height:200px;overflow-y:auto}
+    .ol-log::-webkit-scrollbar{width:4px}
+    .ol-log::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
+    .log-entry{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(51,65,85,.25);font-size:12px}
+    .log-entry:last-child{border-bottom:none}
+    .log-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
+    .log-join .log-dot{background:#10b981}
+    .log-leave .log-dot{background:#ef4444}
+    .log-time{color:#475569;white-space:nowrap;font-family:monospace;min-width:60px}
+    .log-msg{color:#94a3b8;flex:1}
+
+    @media(max-width:768px){.sa-sidebar{display:none}.sa-main{padding:16px}}
+  </style>
+</head>
+<body>
+<div class="sa-layout">
+
+  <!-- Sidebar -->
+  <aside class="sa-sidebar">
+    <div class="sa-brand">
+      <div class="sa-brand-icon">S</div>
+      <div class="sa-brand-text">Super Admin<span>Full Control Panel</span></div>
+    </div>
+    <a href="/super-admin" class="sa-nav-item"><span class="icon">🏠</span> Dashboard</a>
+    <div class="sa-nav-section">Analytics</div>
+    <a href="/super-admin/online" class="sa-nav-item active">
+      <span class="icon">🟢</span> Online Users
+      <span id="sidebar-badge"
+            style="margin-left:auto;background:#0d9488;color:#fff;font-size:10px;
+                         font-weight:800;padding:2px 7px;border-radius:20px;"
+            th:text="${onlineCount}">0</span>
+    </a>
+    <div class="sa-nav-section">Management</div>
+    <a href="/admin" class="sa-nav-item"><span class="icon">👥</span> Manage Users</a>
+    <a href="/admin/news" class="sa-nav-item"><span class="icon">📰</span> News</a>
+    <div class="sa-nav-section">Account</div>
+    <form th:action="@{/auth/logout}" method="post" class="sa-logout">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="sa-nav-item"><span class="icon">🚪</span> Sign Out</button>
+    </form>
+  </aside>
+
+  <!-- Main -->
+  <main class="sa-main">
+
+    <div class="ol-header">
+      <div>
+        <div class="ol-title">🟢 Online Users</div>
+        <div class="ol-sub">Real-time geolocation • browser GPS + IP fallback • updates live via WebSocket</div>
+      </div>
+      <div class="live-pill"><div class="live-dot"></div> Live</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="ol-stats">
+      <div class="ol-stat">
+        <div class="ol-stat-val c-teal" id="stat-online" th:text="${onlineCount}">0</div>
+        <div class="ol-stat-label">Online Now</div>
+      </div>
+      <div class="ol-stat">
+        <div class="ol-stat-val c-purple" id="stat-countries" th:text="${countryBreakdown.size()}">0</div>
+        <div class="ol-stat-label">Countries</div>
+      </div>
+      <div class="ol-stat">
+        <div class="ol-stat-val c-amber" id="stat-peak" th:text="${onlineCount}">0</div>
+        <div class="ol-stat-label">Peak Today</div>
+      </div>
+      <div class="ol-stat">
+        <div class="ol-stat-val c-blue" id="stat-browser">0</div>
+        <div class="ol-stat-label">Precise GPS</div>
+      </div>
+    </div>
+
+    <!-- Map + Table grid -->
+    <div class="ol-grid">
+
+      <!-- Left column -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <!-- World Map -->
+        <div class="ol-card">
+          <div class="ol-card-head">
+            <div>
+              <div class="ol-card-title">🗺 Live Map</div>
+              <div class="ol-card-sub">
+                <span style="color:#10b981;">● Green</span> = browser GPS &nbsp;
+                <span style="color:#f59e0b;">● Amber</span> = IP-based
+              </div>
+            </div>
+            <button onclick="geoMap.setView([30,20],2)"
+                    style="background:#334155;border:none;color:#94a3b8;padding:5px 12px;
+                                       border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">
+              Reset View
+            </button>
+          </div>
+          <div id="geo-map"></div>
+        </div>
+
+        <!-- User Table -->
+        <div class="ol-card">
+          <div class="ol-card-head">
+            <div>
+              <div class="ol-card-title">Active Sessions</div>
+              <div class="ol-card-sub">One row per online user</div>
+            </div>
+            <span style="font-size:11px;color:#475569;" id="last-updated">Updated just now</span>
+          </div>
+          <div class="ol-table-wrap" id="users-table-wrap">
+            <div th:if="${#lists.isEmpty(onlineUsers)}" class="ol-empty">
+              <div class="ol-empty-icon">💤</div>
+              <div style="font-size:14px;">No users online right now</div>
+            </div>
+            <table class="ol-table" th:unless="${#lists.isEmpty(onlineUsers)}">
+              <thead><tr><th>User</th><th>Location</th><th>Duration</th><th>IP</th><th>Source</th></tr></thead>
+              <tbody>
+              <tr th:each="u : ${onlineUsers}">
+                <td>
+                  <div class="ol-user-cell">
+                    <img th:if="${u.avatarUrl != null}" th:src="${u.avatarUrl}" class="ol-avatar" alt=""/>
+                    <div th:if="${u.avatarUrl == null}" class="ol-avatar-init" th:text="${#strings.substring(u.fullName,0,1)}">A</div>
+                    <div>
+                      <div class="ol-name" th:text="${u.fullName}">Name</div>
+                      <span class="ol-role-badge" th:text="${u.role}">ROLE</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="ol-geo-cell">
+                    <span class="ol-flag" th:text="${u.flagEmoji}">🌍</span>
+                    <div>
+                      <div class="ol-city" th:text="${u.city}">City</div>
+                      <div class="ol-country" th:text="${u.country}">Country</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="ol-duration" th:text="${u.durationLabel}">0s</span></td>
+                <td><span class="ol-ip" th:text="${u.ipAddress}">—</span></td>
+                <td>
+                                    <span th:if="${u.geoFromBrowser}"
+                                          style="font-size:10px;font-weight:700;color:#10b981;
+                                                 background:rgba(16,185,129,.12);padding:2px 8px;border-radius:20px;">
+                                        📍 GPS
+                                    </span>
+                  <span th:unless="${u.geoFromBrowser}"
+                        style="font-size:10px;font-weight:700;color:#f59e0b;
+                                                 background:rgba(245,158,11,.12);padding:2px 8px;border-radius:20px;">
+                                        🌐 IP
+                                    </span>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Connection Log -->
+        <div class="ol-card">
+          <div class="ol-card-head">
+            <div class="ol-card-title">📋 Connection Log</div>
+            <button onclick="document.getElementById('log-body').innerHTML='<div style=\'color:#475569;font-size:12px;padding:8px 0;\'>Cleared</div>'"
+                    style="background:none;border:none;color:#475569;cursor:pointer;font-size:11px;font-weight:700;">Clear</button>
+          </div>
+          <div class="ol-log" id="log-body">
+            <div style="color:#475569;font-size:12px;padding:8px 0;">Waiting for events…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <!-- Country breakdown -->
+        <div class="ol-card">
+          <div class="ol-card-head">
+            <div>
+              <div class="ol-card-title">🌍 By Country</div>
+              <div class="ol-card-sub">Online users per country</div>
+            </div>
+          </div>
+          <div class="country-list" id="country-list">
+            <div th:if="${countryBreakdown.isEmpty()}"
+                 style="padding:24px;text-align:center;color:#475569;font-size:13px;">
+              No geo data yet
+            </div>
+            <div th:each="entry : ${countryBreakdown}" class="country-row"
+                 th:unless="${countryBreakdown.isEmpty()}">
+              <span class="country-flag">🌍</span>
+              <span class="country-name" th:text="${entry.key}">Country</span>
+              <div class="country-bar-wrap">
+                <div class="country-bar"
+                     th:style="'width:' + (${onlineCount} > 0 ? (${entry.value} * 100 / ${onlineCount}) : 0) + '%'"></div>
+              </div>
+              <span class="country-count" th:text="${entry.value}">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats card -->
+        <div class="ol-card" style="padding:20px;">
+          <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;color:white;margin-bottom:14px;">📊 Session Info</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:#64748b;">Online now</span>
+              <span style="font-weight:700;color:#2dd4bf;" id="info-online" th:text="${onlineCount}">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:#64748b;">Countries</span>
+              <span style="font-weight:700;color:#a78bfa;" id="info-countries" th:text="${countryBreakdown.size()}">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:#64748b;">Peak (session)</span>
+              <span style="font-weight:700;color:#fbbf24;" id="info-peak" th:text="${onlineCount}">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:#64748b;">📍 GPS users</span>
+              <span style="font-weight:700;color:#10b981;" id="info-browser">0</span>
+            </div>
+            <div style="height:1px;background:#334155;margin:4px 0;"></div>
+            <div style="font-size:10px;color:#334155;text-align:center;">
+              🟢 GPS = precise &nbsp;|&nbsp; 🟡 IP = approximate
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  /* ════════════════════════════════════════════════════════════════
+     SUPER ADMIN ONLINE DASHBOARD
+     ════════════════════════════════════════════════════════════════ */
+
+  // ── Leaflet dark map ──────────────────────────────────────────────
+  const geoMap = L.map('geo-map', { zoomControl: true }).setView([30, 20], 2);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors © CARTO',
+    subdomains: 'abcd', maxZoom: 19
+  }).addTo(geoMap);
+
+  // Custom green marker (browser GPS)
+  function makeMarker(color) {
+    return L.divIcon({
+      className: '',
+      html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};
+                           border:2px solid rgba(255,255,255,0.7);
+                           box-shadow:0 0 8px ${color};"></div>`,
+      iconSize:  [12, 12],
+      iconAnchor:[6, 6],
+      popupAnchor:[0, -8]
+    });
+  }
+
+  const GPS_MARKER = makeMarker('#10b981');  // green
+  const IP_MARKER  = makeMarker('#f59e0b');  // amber
+
+  let mapMarkers = {};  // userId → L.Marker
+
+  function refreshMapMarkers(users) {
+    const activeIds = new Set(users.map(u => u.userId));
+
+    // Remove stale markers
+    Object.keys(mapMarkers).forEach(id => {
+      if (!activeIds.has(id)) {
+        geoMap.removeLayer(mapMarkers[id]);
+        delete mapMarkers[id];
+      }
+    });
+
+    // Add/update
+    users.forEach(u => {
+      const lat = u.lat, lng = u.lng;
+      if (lat == null || lng == null) return;
+
+      const icon    = u.geoSource === 'browser' ? GPS_MARKER : IP_MARKER;
+      const city    = u.city    || '';
+      const country = u.country || '';
+      const popup   = `<div style="font-family:'Open Sans',sans-serif;min-width:160px;">
+            <div style="font-weight:700;font-size:13px;margin-bottom:4px;">${esc(u.fullName)}</div>
+            <div style="font-size:11px;color:#666;margin-bottom:3px;">${esc(u.role)}</div>
+            <div style="font-size:12px;">${u.flagEmoji || '🌍'} ${esc(city)}${city && country ? ', ' : ''}${esc(country)}</div>
+            <div style="font-size:10px;color:#999;margin-top:4px;">
+                ${u.geoSource === 'browser' ? '📍 GPS location' : '🌐 IP-based'} &nbsp;·&nbsp; ${esc(u.duration)}
+            </div>
+        </div>`;
+
+      if (mapMarkers[u.userId]) {
+        mapMarkers[u.userId].setLatLng([lat, lng]).setIcon(icon).setPopupContent(popup);
+      } else {
+        mapMarkers[u.userId] = L.marker([lat, lng], { icon }).addTo(geoMap).bindPopup(popup);
+      }
+    });
+  }
+
+  // ── State ─────────────────────────────────────────────────────────
+  let peakCount = parseInt(document.getElementById('stat-peak').textContent) || 0;
+  let prevUsers = [];
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function fmtTime(d) {
+    return String(d.getHours()).padStart(2,'0') + ':' +
+            String(d.getMinutes()).padStart(2,'0') + ':' +
+            String(d.getSeconds()).padStart(2,'0');
+  }
+
+  function addLog(name, type) {
+    const log = document.getElementById('log-body');
+    if (!log) return;
+    if (log.querySelector('[data-placeholder]')) log.innerHTML = '';
+    const entry = document.createElement('div');
+    entry.className = 'log-entry ' + (type === 'join' ? 'log-join' : 'log-leave');
+    entry.innerHTML = `<div class="log-dot"></div>
+        <span class="log-time">${fmtTime(new Date())}</span>
+        <span class="log-msg"><strong style="color:#e2e8f0">${esc(name)}</strong>
+        ${type === 'join' ? 'connected' : 'disconnected'}</span>`;
+    log.insertBefore(entry, log.firstChild);
+    while (log.children.length > 60) log.removeChild(log.lastChild);
+  }
+
+  function animateNumber(el, newVal) {
+    if (!el) return;
+    const prev = parseInt(el.textContent) || 0;
+    if (prev === newVal) return;
+    el.style.transition = 'color .35s';
+    el.style.color = newVal > prev ? '#2dd4bf' : '#f87171';
+    el.textContent = newVal;
+    setTimeout(() => el.style.color = '', 700);
+  }
+
+  function updateAll(data) {
+    const count = data.onlineCount || 0;
+
+    // Peak tracking
+    if (count > peakCount) {
+      peakCount = count;
+      ['stat-peak','info-peak'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = peakCount;
+      });
+    }
+
+    // Count displays
+    ['stat-online','info-online','sidebar-badge'].forEach(id =>
+            animateNumber(document.getElementById(id), count));
+
+    // Browser GPS count
+    const browserCount = (data.users || []).filter(u => u.geoSource === 'browser').length;
+    animateNumber(document.getElementById('stat-browser'), browserCount);
+    animateNumber(document.getElementById('info-browser'), browserCount);
+
+    // Countries
+    if (data.countries) {
+      const cCount = Object.keys(data.countries).length;
+      ['stat-countries','info-countries'].forEach(id =>
+              animateNumber(document.getElementById(id), cCount));
+      renderCountries(data.countries, count);
+    }
+
+    if (data.users !== undefined) {
+      renderTable(data.users);
+      refreshMapMarkers(data.users);
+    }
+
+    const lu = document.getElementById('last-updated');
+    if (lu) lu.textContent = 'Updated ' + fmtTime(new Date());
+  }
+
+  function renderTable(users) {
+    const wrap = document.getElementById('users-table-wrap');
+    if (!wrap) return;
+    if (!users.length) {
+      wrap.innerHTML = '<div class="ol-empty"><div class="ol-empty-icon">💤</div><div style="font-size:14px;">No users online</div></div>';
+      return;
+    }
+    const rows = users.map(u => {
+      const av = u.avatarUrl
+              ? `<img src="${esc(u.avatarUrl)}" class="ol-avatar" alt=""/>`
+              : `<div class="ol-avatar-init">${esc((u.fullName||'?').charAt(0).toUpperCase())}</div>`;
+      const geoTag = u.geoSource === 'browser'
+              ? `<span style="font-size:10px;font-weight:700;color:#10b981;background:rgba(16,185,129,.12);padding:2px 8px;border-radius:20px;">📍 GPS</span>`
+              : `<span style="font-size:10px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.12);padding:2px 8px;border-radius:20px;">🌐 IP</span>`;
+      return `<tr>
+            <td><div class="ol-user-cell">${av}<div>
+                <div class="ol-name">${esc(u.fullName)}</div>
+                <span class="ol-role-badge">${esc(u.role)}</span>
+            </div></div></td>
+            <td><div class="ol-geo-cell">
+                <span class="ol-flag">${u.flagEmoji||'🌍'}</span>
+                <div>
+                    <div class="ol-city">${esc(u.city||'Resolving…')}</div>
+                    <div class="ol-country">${esc(u.country||'')}</div>
+                </div>
+            </div></td>
+            <td><span class="ol-duration">${esc(u.duration||'0s')}</span></td>
+            <td><span class="ol-ip">${esc(u.ipAddress||'—')}</span></td>
+            <td>${geoTag}</td>
+        </tr>`;
+    }).join('');
+    wrap.innerHTML = `<table class="ol-table">
+        <thead><tr><th>User</th><th>Location</th><th>Duration</th><th>IP</th><th>Source</th></tr></thead>
+        <tbody>${rows}</tbody></table>`;
+  }
+
+  function renderCountries(map, total) {
+    const list = document.getElementById('country-list');
+    if (!list) return;
+    const entries = Object.entries(map).sort((a,b) => b[1]-a[1]);
+    if (!entries.length) {
+      list.innerHTML = '<div style="padding:24px;text-align:center;color:#475569;font-size:13px;">No data yet</div>';
+      return;
+    }
+    const max = entries[0][1];
+    list.innerHTML = entries.map(([c, n]) =>
+            `<div class="country-row">
+            <span class="country-flag">🌍</span>
+            <span class="country-name">${esc(c)}</span>
+            <div class="country-bar-wrap"><div class="country-bar" style="width:${Math.round(n/max*100)}%"></div></div>
+            <span class="country-count">${n}</span>
+        </div>`
+    ).join('');
+  }
+
+  // ── WebSocket ─────────────────────────────────────────────────────
+  function connectWs() {
+    const socket = new SockJS('/ws');
+    const stomp  = Stomp.over(socket);
+    stomp.debug  = null;
+
+    stomp.connect({}, function() {
+      stomp.subscribe('/topic/superadmin.online', function(frame) {
+        try {
+          const data = JSON.parse(frame.body);
+
+          // Log joins/leaves
+          const newSet  = new Set((data.users||[]).map(u => u.userId));
+          const prevSet = new Set(prevUsers.map(u => u.userId));
+          (data.users||[]).forEach(u => { if (!prevSet.has(u.userId)) addLog(u.fullName, 'join'); });
+          prevUsers.forEach(u => { if (!newSet.has(u.userId)) addLog(u.fullName, 'leave'); });
+          prevUsers = data.users || [];
+
+          updateAll(data);
+        } catch(e) { console.error('[SA Online]', e); }
+      });
+    }, function() { setTimeout(connectWs, 5000); });
+  }
+
+  connectWs();
+
+  // Refresh durations every 30s
+  setInterval(() => {
+    document.querySelectorAll('.ol-duration').forEach(el => {
+      // Durations come from server on each broadcast — no client-side recalc needed
+    });
+  }, 30000);
+  /*]]>*/
+</script>
+</body>
+</html>
