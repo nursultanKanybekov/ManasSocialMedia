@@ -363,7 +363,7 @@
                 <!-- Audio call button — shown only for DM rooms via JS -->
                 <!-- Call button — only shown in DM rooms -->
                 <button th:if="${roomType == 'DIRECT' and otherUserId != null}"
-                        id="call-btn" onclick="startCall()"
+                        id="call-btn" onclick="startCall(false)"
                         style="background:rgba(255,255,255,0.15);border:none;border-radius:10px;
                                padding:8px 16px;cursor:pointer;color:#fff;display:flex;align-items:center;
                                gap:7px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;
@@ -374,6 +374,19 @@
                         <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.5 1.18 2 2 0 012.5 0h3a2 2 0 012 1.72c.127.96.36 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.18 6.18l1.27-1.27a2 2 0 012.11-.45c.907.34 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
                     </svg>
                     📞 Call
+                </button>
+                <button th:if="${roomType == 'DIRECT' and otherUserId != null}"
+                        id="video-call-btn" onclick="startCall(true)"
+                        style="background:rgba(255,255,255,0.15);border:none;border-radius:10px;
+                               padding:8px 16px;cursor:pointer;color:#fff;display:flex;align-items:center;
+                               gap:7px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;
+                               transition:background .15s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.28)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                    📹 Video
                 </button>
                 <button onclick="toggleMembers()" class="header-btn">
                     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
@@ -1697,51 +1710,63 @@
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     AUDIO CALL SYSTEM
+     CALL SYSTEM  (Audio + Video)
      ═══════════════════════════════════════════════════════════════ -->
 
-<!-- Outgoing call overlay -->
+<!-- ── Outgoing call overlay ──────────────────────────────────── -->
 <div id="call-outgoing"
-     style="display:none;position:fixed;inset:0;background:rgba(10,14,40,0.92);backdrop-filter:blur(16px);
-            z-index:9900;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
-    <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
-                display:flex;align-items:center;justify-content:center;font-size:36px;
-                box-shadow:0 0 0 14px rgba(27,42,107,0.25),0 0 0 28px rgba(27,42,107,0.12);
-                animation:callPulse 1.8s infinite;" id="call-out-avatar">📞</div>
+     style="display:none;position:fixed;inset:0;background:rgba(10,14,40,0.95);backdrop-filter:blur(18px);
+            z-index:9900;flex-direction:column;align-items:center;justify-content:center;gap:22px;">
+    <div id="call-out-avatar-wrap"
+         style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+                display:flex;align-items:center;justify-content:center;font-size:38px;overflow:hidden;
+                box-shadow:0 0 0 16px rgba(27,42,107,0.2),0 0 0 32px rgba(27,42,107,0.1);
+                animation:callPulse 1.8s infinite;">📹</div>
     <div style="text-align:center;">
-        <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:22px;color:#fff;margin-bottom:6px;"
-             id="call-out-name">Calling…</div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.55);font-family:Montserrat,sans-serif;">
-            Audio Call · Ringing…</div>
+        <div id="call-out-name"
+             style="font-family:Montserrat,sans-serif;font-weight:800;font-size:24px;color:#fff;margin-bottom:8px;">
+            Calling…</div>
+        <div id="call-out-type"
+             style="font-size:13px;color:rgba(255,255,255,0.5);font-family:Montserrat,sans-serif;
+                    display:flex;align-items:center;justify-content:center;gap:6px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;
+                         animation:callPulse 1.2s infinite;display:inline-block;"></span>
+            Video Call · Ringing…
+        </div>
     </div>
     <button onclick="hangUp()"
-            style="width:62px;height:62px;border-radius:50%;background:#ef4444;border:none;cursor:pointer;
-                   display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(239,68,68,0.5);
-                   transition:transform .15s;"
+            style="width:64px;height:64px;border-radius:50%;background:#ef4444;border:none;cursor:pointer;
+                   display:flex;align-items:center;justify-content:center;
+                   box-shadow:0 6px 24px rgba(239,68,68,0.55);transition:transform .15s;"
             onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-        <svg width="24" height="24" fill="#fff" viewBox="0 0 24 24">
-            <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 012 2v3a2 2 0 01-2.18 2A19.79 19.79 0 015 3.18 2 2 0 017 1h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L11 8.91a16 16 0 002.31 2.7"/>
-            <line x1="1" y1="1" x2="23" y2="23" stroke="#fff" stroke-width="2"/>
+        <svg width="26" height="26" fill="#fff" viewBox="0 0 24 24">
+            <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7
+                     2 2 0 012 2v3a2 2 0 01-2.18 2A19.79 19.79 0 015 3.18 2 2 0 017 1h3a2 2 0 012 1.72
+                     12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L11 8.91a16 16 0 002.31 2.7"/>
+            <line x1="1" y1="1" x2="23" y2="23" stroke="#fff" stroke-width="2.2"/>
         </svg>
     </button>
 </div>
 
-<!-- Incoming call overlay -->
+<!-- ── Incoming call toast ───────────────────────────────────── -->
 <div id="call-incoming"
      style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
             background:#fff;border-radius:24px;padding:22px 28px;z-index:9901;
-            box-shadow:0 20px 60px rgba(0,0,0,0.25);min-width:300px;max-width:360px;
+            box-shadow:0 20px 60px rgba(0,0,0,0.28);min-width:310px;max-width:370px;
             animation:callSlideUp .3s ease;">
     <div style="display:flex;align-items:center;gap:14px;">
         <div id="call-in-avatar"
-             style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+             style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
                     display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
                     overflow:hidden;border:2px solid #e8eaf6;">📞</div>
         <div style="flex:1;min-width:0;">
-            <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#1b2a6b;"
-                 id="call-in-name">Incoming Call</div>
-            <div style="font-size:12px;color:#8a91a8;margin-top:2px;display:flex;align-items:center;gap:5px;">
-                <span style="width:7px;height:7px;border-radius:50%;background:#10b981;animation:callPulse 1.2s infinite;display:inline-block;"></span>
+            <div id="call-in-name"
+                 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#1b2a6b;">
+                Incoming Call</div>
+            <div id="call-in-type"
+                 style="font-size:12px;color:#8a91a8;margin-top:3px;display:flex;align-items:center;gap:5px;">
+                <span style="width:7px;height:7px;border-radius:50%;background:#10b981;
+                             animation:callPulse 1.2s infinite;display:inline-block;"></span>
                 Audio Call
             </div>
         </div>
@@ -1754,7 +1779,7 @@
                 onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
             ✕ Decline
         </button>
-        <button onclick="acceptCall()"
+        <button id="call-accept-btn" onclick="acceptCall()"
                 style="flex:1;padding:12px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;
                        border:none;border-radius:14px;font-family:Montserrat,sans-serif;font-weight:700;
                        font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,0.35);
@@ -1765,19 +1790,157 @@
     </div>
 </div>
 
-<!-- Active call bar (shown while call is live) -->
+<!-- ── Full-screen VIDEO call window (Telegram-style) ─────────── -->
+<div id="video-call-window"
+     style="display:none;position:fixed;inset:0;background:#0a0e1a;z-index:9950;
+            flex-direction:column;overflow:hidden;">
+
+    <!-- Remote video (full screen) -->
+    <video id="call-remote-video" autoplay playsinline
+           style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#111;"></video>
+
+    <!-- Remote avatar placeholder (shown while video not streaming) -->
+    <div id="remote-avatar-placeholder"
+         style="position:absolute;inset:0;display:flex;flex-direction:column;
+                align-items:center;justify-content:center;gap:14px;z-index:1;">
+        <div id="remote-avatar-circle"
+             style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);
+                    display:flex;align-items:center;justify-content:center;font-size:40px;
+                    box-shadow:0 0 0 16px rgba(27,42,107,0.2);">👤</div>
+        <div id="remote-name-label"
+             style="font-family:Montserrat,sans-serif;font-weight:700;font-size:18px;color:#fff;"></div>
+        <div id="call-status-label"
+             style="font-size:13px;color:rgba(255,255,255,0.5);font-family:Montserrat,sans-serif;">
+            Connecting…</div>
+    </div>
+
+    <!-- Local PiP video (bottom-right corner, draggable) -->
+    <div id="local-pip"
+         style="position:absolute;bottom:100px;right:16px;width:120px;height:160px;border-radius:16px;
+                overflow:hidden;border:2px solid rgba(255,255,255,0.2);box-shadow:0 8px 32px rgba(0,0,0,0.5);
+                z-index:10;cursor:grab;background:#222;">
+        <video id="call-local-video" autoplay playsinline muted
+               style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+        <div id="local-pip-muted"
+             style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.6);
+                    align-items:center;justify-content:center;font-size:28px;">🔇</div>
+    </div>
+
+    <!-- Top bar: timer + partner name -->
+    <div style="position:absolute;top:0;left:0;right:0;padding:52px 20px 20px;
+                background:linear-gradient(to bottom,rgba(0,0,0,0.6),transparent);
+                z-index:11;display:flex;align-items:center;gap:12px;">
+        <div style="flex:1;">
+            <div id="video-partner-name"
+                 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:18px;color:#fff;"></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                <span id="call-quality-dot"
+                      style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
+                <span id="video-call-timer"
+                      style="font-family:Montserrat,sans-serif;font-size:13px;color:rgba(255,255,255,0.75);">
+                      0:00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom controls bar -->
+    <div id="video-controls"
+         style="position:absolute;bottom:0;left:0;right:0;padding:24px 20px 36px;
+                background:linear-gradient(to top,rgba(0,0,0,0.75),transparent);
+                z-index:11;display:flex;align-items:center;justify-content:center;gap:18px;
+                transition:opacity .3s;">
+        <!-- Mute mic -->
+        <button id="vid-mute-btn" onclick="toggleMute()"
+                style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.18);
+                       border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+                       flex-direction:column;gap:3px;transition:background .15s;"
+                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                onmouseout="this.style.background=isMuted?'rgba(239,68,68,0.7)':'rgba(255,255,255,0.18)'">
+            <span id="vid-mute-icon" style="font-size:22px;">🎙</span>
+        </button>
+
+        <!-- Toggle camera -->
+        <button id="vid-cam-btn" onclick="toggleCamera()"
+                style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.18);
+                       border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+                       flex-direction:column;gap:3px;transition:background .15s;"
+                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                onmouseout="this.style.background=isCamOff?'rgba(239,68,68,0.7)':'rgba(255,255,255,0.18)'">
+            <span id="vid-cam-icon" style="font-size:22px;">📷</span>
+        </button>
+
+        <!-- Flip camera (mobile) -->
+        <button id="vid-flip-btn" onclick="flipCamera()"
+                style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,0.12);
+                       border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+                       transition:background .15s;"
+                onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+                onmouseout="this.style.background='rgba(255,255,255,0.12)'">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2">
+                <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
+                <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/>
+            </svg>
+        </button>
+
+        <!-- End call (large red) -->
+        <button onclick="hangUp()"
+                style="width:64px;height:64px;border-radius:50%;background:#ef4444;border:none;cursor:pointer;
+                       display:flex;align-items:center;justify-content:center;
+                       box-shadow:0 6px 24px rgba(239,68,68,0.6);transition:transform .15s;"
+                onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+            <svg width="26" height="26" fill="#fff" viewBox="0 0 24 24">
+                <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7
+                         2 2 0 012 2v3a2 2 0 01-2.18 2A19.79 19.79 0 015 3.18 2 2 0 017 1h3a2 2 0 012 1.72
+                         12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L11 8.91a16 16 0 002.31 2.7"/>
+                <line x1="1" y1="1" x2="23" y2="23" stroke="#fff" stroke-width="2.2"/>
+            </svg>
+        </button>
+
+        <!-- Speaker toggle -->
+        <button id="vid-speaker-btn" onclick="toggleSpeaker()"
+                style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,0.12);
+                       border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+                       transition:background .15s;"
+                onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+                onmouseout="this.style.background='rgba(255,255,255,0.12)'">
+            <span id="vid-speaker-icon" style="font-size:20px;">🔊</span>
+        </button>
+
+        <!-- Switch to audio-only -->
+        <button id="vid-audio-only-btn" onclick="switchToAudioOnly()"
+                style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,0.12);
+                       border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+                       transition:background .15s;"
+                title="Switch to audio call"
+                onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+                onmouseout="this.style.background='rgba(255,255,255,0.12)'">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8
+                         19.79 19.79 0 01.5 1.18 2 2 0 012.5 0h3a2 2 0 012 1.72c.127.96.36 1.903.7 2.81
+                         a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.18 6.18l1.27-1.27a2 2 0 012.11-.45
+                         c.907.34 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- ── Audio-only active call bar ─────────────────────────────── -->
 <div id="call-active"
      style="display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);
             background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:#fff;
             border-radius:30px;padding:10px 20px;z-index:9800;
             box-shadow:0 8px 28px rgba(27,42,107,0.35);
-            display:none;align-items:center;gap:14px;min-width:260px;">
-    <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;animation:callPulse 1.5s infinite;flex-shrink:0;"></div>
-    <span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;" id="call-active-label">Call active</span>
-    <span id="call-timer" style="font-family:Montserrat,sans-serif;font-size:12px;opacity:.7;min-width:42px;">0:00</span>
+            align-items:center;gap:14px;min-width:260px;">
+    <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;
+                animation:callPulse 1.5s infinite;flex-shrink:0;"></div>
+    <span id="call-active-label"
+          style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;">Call active</span>
+    <span id="call-timer"
+          style="font-family:Montserrat,sans-serif;font-size:12px;opacity:.7;min-width:42px;">0:00</span>
     <button onclick="toggleMute()" id="mute-btn"
             style="background:rgba(255,255,255,0.18);border:none;color:#fff;border-radius:20px;
-                   padding:5px 12px;cursor:pointer;font-size:12px;font-family:Montserrat,sans-serif;font-weight:700;">
+                   padding:5px 12px;cursor:pointer;font-size:12px;
+                   font-family:Montserrat,sans-serif;font-weight:700;">
         🎙 Mute
     </button>
     <button onclick="hangUp()"
@@ -1788,24 +1951,27 @@
     </button>
 </div>
 
-<!-- Hidden audio elements -->
-<audio id="call-remote-audio" autoplay></audio>
-<audio id="call-ringtone" loop
-       src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA..." style="display:none;"></audio>
+<!-- Hidden audio element for audio-only calls -->
+<audio id="call-remote-audio" autoplay playsinline></audio>
 
 <style>
-    @keyframes callPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
-    @keyframes callSlideUp { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+    @keyframes callPulse {
+        0%,100% { opacity:1; transform:scale(1); }
+        50%      { opacity:.5; transform:scale(1.4); }
+    }
+    @keyframes callSlideUp {
+        from { opacity:0; transform:translateX(-50%) translateY(20px); }
+        to   { opacity:1; transform:translateX(-50%) translateY(0); }
+    }
+    /* Hide controls on video window after 4s of no interaction */
+    #video-call-window.controls-hidden #video-controls { opacity:0; pointer-events:none; }
+    #video-call-window.controls-hidden #local-pip      { opacity:0.4; }
 </style>
+
 <script>
-    /* ══════════════════════════════════════════════════════════
-       AUDIO CALL SYSTEM — WebRTC over STOMP signaling
-       FIXES:
-         1. ICE candidate queuing (prevents "mute" race condition)
-         2. Explicit audio .play() (bypasses autoplay block)
-         3. Telegram-style call messages sent to chat
-         4. Browser Notification API for incoming calls
-       ══════════════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════════
+       CALL SYSTEM — Audio + Video — WebRTC over STOMP
+       ══════════════════════════════════════════════════════════════ */
 
     const ICE_SERVERS = [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -1813,30 +1979,66 @@
         { urls: 'stun:stun2.l.google.com:19302' }
     ];
 
-    let callPeerConn    = null;   // RTCPeerConnection
-    let callLocalStream = null;   // MediaStream (microphone)
-    let callRemoteId    = null;   // UUID of the other party
-    let callRoomId      = null;   // DM room ID
-    let callTimerInt    = null;   // interval for call timer
-    let callSecs        = 0;
-    let isMuted         = false;
-    let callStomp       = null;   // reference to stompClient
-    let pendingOffer    = null;   // stored SDP offer while waiting for mic
-    let iceCandidateQueue = [];   // FIX: queue ICE candidates until remote desc is set
-    let remoteDescSet   = false;  // FIX: flag to drain queue
+    let callPeerConn      = null;
+    let callLocalStream   = null;
+    let callRemoteId      = null;
+    let callRoomId        = null;
+    let callTimerInt      = null;
+    let callSecs          = 0;
+    let isMuted           = false;
+    let isCamOff          = false;
+    let isSpeakerOff      = false;
+    let isVideoCall       = false;     // true = video, false = audio-only
+    let callStomp         = null;
+    let pendingOffer      = null;
+    let iceCandidateQueue = [];
+    let remoteDescSet     = false;
+    let facingMode        = 'user';    // for camera flip on mobile
+    let controlsHideTimer = null;
 
-    // Request browser notification permission on page load
+    // Request browser notification permission on load
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
     }
 
-    // Called once STOMP is connected — wire up call signal subscription
+    // Auto-hide video controls after 4s of inactivity
+    const videoWin = document.getElementById('video-call-window');
+    if (videoWin) {
+        videoWin.addEventListener('mousemove', resetControlsTimer);
+        videoWin.addEventListener('touchstart', resetControlsTimer);
+    }
+    function resetControlsTimer() {
+        if (videoWin) videoWin.classList.remove('controls-hidden');
+        clearTimeout(controlsHideTimer);
+        controlsHideTimer = setTimeout(() => {
+            if (videoWin) videoWin.classList.add('controls-hidden');
+        }, 4000);
+    }
+
+    // Make local PiP draggable
+    (function() {
+        const pip = document.getElementById('local-pip');
+        if (!pip) return;
+        let dragging = false, ox, oy, sx, sy;
+        pip.addEventListener('mousedown', e => {
+            dragging = true; ox = pip.offsetLeft; oy = pip.offsetTop;
+            sx = e.clientX; sy = e.clientY; pip.style.cursor = 'grabbing';
+        });
+        document.addEventListener('mousemove', e => {
+            if (!dragging) return;
+            pip.style.right = 'auto'; pip.style.bottom = 'auto';
+            pip.style.left = (ox + e.clientX - sx) + 'px';
+            pip.style.top  = (oy + e.clientY - sy) + 'px';
+        });
+        document.addEventListener('mouseup', () => { dragging = false; pip.style.cursor = 'grab'; });
+    })();
+
+    /* ── Wire up STOMP signaling ──────────────────────────────── */
     function initCallSignaling(stomp) {
         callStomp = stomp;
         if (!CUR_USER_ID) return;
         stomp.subscribe('/topic/call.' + CUR_USER_ID, frame => {
-            const signal = JSON.parse(frame.body);
-            handleCallSignal(signal);
+            handleCallSignal(JSON.parse(frame.body));
         });
     }
 
@@ -1850,111 +2052,86 @@
         }
     }
 
-    /* ── CALLER SIDE ───────────────────────────────────────── */
-    async function startCall() {
+    /* ══════════════════════════════════════════════════════════════
+       CALLER SIDE
+       ══════════════════════════════════════════════════════════════ */
+    async function startCall(withVideo) {
         if (!OTHER_USER_ID || !ROOM_ID || !callStomp) {
             showCallToast('Cannot start call — not connected');
             return;
         }
+        isVideoCall  = !!withVideo;
         callRemoteId = OTHER_USER_ID;
         callRoomId   = ROOM_ID;
 
+        const constraints = { audio: true, video: isVideoCall ? { facingMode } : false };
         try {
-            callLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            callLocalStream = await navigator.mediaDevices.getUserMedia(constraints);
         } catch(e) {
-            showCallToast('Microphone access denied 🎤');
+            showCallToast(isVideoCall ? 'Camera/mic access denied 📷' : 'Microphone access denied 🎤');
             return;
         }
 
-        showOutgoing(OTHER_USER_NAME || 'User');
-        iceCandidateQueue = [];
-        remoteDescSet = false;
+        showOutgoing(OTHER_USER_NAME || 'User', isVideoCall);
+        if (isVideoCall) {
+            document.getElementById('call-local-video').srcObject = callLocalStream;
+        }
 
-        callPeerConn = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        iceCandidateQueue = []; remoteDescSet = false;
+
+        callPeerConn = buildPeerConn();
         callLocalStream.getTracks().forEach(t => callPeerConn.addTrack(t, callLocalStream));
 
-        callPeerConn.onicecandidate = e => {
-            if (e.candidate) sendSignal('call.ice', { candidate: e.candidate });
-        };
-        callPeerConn.ontrack = e => {
-            const audio = document.getElementById('call-remote-audio');
-            audio.srcObject = e.streams[0];
-            // FIX: explicitly call play() — autoplay is often blocked by browsers
-            audio.play().catch(() => {});
-        };
-        callPeerConn.onconnectionstatechange = () => {
-            if (['disconnected','failed','closed'].includes(callPeerConn.connectionState)) {
-                onHangup(null);
-            }
-        };
-
-        const offer = await callPeerConn.createOffer();
+        const offer = await callPeerConn.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: isVideoCall });
         await callPeerConn.setLocalDescription(offer);
-        sendSignal('call.invite', { sdp: offer.sdp });
+        sendSignal('call.invite', { sdp: offer.sdp, callType: isVideoCall ? 'VIDEO' : 'AUDIO' });
 
-        // Send "Calling…" system message to chat
-        sendCallChatMsg('📞 Outgoing call…');
+        sendCallChatMsg(isVideoCall ? '📹 Outgoing video call…' : '📞 Outgoing call…');
     }
 
-    /* ── CALLEE SIDE ───────────────────────────────────────── */
+    /* ══════════════════════════════════════════════════════════════
+       CALLEE SIDE
+       ══════════════════════════════════════════════════════════════ */
     function onInvite(signal) {
-        // If already in a call, auto-reject
         if (callPeerConn) {
             callStomp.send('/app/call.reject', {}, JSON.stringify({
                 targetUserId: signal.callerId, roomId: signal.roomId
             }));
             return;
         }
+        isVideoCall   = signal.callType === 'VIDEO';
         callRemoteId  = signal.callerId;
         callRoomId    = signal.roomId;
         pendingOffer  = signal.sdp;
-        iceCandidateQueue = [];
-        remoteDescSet = false;
-        showIncoming(signal.callerName || 'Unknown', signal.callerAvatar);
+        iceCandidateQueue = []; remoteDescSet = false;
 
-        // Browser push notification for incoming call
+        showIncoming(signal.callerName || 'Unknown', signal.callerAvatar, isVideoCall);
+
         showBrowserNotification(
-            '📞 Incoming call',
+            isVideoCall ? '📹 Incoming video call' : '📞 Incoming call',
             (signal.callerName || 'Unknown') + ' is calling you'
         );
     }
 
     async function acceptCall() {
         hideIncoming();
+        const constraints = { audio: true, video: isVideoCall ? { facingMode } : false };
         try {
-            callLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            callLocalStream = await navigator.mediaDevices.getUserMedia(constraints);
         } catch(e) {
-            showCallToast('Microphone access denied 🎤');
+            showCallToast(isVideoCall ? 'Camera/mic access denied 📷' : 'Microphone access denied 🎤');
             sendSignal('call.reject', {});
             return;
         }
 
-        callPeerConn = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-        callLocalStream.getTracks().forEach(t => callPeerConn.addTrack(t, callLocalStream));
+        if (isVideoCall) document.getElementById('call-local-video').srcObject = callLocalStream;
 
-        // FIX: set onicecandidate BEFORE setRemoteDescription
-        callPeerConn.onicecandidate = e => {
-            if (e.candidate) sendSignal('call.ice', { candidate: e.candidate });
-        };
-        callPeerConn.ontrack = e => {
-            const audio = document.getElementById('call-remote-audio');
-            audio.srcObject = e.streams[0];
-            // FIX: explicitly call play()
-            audio.play().catch(() => {});
-        };
-        callPeerConn.onconnectionstatechange = () => {
-            if (['disconnected','failed','closed'].includes(callPeerConn.connectionState)) {
-                onHangup(null);
-            }
-        };
+        callPeerConn = buildPeerConn();
+        callLocalStream.getTracks().forEach(t => callPeerConn.addTrack(t, callLocalStream));
 
         await callPeerConn.setRemoteDescription({ type: 'offer', sdp: pendingOffer });
         remoteDescSet = true;
-
-        // FIX: drain queued ICE candidates
-        for (const c of iceCandidateQueue) {
-            try { await callPeerConn.addIceCandidate(c); } catch(e) {}
-        }
+        for (const c of iceCandidateQueue) { try { await callPeerConn.addIceCandidate(c); } catch(e) {} }
         iceCandidateQueue = [];
 
         const answer = await callPeerConn.createAnswer();
@@ -1962,180 +2139,318 @@
         sendSignal('call.answer', { sdp: answer.sdp });
         pendingOffer = null;
         showActive();
-
-        // Send "Call started" message to chat
-        sendCallChatMsg('📞 Call started');
+        sendCallChatMsg(isVideoCall ? '📹 Video call started' : '📞 Call started');
     }
 
     function rejectCall() {
         hideIncoming();
         sendSignal('call.reject', {});
-        // Send "Missed call" message to chat
-        if (callRoomId) sendCallChatMsgToRoom(callRoomId, '📵 Missed call');
-        callRemoteId = null;
-        callRoomId   = null;
-        pendingOffer = null;
-        iceCandidateQueue = [];
-        remoteDescSet = false;
+        if (callRoomId) sendCallChatMsgToRoom(callRoomId, isVideoCall ? '📹 Missed video call' : '📵 Missed call');
+        callRemoteId = null; callRoomId = null; pendingOffer = null;
+        iceCandidateQueue = []; remoteDescSet = false;
     }
 
-    /* ── ANSWER received by caller ─────────────────────────── */
+    /* ── ANSWER received by caller ──────────────────────────── */
     async function onAnswer(signal) {
         if (!callPeerConn) return;
         await callPeerConn.setRemoteDescription({ type: 'answer', sdp: signal.sdp });
         remoteDescSet = true;
-
-        // FIX: drain queued ICE candidates after setting remote description
-        for (const c of iceCandidateQueue) {
-            try { await callPeerConn.addIceCandidate(c); } catch(e) {}
-        }
+        for (const c of iceCandidateQueue) { try { await callPeerConn.addIceCandidate(c); } catch(e) {} }
         iceCandidateQueue = [];
-
         hideOutgoing();
         showActive();
-
-        // Send "Call started" message
-        sendCallChatMsg('📞 Call started');
+        sendCallChatMsg(isVideoCall ? '📹 Video call started' : '📞 Call started');
     }
 
-    /* ── ICE CANDIDATE ─────────────────────────────────────── */
+    /* ── ICE (queued until remote desc ready) ────────────────── */
     async function onIce(signal) {
         if (!callPeerConn || !signal.candidate) return;
         if (remoteDescSet) {
-            // Remote description already set — add immediately
             try { await callPeerConn.addIceCandidate(signal.candidate); } catch(e) {}
         } else {
-            // FIX: queue the candidate until remote description is ready
             iceCandidateQueue.push(signal.candidate);
         }
     }
 
-    /* ── REMOTE HANGUP / REJECT ────────────────────────────── */
-    function onHangup(signal) {
-        const duration = formatCallDuration(callSecs);
-        showCallToast('📞 Call ended' + (callSecs > 0 ? ' · ' + duration : ''));
-        // Send "Call ended" system message
-        if (callRoomId && callSecs > 0) sendCallChatMsgToRoom(callRoomId, '📞 Call ended · ' + duration);
-        else if (callRoomId) sendCallChatMsgToRoom(callRoomId, '📞 Call ended');
+    /* ── REMOTE HANGUP / REJECT ─────────────────────────────── */
+    function onHangup() {
+        const dur = formatCallDuration(callSecs);
+        showCallToast('Call ended' + (callSecs > 0 ? ' · ' + dur : ''));
+        if (callRoomId && callSecs > 0) {
+            sendCallChatMsgToRoom(callRoomId, (isVideoCall ? '📹 Video call ended' : '📞 Call ended') + ' · ' + dur);
+        } else if (callRoomId) {
+            sendCallChatMsgToRoom(callRoomId, isVideoCall ? '📹 Video call ended' : '📞 Call ended');
+        }
         cleanupCall();
     }
 
-    function onReject(signal) {
+    function onReject() {
         showCallToast('Call declined ✕');
-        // Send "Missed call" message
-        sendCallChatMsg('📵 Missed call');
+        sendCallChatMsg(isVideoCall ? '📹 Missed video call' : '📵 Missed call');
         cleanupCall();
     }
 
-    /* ── LOCAL HANGUP ──────────────────────────────────────── */
+    /* ── LOCAL HANGUP ────────────────────────────────────────── */
     function hangUp() {
-        const duration = formatCallDuration(callSecs);
+        const dur = formatCallDuration(callSecs);
         sendSignal('call.end', {});
-        // Send "Call ended" system message before cleanup
-        if (callSecs > 0) sendCallChatMsg('📞 Call ended · ' + duration);
-        else sendCallChatMsg('📞 Call ended');
+        const msg = (isVideoCall ? '📹 Video call ended' : '📞 Call ended') + (callSecs > 0 ? ' · ' + dur : '');
+        sendCallChatMsg(msg);
         cleanupCall();
     }
 
+    /* ── CLEANUP ─────────────────────────────────────────────── */
     function cleanupCall() {
         if (callPeerConn) { callPeerConn.close(); callPeerConn = null; }
         if (callLocalStream) { callLocalStream.getTracks().forEach(t => t.stop()); callLocalStream = null; }
+
         const ra = document.getElementById('call-remote-audio');
         if (ra) ra.srcObject = null;
+        const rv = document.getElementById('call-remote-video');
+        if (rv) rv.srcObject = null;
+        const lv = document.getElementById('call-local-video');
+        if (lv) lv.srcObject = null;
+
         clearInterval(callTimerInt); callTimerInt = null; callSecs = 0;
-        isMuted = false;
-        remoteDescSet = false;
-        iceCandidateQueue = [];
+        isMuted = false; isCamOff = false; isSpeakerOff = false;
+        remoteDescSet = false; iceCandidateQueue = [];
         callRemoteId = null; callRoomId = null; pendingOffer = null;
+
         hideOutgoing(); hideIncoming();
         document.getElementById('call-active').style.display = 'none';
+        document.getElementById('video-call-window').style.display = 'none';
+        clearTimeout(controlsHideTimer);
     }
 
-    /* ── MUTE ──────────────────────────────────────────────── */
+    /* ── BUILD RTCPeerConnection ─────────────────────────────── */
+    function buildPeerConn() {
+        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+        pc.onicecandidate = e => {
+            if (e.candidate) sendSignal('call.ice', { candidate: e.candidate });
+        };
+
+        pc.ontrack = e => {
+            const stream = e.streams[0];
+            if (isVideoCall) {
+                const rv = document.getElementById('call-remote-video');
+                rv.srcObject = stream;
+                rv.play().catch(() => {});
+                // Hide placeholder once video starts
+                rv.onloadedmetadata = () => {
+                    document.getElementById('remote-avatar-placeholder').style.display = 'none';
+                };
+            } else {
+                const ra = document.getElementById('call-remote-audio');
+                ra.srcObject = stream;
+                ra.play().catch(() => {});
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            const state = pc.connectionState;
+            if (['disconnected','failed','closed'].includes(state)) onHangup();
+            // Update quality dot color
+            const dot = document.getElementById('call-quality-dot');
+            if (dot) dot.style.background = state === 'connected' ? '#4ade80' : '#fbbf24';
+        };
+
+        return pc;
+    }
+
+    /* ── MUTE ────────────────────────────────────────────────── */
     function toggleMute() {
         if (!callLocalStream) return;
         isMuted = !isMuted;
         callLocalStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
-        const btn = document.getElementById('mute-btn');
-        btn.textContent = isMuted ? '🔇 Unmute' : '🎙 Mute';
-        btn.style.background = isMuted ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.18)';
+
+        // Audio-only bar button
+        const muteBtn = document.getElementById('mute-btn');
+        if (muteBtn) {
+            muteBtn.textContent = isMuted ? '🔇 Unmute' : '🎙 Mute';
+            muteBtn.style.background = isMuted ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.18)';
+        }
+        // Video controls button
+        const vidMuteIcon = document.getElementById('vid-mute-icon');
+        if (vidMuteIcon) vidMuteIcon.textContent = isMuted ? '🔇' : '🎙';
+        const vidMuteBtn = document.getElementById('vid-mute-btn');
+        if (vidMuteBtn) vidMuteBtn.style.background = isMuted ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.18)';
+
+        // PiP muted overlay
+        const pip = document.getElementById('local-pip-muted');
+        if (pip) pip.style.display = isMuted ? 'flex' : 'none';
     }
 
-    /* ── STOMP HELPERS ─────────────────────────────────────── */
-    function sendSignal(dest, extra) {
-        if (!callStomp || !callRemoteId) return;
-        const payload = { targetUserId: callRemoteId, roomId: callRoomId || ROOM_ID, ...extra };
-        callStomp.send('/app/' + dest, {}, JSON.stringify(payload));
+    /* ── CAMERA ON/OFF ───────────────────────────────────────── */
+    function toggleCamera() {
+        if (!callLocalStream) return;
+        isCamOff = !isCamOff;
+        callLocalStream.getVideoTracks().forEach(t => t.enabled = !isCamOff);
+
+        const icon = document.getElementById('vid-cam-icon');
+        if (icon) icon.textContent = isCamOff ? '🚫' : '📷';
+        const btn = document.getElementById('vid-cam-btn');
+        if (btn) btn.style.background = isCamOff ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.18)';
     }
 
-    // Send a CALL_EVENT system message to current chat room
-    function sendCallChatMsg(text) {
-        const roomId = callRoomId || ROOM_ID;
-        if (!callStomp || !roomId) return;
-        sendCallChatMsgToRoom(roomId, text);
-    }
-
-    function sendCallChatMsgToRoom(roomId, text) {
-        if (!callStomp || !roomId) return;
-        callStomp.send('/app/chat.send/' + roomId, {}, JSON.stringify({
-            content: text,
-            messageType: 'SYSTEM'
-        }));
-    }
-
-    /* ── BROWSER NOTIFICATION ──────────────────────────────── */
-    function showBrowserNotification(title, body) {
-        if (!('Notification' in window)) return;
-        if (Notification.permission === 'granted') {
-            const n = new Notification(title, {
-                body,
-                icon: '/images/manas_logo.png',
-                tag: 'call-notification',
-                requireInteraction: true
+    /* ── FLIP CAMERA (mobile) ────────────────────────────────── */
+    async function flipCamera() {
+        if (!callLocalStream || !callPeerConn) return;
+        facingMode = facingMode === 'user' ? 'environment' : 'user';
+        try {
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: { facingMode }
             });
-            n.onclick = () => { window.focus(); n.close(); };
+            const newVideoTrack = newStream.getVideoTracks()[0];
+            // Replace the video track in the peer connection
+            const sender = callPeerConn.getSenders().find(s => s.track && s.track.kind === 'video');
+            if (sender) await sender.replaceTrack(newVideoTrack);
+            // Update local preview
+            callLocalStream.getVideoTracks().forEach(t => { t.stop(); callLocalStream.removeTrack(t); });
+            callLocalStream.addTrack(newVideoTrack);
+            document.getElementById('call-local-video').srcObject = callLocalStream;
+        } catch(e) {
+            showCallToast('Camera flip failed');
         }
     }
 
-    /* ── UI HELPERS ────────────────────────────────────────── */
-    function showOutgoing(name) {
+    /* ── SPEAKER ─────────────────────────────────────────────── */
+    function toggleSpeaker() {
+        isSpeakerOff = !isSpeakerOff;
+        const audio = document.getElementById('call-remote-audio');
+        const video = document.getElementById('call-remote-video');
+        if (audio) audio.muted = isSpeakerOff;
+        if (video) video.muted = isSpeakerOff;
+        const icon = document.getElementById('vid-speaker-icon');
+        if (icon) icon.textContent = isSpeakerOff ? '🔇' : '🔊';
+    }
+
+    /* ── SWITCH TO AUDIO-ONLY (during video call) ────────────── */
+    function switchToAudioOnly() {
+        if (!callLocalStream) return;
+        callLocalStream.getVideoTracks().forEach(t => { t.stop(); });
+        isVideoCall = false;
+        document.getElementById('video-call-window').style.display = 'none';
+        showActiveAudioBar();
+        showCallToast('Switched to audio call 🎙');
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       UI HELPERS
+       ══════════════════════════════════════════════════════════════ */
+    function showOutgoing(name, video) {
         document.getElementById('call-out-name').textContent = 'Calling ' + name + '…';
+        document.getElementById('call-out-type').innerHTML =
+            `<span style="width:7px;height:7px;border-radius:50%;background:#4ade80;animation:callPulse 1.2s infinite;display:inline-block;"></span>
+         ${video ? 'Video' : 'Audio'} Call · Ringing…`;
+        document.getElementById('call-out-avatar-wrap').textContent = video ? '📹' : '📞';
         document.getElementById('call-outgoing').style.display = 'flex';
     }
     function hideOutgoing() {
         document.getElementById('call-outgoing').style.display = 'none';
     }
-    function showIncoming(name, avatar) {
+
+    function showIncoming(name, avatar, video) {
         document.getElementById('call-in-name').textContent = name;
+        document.getElementById('call-in-type').innerHTML =
+            `<span style="width:7px;height:7px;border-radius:50%;background:#10b981;animation:callPulse 1.2s infinite;display:inline-block;"></span>
+         ${video ? 'Video Call' : 'Audio Call'}`;
         const av = document.getElementById('call-in-avatar');
         if (avatar) {
-            av.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="av"/>';
+            av.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="av"/>`;
         } else {
             av.textContent = name.charAt(0).toUpperCase();
         }
+        const acceptBtn = document.getElementById('call-accept-btn');
+        if (acceptBtn) acceptBtn.textContent = video ? '📹 Accept' : '📞 Accept';
         document.getElementById('call-incoming').style.display = 'block';
     }
     function hideIncoming() {
         document.getElementById('call-incoming').style.display = 'none';
     }
+
     function showActive() {
-        document.getElementById('call-active-label').textContent =
-            'Call with ' + (OTHER_USER_NAME || 'User');
+        if (isVideoCall) {
+            showActiveVideoWindow();
+        } else {
+            showActiveAudioBar();
+        }
+    }
+
+    function showActiveVideoWindow() {
+        const win = document.getElementById('video-call-window');
+        win.style.display = 'flex';
+        document.getElementById('video-partner-name').textContent = OTHER_USER_NAME || 'User';
+        document.getElementById('remote-name-label').textContent = OTHER_USER_NAME || 'User';
+        document.getElementById('call-status-label').textContent = 'Connected';
+        document.getElementById('remote-avatar-placeholder').style.display = 'flex';
+        resetControlsTimer();
+        startCallTimer('video-call-timer');
+    }
+
+    function showActiveAudioBar() {
+        document.getElementById('call-active-label').textContent = 'Call with ' + (OTHER_USER_NAME || 'User');
         const bar = document.getElementById('call-active');
         bar.style.display = 'flex';
+        startCallTimer('call-timer');
+    }
+
+    function startCallTimer(elementId) {
+        clearInterval(callTimerInt);
         callSecs = 0;
         callTimerInt = setInterval(() => {
             callSecs++;
-            document.getElementById('call-timer').textContent = formatCallDuration(callSecs);
+            const el = document.getElementById(elementId);
+            if (el) el.textContent = formatCallDuration(callSecs);
+            // Sync both timer elements
+            const other = elementId === 'call-timer' ? 'video-call-timer' : 'call-timer';
+            const otherEl = document.getElementById(other);
+            if (otherEl) otherEl.textContent = formatCallDuration(callSecs);
         }, 1000);
     }
+
     function formatCallDuration(secs) {
         const m = Math.floor(secs / 60), s = secs % 60;
         return m + ':' + (s < 10 ? '0' : '') + s;
     }
+
+    /* ── STOMP HELPERS ────────────────────────────────────────── */
+    function sendSignal(dest, extra) {
+        if (!callStomp || !callRemoteId) return;
+        callStomp.send('/app/' + dest, {}, JSON.stringify({
+            targetUserId: callRemoteId, roomId: callRoomId || ROOM_ID, ...extra
+        }));
+    }
+
+    function sendCallChatMsg(text) {
+        sendCallChatMsgToRoom(callRoomId || ROOM_ID, text);
+    }
+
+    function sendCallChatMsgToRoom(roomId, text) {
+        if (!callStomp || !roomId) return;
+        callStomp.send('/app/chat.send/' + roomId, {}, JSON.stringify({
+            content: text, messageType: 'SYSTEM'
+        }));
+    }
+
+    /* ── BROWSER NOTIFICATION ─────────────────────────────────── */
+    function showBrowserNotification(title, body) {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        const n = new Notification(title, {
+            body, icon: '/images/manas_logo.png',
+            tag: 'call-notification', requireInteraction: true
+        });
+        n.onclick = () => { window.focus(); n.close(); };
+    }
+
+    /* ── TOAST ────────────────────────────────────────────────── */
     function showCallToast(msg) {
         const t = document.createElement('div');
-        t.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(27,42,107,.93);color:#fff;padding:9px 22px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.26);pointer-events:none;';
+        t.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);' +
+            'background:rgba(27,42,107,.93);color:#fff;padding:9px 22px;border-radius:30px;' +
+            'font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;z-index:9999;' +
+            'box-shadow:0 6px 20px rgba(0,0,0,.26);pointer-events:none;';
         t.textContent = msg;
         document.body.appendChild(t);
         setTimeout(() => t.remove(), 3500);

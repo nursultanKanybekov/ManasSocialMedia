@@ -103,5 +103,6 @@ public class CallSignalController {
         private String roomId;         // the DM room this call belongs to
         private String sdp;            // SDP offer or answer
         private Object candidate;      // ICE candidate object
+        private String callType;       // AUDIO | VIDEO — set by caller, forwarded to callee
     }
 }
