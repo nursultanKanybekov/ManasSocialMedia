@@ -4,6 +4,8 @@ import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.domain.entity.chat.ChatMessage;
 import com.com.manasuniversityecosystem.domain.entity.chat.ChatRoom;
 import com.com.manasuniversityecosystem.domain.entity.social.Post;
+import com.com.manasuniversityecosystem.domain.entity.chat.ChatParticipant;
+import com.com.manasuniversityecosystem.domain.enums.RoomType;
 import com.com.manasuniversityecosystem.domain.enums.UserStatus;
 import com.com.manasuniversityecosystem.repository.UserRepository;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
@@ -45,6 +47,9 @@ public class ChatController {
         model.addAttribute("roomNames",    buildRoomNames(rooms, principal.getId()));
         model.addAttribute("unreadCounts", buildUnreadCounts(rooms, principal.getId()));
         model.addAttribute("includeChat",  true);
+        model.addAttribute("roomType",      "NONE");
+        model.addAttribute("otherUserId",   (Object) null);
+        model.addAttribute("otherUserName", "");
         return "chat/chat";
     }
 
@@ -69,6 +74,23 @@ public class ChatController {
         model.addAttribute("unreadCounts", buildUnreadCounts(sidebarRooms, principal.getId()));
         model.addAttribute("members",      currentRoom != null ? currentRoom.getParticipants() : List.of());
         model.addAttribute("includeChat",  true);
+        String roomTypeStr = currentRoom != null ? currentRoom.getRoomType().name() : "NONE";
+        model.addAttribute("roomType", roomTypeStr);
+        if (currentRoom != null && currentRoom.getRoomType() == RoomType.DIRECT) {
+            currentRoom.getParticipants().stream()
+                    .filter(p -> !p.getUser().getId().equals(principal.getId()))
+                    .findFirst()
+                    .ifPresentOrElse(p -> {
+                        model.addAttribute("otherUserId",   p.getUser().getId());
+                        model.addAttribute("otherUserName", p.getUser().getFullName());
+                    }, () -> {
+                        model.addAttribute("otherUserId",   (Object) null);
+                        model.addAttribute("otherUserName", "");
+                    });
+        } else {
+            model.addAttribute("otherUserId",   (Object) null);
+            model.addAttribute("otherUserName", "");
+        }
         return "chat/chat";
     }
 
