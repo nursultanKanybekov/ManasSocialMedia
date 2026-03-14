@@ -739,7 +739,13 @@
 
         if (isSystem) {
             div.className = 'msg-system';
-            div.innerHTML = `<span>${esc(data.content)}</span>`;
+            // Call event messages (📞/📵) get a styled blue pill; plain system messages get the default look
+            const isCallMsg = data.content && (data.content.startsWith('📞') || data.content.startsWith('📵'));
+            if (isCallMsg) {
+                div.innerHTML = `<span style="background:rgba(27,42,107,0.08);border-radius:20px;padding:5px 16px;font-family:Montserrat,sans-serif;font-weight:600;font-size:12px;color:#1b2a6b;">${esc(data.content)}</span>`;
+            } else {
+                div.innerHTML = `<span>${esc(data.content)}</span>`;
+            }
             return div;
         }
 
@@ -1376,6 +1382,11 @@
         if (type === 'IMAGE' || type === 'VOICE' || type === 'FILE' || type === 'POST_SHARE') {
             textEl.innerHTML = renderMsgContent(content, type);
         }
+        // SYSTEM rows that are call messages → blue pill
+        if (type === 'SYSTEM' && (content.startsWith('📞') || content.startsWith('📵'))) {
+            row.className = 'msg-system';
+            row.innerHTML = `<span style="background:rgba(27,42,107,0.08);border-radius:20px;padding:5px 16px;font-family:Montserrat,sans-serif;font-weight:600;font-size:12px;color:#1b2a6b;">${esc(content)}</span>`;
+        }
     });
 
     function openImageModal(src) {
@@ -1786,31 +1797,38 @@
     @keyframes callPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
     @keyframes callSlideUp { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 </style>
-
 <script>
     /* ══════════════════════════════════════════════════════════
        AUDIO CALL SYSTEM — WebRTC over STOMP signaling
+       FIXES:
+         1. ICE candidate queuing (prevents "mute" race condition)
+         2. Explicit audio .play() (bypasses autoplay block)
+         3. Telegram-style call messages sent to chat
+         4. Browser Notification API for incoming calls
        ══════════════════════════════════════════════════════════ */
 
     const ICE_SERVERS = [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
     ];
 
-    let callPeerConn   = null;   // RTCPeerConnection
-    let callLocalStream= null;   // MediaStream (microphone)
-    let callRemoteId   = null;   // UUID of the other party
-    let callRoomId     = null;   // DM room ID
-    let callTimerInt   = null;   // interval for call timer
-    let callSecs       = 0;
-    let isMuted        = false;
-    let callStomp      = null;   // reference to stompClient (set when STOMP connects)
-    let pendingOffer   = null;   // stored SDP offer while waiting for mic permission
+    let callPeerConn    = null;   // RTCPeerConnection
+    let callLocalStream = null;   // MediaStream (microphone)
+    let callRemoteId    = null;   // UUID of the other party
+    let callRoomId      = null;   // DM room ID
+    let callTimerInt    = null;   // interval for call timer
+    let callSecs        = 0;
+    let isMuted         = false;
+    let callStomp       = null;   // reference to stompClient
+    let pendingOffer    = null;   // stored SDP offer while waiting for mic
+    let iceCandidateQueue = [];   // FIX: queue ICE candidates until remote desc is set
+    let remoteDescSet   = false;  // FIX: flag to drain queue
 
-    // Show call button only for DM rooms
-    window.addEventListener('DOMContentLoaded', () => {
-        // Call button visibility handled server-side via th:if
-    });
+    // Request browser notification permission on page load
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
 
     // Called once STOMP is connected — wire up call signal subscription
     function initCallSignaling(stomp) {
@@ -1827,8 +1845,8 @@
             case 'INVITE':  onInvite(signal);  break;
             case 'ANSWER':  onAnswer(signal);  break;
             case 'ICE':     onIce(signal);     break;
-            case 'HANGUP':  onHangup();        break;
-            case 'REJECT':  onReject();        break;
+            case 'HANGUP':  onHangup(signal);  break;
+            case 'REJECT':  onReject(signal);  break;
         }
     }
 
@@ -1849,6 +1867,8 @@
         }
 
         showOutgoing(OTHER_USER_NAME || 'User');
+        iceCandidateQueue = [];
+        remoteDescSet = false;
 
         callPeerConn = new RTCPeerConnection({ iceServers: ICE_SERVERS });
         callLocalStream.getTracks().forEach(t => callPeerConn.addTrack(t, callLocalStream));
@@ -1857,17 +1877,23 @@
             if (e.candidate) sendSignal('call.ice', { candidate: e.candidate });
         };
         callPeerConn.ontrack = e => {
-            document.getElementById('call-remote-audio').srcObject = e.streams[0];
+            const audio = document.getElementById('call-remote-audio');
+            audio.srcObject = e.streams[0];
+            // FIX: explicitly call play() — autoplay is often blocked by browsers
+            audio.play().catch(() => {});
         };
         callPeerConn.onconnectionstatechange = () => {
             if (['disconnected','failed','closed'].includes(callPeerConn.connectionState)) {
-                onHangup();
+                onHangup(null);
             }
         };
 
         const offer = await callPeerConn.createOffer();
         await callPeerConn.setLocalDescription(offer);
         sendSignal('call.invite', { sdp: offer.sdp });
+
+        // Send "Calling…" system message to chat
+        sendCallChatMsg('📞 Outgoing call…');
     }
 
     /* ── CALLEE SIDE ───────────────────────────────────────── */
@@ -1882,7 +1908,15 @@
         callRemoteId  = signal.callerId;
         callRoomId    = signal.roomId;
         pendingOffer  = signal.sdp;
+        iceCandidateQueue = [];
+        remoteDescSet = false;
         showIncoming(signal.callerName || 'Unknown', signal.callerAvatar);
+
+        // Browser push notification for incoming call
+        showBrowserNotification(
+            '📞 Incoming call',
+            (signal.callerName || 'Unknown') + ' is calling you'
+        );
     }
 
     async function acceptCall() {
@@ -1898,61 +1932,108 @@
         callPeerConn = new RTCPeerConnection({ iceServers: ICE_SERVERS });
         callLocalStream.getTracks().forEach(t => callPeerConn.addTrack(t, callLocalStream));
 
+        // FIX: set onicecandidate BEFORE setRemoteDescription
         callPeerConn.onicecandidate = e => {
             if (e.candidate) sendSignal('call.ice', { candidate: e.candidate });
         };
         callPeerConn.ontrack = e => {
-            document.getElementById('call-remote-audio').srcObject = e.streams[0];
+            const audio = document.getElementById('call-remote-audio');
+            audio.srcObject = e.streams[0];
+            // FIX: explicitly call play()
+            audio.play().catch(() => {});
         };
         callPeerConn.onconnectionstatechange = () => {
             if (['disconnected','failed','closed'].includes(callPeerConn.connectionState)) {
-                onHangup();
+                onHangup(null);
             }
         };
 
         await callPeerConn.setRemoteDescription({ type: 'offer', sdp: pendingOffer });
+        remoteDescSet = true;
+
+        // FIX: drain queued ICE candidates
+        for (const c of iceCandidateQueue) {
+            try { await callPeerConn.addIceCandidate(c); } catch(e) {}
+        }
+        iceCandidateQueue = [];
+
         const answer = await callPeerConn.createAnswer();
         await callPeerConn.setLocalDescription(answer);
         sendSignal('call.answer', { sdp: answer.sdp });
         pendingOffer = null;
         showActive();
+
+        // Send "Call started" message to chat
+        sendCallChatMsg('📞 Call started');
     }
 
     function rejectCall() {
         hideIncoming();
         sendSignal('call.reject', {});
+        // Send "Missed call" message to chat
+        if (callRoomId) sendCallChatMsgToRoom(callRoomId, '📵 Missed call');
         callRemoteId = null;
         callRoomId   = null;
         pendingOffer = null;
+        iceCandidateQueue = [];
+        remoteDescSet = false;
     }
 
     /* ── ANSWER received by caller ─────────────────────────── */
     async function onAnswer(signal) {
         if (!callPeerConn) return;
         await callPeerConn.setRemoteDescription({ type: 'answer', sdp: signal.sdp });
+        remoteDescSet = true;
+
+        // FIX: drain queued ICE candidates after setting remote description
+        for (const c of iceCandidateQueue) {
+            try { await callPeerConn.addIceCandidate(c); } catch(e) {}
+        }
+        iceCandidateQueue = [];
+
         hideOutgoing();
         showActive();
+
+        // Send "Call started" message
+        sendCallChatMsg('📞 Call started');
     }
 
     /* ── ICE CANDIDATE ─────────────────────────────────────── */
     async function onIce(signal) {
         if (!callPeerConn || !signal.candidate) return;
-        try { await callPeerConn.addIceCandidate(signal.candidate); } catch(e) {}
+        if (remoteDescSet) {
+            // Remote description already set — add immediately
+            try { await callPeerConn.addIceCandidate(signal.candidate); } catch(e) {}
+        } else {
+            // FIX: queue the candidate until remote description is ready
+            iceCandidateQueue.push(signal.candidate);
+        }
     }
 
     /* ── REMOTE HANGUP / REJECT ────────────────────────────── */
-    function onHangup() {
-        showCallToast('Call ended');
+    function onHangup(signal) {
+        const duration = formatCallDuration(callSecs);
+        showCallToast('📞 Call ended' + (callSecs > 0 ? ' · ' + duration : ''));
+        // Send "Call ended" system message
+        if (callRoomId && callSecs > 0) sendCallChatMsgToRoom(callRoomId, '📞 Call ended · ' + duration);
+        else if (callRoomId) sendCallChatMsgToRoom(callRoomId, '📞 Call ended');
         cleanupCall();
     }
-    function onReject() {
+
+    function onReject(signal) {
         showCallToast('Call declined ✕');
+        // Send "Missed call" message
+        sendCallChatMsg('📵 Missed call');
         cleanupCall();
     }
 
     /* ── LOCAL HANGUP ──────────────────────────────────────── */
     function hangUp() {
+        const duration = formatCallDuration(callSecs);
         sendSignal('call.end', {});
+        // Send "Call ended" system message before cleanup
+        if (callSecs > 0) sendCallChatMsg('📞 Call ended · ' + duration);
+        else sendCallChatMsg('📞 Call ended');
         cleanupCall();
     }
 
@@ -1963,6 +2044,8 @@
         if (ra) ra.srcObject = null;
         clearInterval(callTimerInt); callTimerInt = null; callSecs = 0;
         isMuted = false;
+        remoteDescSet = false;
+        iceCandidateQueue = [];
         callRemoteId = null; callRoomId = null; pendingOffer = null;
         hideOutgoing(); hideIncoming();
         document.getElementById('call-active').style.display = 'none';
@@ -1978,11 +2061,40 @@
         btn.style.background = isMuted ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.18)';
     }
 
-    /* ── STOMP HELPER ──────────────────────────────────────── */
+    /* ── STOMP HELPERS ─────────────────────────────────────── */
     function sendSignal(dest, extra) {
         if (!callStomp || !callRemoteId) return;
         const payload = { targetUserId: callRemoteId, roomId: callRoomId || ROOM_ID, ...extra };
         callStomp.send('/app/' + dest, {}, JSON.stringify(payload));
+    }
+
+    // Send a CALL_EVENT system message to current chat room
+    function sendCallChatMsg(text) {
+        const roomId = callRoomId || ROOM_ID;
+        if (!callStomp || !roomId) return;
+        sendCallChatMsgToRoom(roomId, text);
+    }
+
+    function sendCallChatMsgToRoom(roomId, text) {
+        if (!callStomp || !roomId) return;
+        callStomp.send('/app/chat.send/' + roomId, {}, JSON.stringify({
+            content: text,
+            messageType: 'SYSTEM'
+        }));
+    }
+
+    /* ── BROWSER NOTIFICATION ──────────────────────────────── */
+    function showBrowserNotification(title, body) {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'granted') {
+            const n = new Notification(title, {
+                body,
+                icon: '/images/manas_logo.png',
+                tag: 'call-notification',
+                requireInteraction: true
+            });
+            n.onclick = () => { window.focus(); n.close(); };
+        }
     }
 
     /* ── UI HELPERS ────────────────────────────────────────── */
@@ -2014,19 +2126,20 @@
         callSecs = 0;
         callTimerInt = setInterval(() => {
             callSecs++;
-            const m = Math.floor(callSecs / 60), s = callSecs % 60;
-            document.getElementById('call-timer').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+            document.getElementById('call-timer').textContent = formatCallDuration(callSecs);
         }, 1000);
+    }
+    function formatCallDuration(secs) {
+        const m = Math.floor(secs / 60), s = secs % 60;
+        return m + ':' + (s < 10 ? '0' : '') + s;
     }
     function showCallToast(msg) {
         const t = document.createElement('div');
         t.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(27,42,107,.93);color:#fff;padding:9px 22px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.26);pointer-events:none;';
         t.textContent = msg;
         document.body.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
+        setTimeout(() => t.remove(), 3500);
     }
-
-    // Call signaling initialized directly in STOMP connect callback above.
 </script>
 </body>
 </html>
