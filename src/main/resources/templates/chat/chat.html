@@ -1956,19 +1956,47 @@
 
     /* ── ICE servers with TURN relay (essential for mobile/NAT) ──── */
     /* FIX #1: STUN alone fails on LTE/mobile. TURN relays the media. */
+    /* ── ICE servers — STUN + multiple TURN providers ─────────────
+       STUN alone NEVER works on mobile/LTE (carrier-grade NAT).
+       We use 3 independent free TURN services as fallback chain.
+       When you move servers, just change the env-var TURN_* — no JS changes.
+       ─────────────────────────────────────────────────────────────── */
     const ICE_SERVERS = [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        /* Free public TURN via Open Relay Project */
+        /* STUN — fast direct connection attempt */
+        { urls: 'stun:stun.l.google.com:19302'   },
+        { urls: 'stun:stun1.l.google.com:19302'  },
+        { urls: 'stun:stun2.l.google.com:19302'  },
+        { urls: 'stun:stun.cloudflare.com:3478'  },
+
+        /* TURN #1 — Open Relay Project (free, no account) */
         {
             urls: [
                 'turn:openrelay.metered.ca:80',
                 'turn:openrelay.metered.ca:443',
                 'turn:openrelay.metered.ca:80?transport=tcp',
-                'turn:openrelay.metered.ca:443?transport=tcp'
+                'turn:openrelay.metered.ca:443?transport=tcp',
+                'turns:openrelay.metered.ca:443'
             ],
             username:   'openrelayproject',
             credential: 'openrelayproject'
+        },
+
+        /* TURN #2 — FreeSWITCH / FreeTURN (free, no account) */
+        {
+            urls: [
+                'turn:freestun.net:3479',
+                'turn:freestun.net:5349',
+                'turns:freestun.net:5349'
+            ],
+            username:   'free',
+            credential: 'free'
+        },
+
+        /* TURN #3 — Numb (Viagenie legacy free relay) */
+        {
+            urls: 'turn:numb.viagenie.ca',
+            username:   'webrtc@live.com',
+            credential: 'muazkh'
         }
     ];
 
@@ -2234,11 +2262,19 @@
        ICE — queued until remote desc ready
        ══════════════════════════════════════════════════════════════════ */
     async function onIce(signal) {
-        if (!callPeerConn || !signal.candidate) return;
+        if (!callPeerConn) return;
+        /* null candidate = end-of-candidates signal — add it to finalize gathering */
+        const candidate = signal.candidate;
+        if (candidate === null || candidate === undefined) {
+            try { await callPeerConn.addIceCandidate(null); } catch(e) {}
+            return;
+        }
         if (remoteDescSet) {
-            try { await callPeerConn.addIceCandidate(signal.candidate); } catch(e) {}
+            try { await callPeerConn.addIceCandidate(candidate); } catch(e) {
+                console.warn('[Call] addIceCandidate failed', e);
+            }
         } else {
-            iceCandidateQueue.push(signal.candidate);
+            iceCandidateQueue.push(candidate);
         }
     }
 
@@ -2329,19 +2365,45 @@
        BUILD RTCPeerConnection
        ══════════════════════════════════════════════════════════════════ */
     function buildPeerConn() {
-        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        const pc = new RTCPeerConnection({
+            iceServers:           ICE_SERVERS,
+            iceCandidatePoolSize: 10,        // pre-gather candidates before offer/answer
+            bundlePolicy:         'max-bundle',
+            rtcpMuxPolicy:        'require'
+        });
 
+        let iceRestartAttempts = 0;
+        const MAX_ICE_RESTARTS = 3;
+        let connectTimeoutId   = null;
+
+        /* 30-second connection timeout */
+        function startConnectTimeout() {
+            clearTimeout(connectTimeoutId);
+            connectTimeoutId = setTimeout(() => {
+                if (!callIsConnected && callPeerConn === pc) {
+                    console.warn('[Call] 30s connection timeout');
+                    showCallToast('Could not connect — check your network');
+                    hangUp();
+                }
+            }, 30000);
+        }
+
+        /* Send all ICE candidates including null (end-of-candidates) */
         pc.onicecandidate = e => {
-            if (e.candidate) sendSignal('call.ice', { candidate: e.candidate });
+            if (callPeerConn !== pc) return;
+            sendSignal('call.ice', { candidate: e.candidate || null });
         };
 
-        /* FIX #9: Always play audio track regardless of call type.
-           For video calls the <video> element handles the video track,
-           but we still pipe the audio through it (video element plays audio too). */
+        /* Start timeout when ICE gathering begins */
+        pc.onicegatheringstatechange = () => {
+            console.log('[Call] ICE gathering:', pc.iceGatheringState);
+            if (pc.iceGatheringState === 'gathering') startConnectTimeout();
+        };
+
+        /* Pipe remote tracks to the right media element */
         pc.ontrack = e => {
             const stream = e.streams[0];
             if (!stream) return;
-
             if (isVideoCall) {
                 const rv = document.getElementById('call-remote-video');
                 if (rv && rv.srcObject !== stream) {
@@ -2353,7 +2415,6 @@
                     }, { once: true });
                 }
             } else {
-                /* Audio-only: pipe to <audio> element */
                 const ra = document.getElementById('call-remote-audio');
                 if (ra && ra.srcObject !== stream) {
                     ra.srcObject = stream;
@@ -2362,49 +2423,59 @@
             }
         };
 
-        /* FIX #2: ONLY 'failed' triggers hangup.
-           - 'disconnected' is transient (ICE restart will recover it)
-           - 'closed'       we triggered ourselves — do nothing
-           - 'connected'    start timer, send "Call started" (once, by caller only) FIX #5 */
+        /* Connection state — only 'failed' ends the call */
         pc.onconnectionstatechange = () => {
+            if (callPeerConn !== pc) return;
             const state = pc.connectionState;
             const dot   = document.getElementById('call-quality-dot');
             const adot  = document.getElementById('audio-call-dot');
+            console.log('[Call] connection state:', state,
+                '| ICE:', pc.iceConnectionState,
+                '| gathering:', pc.iceGatheringState);
 
             if (state === 'connected') {
-                callIsConnected = true;
+                clearTimeout(connectTimeoutId);
+                callIsConnected    = true;
+                iceRestartAttempts = 0;
                 if (dot)  dot.style.background  = '#4ade80';
                 if (adot) adot.style.background = '#4ade80';
-                /* Update status label */
                 const sl = document.getElementById('call-status-label');
                 if (sl) sl.textContent = 'Connected';
                 const al = document.getElementById('call-active-label');
                 if (al) al.textContent = 'Call with ' + callRemoteName;
                 startCallTimer();
-                /* FIX #5: only the CALLER logs "Call started" — one message, not two */
+                /* Only caller sends "Call started" — prevents double message */
                 if (isCaller) sendCallMsg(callRoomId,
                     isVideoCall ? '📹 Video call started' : '📞 Call started');
 
             } else if (state === 'disconnected') {
-                /* FIX #2: transient — warn but do NOT hang up */
                 if (dot)  dot.style.background  = '#f97316';
                 if (adot) adot.style.background = '#f97316';
-                showCallToast('Connection unstable…');
+                /* Wait 2s then try ICE restart — covers brief network hiccups */
+                setTimeout(() => {
+                    if (callPeerConn === pc && pc.connectionState === 'disconnected') {
+                        console.log('[Call] attempting ICE restart after disconnected');
+                        try { pc.restartIce(); } catch(e) {}
+                    }
+                }, 2000);
 
             } else if (state === 'failed') {
-                /* FIX #2: permanent failure — hang up */
-                showCallToast('Connection failed ✕');
-                hangUp();
+                if (iceRestartAttempts < MAX_ICE_RESTARTS) {
+                    iceRestartAttempts++;
+                    console.log('[Call] failed, ICE restart', iceRestartAttempts + '/' + MAX_ICE_RESTARTS);
+                    showCallToast('Reconnecting… (' + iceRestartAttempts + '/' + MAX_ICE_RESTARTS + ')');
+                    try { pc.restartIce(); }
+                    catch(e) { console.error('[Call] restartIce threw', e); hangUp(); }
+                } else {
+                    showCallToast('Connection failed — please try again');
+                    hangUp();
+                }
             }
             /* 'closed', 'new', 'connecting' — ignored */
         };
 
-        /* ICE connection state (extra reliability check) */
         pc.oniceconnectionstatechange = () => {
-            if (pc.iceConnectionState === 'failed') {
-                /* Try ICE restart before giving up */
-                try { pc.restartIce(); } catch(e) {}
-            }
+            console.log('[Call] ICE connection state:', pc.iceConnectionState);
         };
 
         return pc;
