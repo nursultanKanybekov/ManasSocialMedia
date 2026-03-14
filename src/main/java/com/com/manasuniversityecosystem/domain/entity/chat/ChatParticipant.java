@@ -29,6 +29,11 @@ public class ChatParticipant {
 
     private LocalDateTime lastReadAt;
 
+    /** True = this participant is a channel admin (can add/remove members) */
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean isChannelAdmin = false;
+
     public void markRead() {
         this.lastReadAt = LocalDateTime.now();
     }

@@ -1321,7 +1321,28 @@
             <div><div class="msg-file-name">${esc(name)}</div><div class="msg-file-size">Download</div></div>
         </a>`;
         }
+        if (type === 'POST_SHARE') {
+            return renderPostShareCard(content);
+        }
         return esc(content);
+    }
+
+    function renderPostShareCard(json) {
+        try {
+            const d = JSON.parse(json);
+            const img = d.imageUrl ? `<img src="${esc(d.imageUrl)}" style="width:100%;max-height:220px;object-fit:cover;border-radius:0;" alt="post image"/>` : '';
+            const text = d.content ? `<div style="font-size:13px;color:#374151;line-height:1.5;padding:10px 12px;white-space:pre-wrap;">${esc(d.content)}</div>` : '';
+            return `<a href="${esc(d.postUrl || '#')}" target="_blank" style="display:block;text-decoration:none;border:1.5px solid #e8eaf6;border-radius:12px;overflow:hidden;max-width:320px;background:#fff;transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(27,42,107,0.12)'" onmouseout="this.style.boxShadow='none'">
+                ${img}
+                <div style="padding:10px 12px 6px;border-top:${img ? '1px solid #f0f2f8' : 'none'};">
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                        <span style="font-size:11px;font-family:Montserrat,sans-serif;font-weight:700;color:#1b2a6b;">📌 ${esc(d.author || 'Unknown')}</span>
+                    </div>
+                    ${text}
+                    <div style="padding:6px 12px 10px;font-size:11px;color:#6366f1;font-family:Montserrat,sans-serif;font-weight:600;">View post →</div>
+                </div>
+            </a>`;
+        } catch(e) { return esc(json); }
     }
 
     // Patch existing rendered messages on page load
@@ -1332,7 +1353,7 @@
         if (!textEl) return;
         const type = row.dataset.msgType || 'TEXT';
         const content = row.dataset.content || '';
-        if (type === 'IMAGE' || type === 'VOICE' || type === 'FILE') {
+        if (type === 'IMAGE' || type === 'VOICE' || type === 'FILE' || type === 'POST_SHARE') {
             textEl.innerHTML = renderMsgContent(content, type);
         }
     });

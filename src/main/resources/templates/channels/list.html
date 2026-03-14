@@ -4,47 +4,50 @@
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-            <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin:0;">📢 Channels</h1>
-            <a th:href="@{/channels/new}" style="background:#1b2a6b;color:white;padding:10px 20px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">+ Create Channel</a>
-        </div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin:0;">📢 Channels</h1>
+        <a th:href="@{/channels/new}" style="background:#1b2a6b;color:white;padding:10px 20px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">+ Create Channel</a>
+    </div>
 
-        <div th:if="${not #lists.isEmpty(myChannels)}" style="margin-bottom:32px;">
-            <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;color:#8a91a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">My Channels</h2>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
-                <a th:each="ch : ${myChannels}" th:href="@{/channels/{id}(id=${ch.id})}"
-                   style="background:white;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);text-decoration:none;display:flex;align-items:center;gap:16px;border-left:4px solid #1b2a6b;">
-                    <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#1b2a6b,#c0392b);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;flex-shrink:0;">📢</div>
-                    <div>
-                        <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:#1b2a6b;" th:text="${ch.name}">Channel</div>
-                        <div style="font-size:11px;color:#8a91a8;margin-top:3px;" th:text="${ch.participants.size() + ' members'}">0 members</div>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;color:#8a91a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">All Channels</h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;" th:if="${not #lists.isEmpty(channels)}">
-            <a th:each="ch : ${channels}" th:href="@{/channels/{id}(id=${ch.id})}"
-               style="background:white;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);text-decoration:none;display:flex;align-items:center;gap:16px;">
-                <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#2c3e8c,#8e2222);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;flex-shrink:0;">📢</div>
-                <div style="flex:1;min-width:0;">
+    <div th:if="${not #lists.isEmpty(myChannels)}" style="margin-bottom:32px;">
+        <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;color:#8a91a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">My Channels</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
+            <a th:each="ch : ${myChannels}" th:href="@{/channels/{id}(id=${ch.id})}"
+               style="background:white;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);text-decoration:none;display:flex;align-items:center;gap:16px;border-left:4px solid #1b2a6b;">
+                <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#1b2a6b,#c0392b);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;flex-shrink:0;">📢</div>
+                <div>
                     <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:#1b2a6b;" th:text="${ch.name}">Channel</div>
-                    <div style="font-size:11px;color:#8a91a8;margin-top:3px;">
-                        <span th:text="${ch.participants.size() + ' members'}">members</span> · <span th:text="${ch.createdBy.fullName}">Owner</span>
-                    </div>
+                    <div style="font-size:11px;color:#8a91a8;margin-top:3px;" th:text="${ch.participants.size() + ' members'}">0 members</div>
                 </div>
             </a>
         </div>
-        <div th:if="${#lists.isEmpty(channels)}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
-            <div style="font-size:48px;margin-bottom:16px;">📢</div>
-            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;margin-bottom:8px;">No Channels Yet</h3>
-            <p style="color:#8a91a8;margin-bottom:20px;">Be the first to create a channel!</p>
-            <a th:href="@{/channels/new}" style="background:#1b2a6b;color:white;padding:10px 24px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">+ Create Channel</a>
-        </div>
-    </main>
+    </div>
+
+    <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;color:#8a91a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">All Channels</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;" th:if="${not #lists.isEmpty(channels)}">
+        <a th:each="ch : ${channels}" th:href="@{/channels/{id}(id=${ch.id})}"
+           style="background:white;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);text-decoration:none;display:flex;align-items:center;gap:16px;">
+            <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#2c3e8c,#8e2222);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;flex-shrink:0;">📢</div>
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:#1b2a6b;" th:text="${ch.name}">Channel</div>
+                    <span th:if="${ch.isPrivate}" style="background:#f3e5f5;color:#7c3aed;font-size:9px;font-family:Montserrat,sans-serif;font-weight:700;padding:1px 6px;border-radius:10px;">🔒</span>
+                </div>
+                <div style="font-size:11px;color:#8a91a8;margin-top:3px;">
+                    <span th:text="${ch.participants.size() + ' members'}">members</span> · <span th:text="${ch.createdBy.fullName}">Owner</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div th:if="${#lists.isEmpty(channels)}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+        <div style="font-size:48px;margin-bottom:16px;">📢</div>
+        <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;margin-bottom:8px;">No Channels Yet</h3>
+        <p style="color:#8a91a8;margin-bottom:20px;">Be the first to create a channel!</p>
+        <a th:href="@{/channels/new}" style="background:#1b2a6b;color:white;padding:10px 24px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">+ Create Channel</a>
+    </div>
+</main>
 </div>
 </body>
 </html>

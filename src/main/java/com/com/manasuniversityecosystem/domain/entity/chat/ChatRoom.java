@@ -47,6 +47,11 @@ public class ChatRoom {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /** True = only invited members can see/join this channel */
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean isPrivate = false;
+
     @OneToMany(mappedBy = "room",
             cascade = CascadeType.ALL,
             orphanRemoval = true,

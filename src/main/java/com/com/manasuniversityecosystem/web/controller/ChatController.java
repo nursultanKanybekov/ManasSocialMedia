@@ -3,12 +3,14 @@ package com.com.manasuniversityecosystem.web.controller;
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.domain.entity.chat.ChatMessage;
 import com.com.manasuniversityecosystem.domain.entity.chat.ChatRoom;
-import com.com.manasuniversityecosystem.security.UserDetailsImpl;
-import com.com.manasuniversityecosystem.repository.UserRepository;
+import com.com.manasuniversityecosystem.domain.entity.social.Post;
 import com.com.manasuniversityecosystem.domain.enums.UserStatus;
-import com.com.manasuniversityecosystem.service.UserService;
+import com.com.manasuniversityecosystem.repository.UserRepository;
+import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.service.CloudinaryService;
+import com.com.manasuniversityecosystem.service.UserService;
 import com.com.manasuniversityecosystem.service.chat.ChatService;
+import com.com.manasuniversityecosystem.service.social.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -32,22 +34,20 @@ public class ChatController {
     private final UserService userService;
     private final UserRepository userRepo;
     private final CloudinaryService cloudinaryService;
+    private final PostService postService;
 
-    // GET /chat  — chat lobby with all rooms
     @GetMapping
     public String chatLobby(@AuthenticationPrincipal UserDetailsImpl principal, Model model) {
-        AppUser user  = userService.getById(principal.getId());
+        AppUser user = userService.getById(principal.getId());
         List<ChatRoom> rooms = chatService.getUserRooms(principal.getId());
-
-        model.addAttribute("currentUser",   user);
-        model.addAttribute("rooms",         rooms);
-        model.addAttribute("roomNames",     buildRoomNames(rooms, principal.getId()));
-        model.addAttribute("unreadCounts",  buildUnreadCounts(rooms, principal.getId()));
-        model.addAttribute("includeChat",   true);
+        model.addAttribute("currentUser",  user);
+        model.addAttribute("rooms",        rooms);
+        model.addAttribute("roomNames",    buildRoomNames(rooms, principal.getId()));
+        model.addAttribute("unreadCounts", buildUnreadCounts(rooms, principal.getId()));
+        model.addAttribute("includeChat",  true);
         return "chat/chat";
     }
 
-    // GET /chat/room/{id}  — open a specific room
     @GetMapping("/room/{id}")
     public String openRoom(@PathVariable UUID id,
                            @AuthenticationPrincipal UserDetailsImpl principal,
@@ -55,27 +55,23 @@ public class ChatController {
         AppUser user = userService.getById(principal.getId());
         List<ChatMessage> history = chatService.getRoomHistory(id, 0);
         chatService.markRoomAsRead(user, id);
-
         ChatRoom currentRoom = chatService.getRoomWithParticipants(id);
         List<ChatMessage> pinnedMessages = chatService.getPinnedMessages(id);
-
         model.addAttribute("currentUser",    user);
         model.addAttribute("currentRoom",    currentRoom);
         model.addAttribute("roomId",         id);
         model.addAttribute("history",        history);
         model.addAttribute("pinnedMessages", pinnedMessages);
         model.addAttribute("unread",         chatService.getUnreadCount(id, principal.getId()));
-
         List<ChatRoom> sidebarRooms = chatService.getUserRooms(principal.getId());
-        model.addAttribute("rooms",          sidebarRooms);
-        model.addAttribute("roomNames",      buildRoomNames(sidebarRooms, principal.getId()));
-        model.addAttribute("unreadCounts",   buildUnreadCounts(sidebarRooms, principal.getId()));
-        model.addAttribute("members",        currentRoom != null ? currentRoom.getParticipants() : List.of());
-        model.addAttribute("includeChat",    true);
+        model.addAttribute("rooms",        sidebarRooms);
+        model.addAttribute("roomNames",    buildRoomNames(sidebarRooms, principal.getId()));
+        model.addAttribute("unreadCounts", buildUnreadCounts(sidebarRooms, principal.getId()));
+        model.addAttribute("members",      currentRoom != null ? currentRoom.getParticipants() : List.of());
+        model.addAttribute("includeChat",  true);
         return "chat/chat";
     }
 
-    // GET /chat/room/{id}/history?page=1  (HTMX load more)
     @GetMapping("/room/{id}/history")
     public String loadMoreHistory(@PathVariable UUID id,
                                   @RequestParam(defaultValue = "1") int page,
@@ -85,7 +81,6 @@ public class ChatController {
         return "chat/fragments/message-list :: messageList";
     }
 
-    // POST /chat/direct/{userId}  — open or create DM with user
     @PostMapping("/direct/{userId}")
     public String openDirectChat(@PathVariable UUID userId,
                                  @AuthenticationPrincipal UserDetailsImpl principal) {
@@ -95,7 +90,6 @@ public class ChatController {
         return "redirect:/chat/room/" + room.getId();
     }
 
-    // POST /chat/global  — open global room
     @PostMapping("/global")
     public String openGlobalChat(@AuthenticationPrincipal UserDetailsImpl principal) {
         AppUser user = userService.getById(principal.getId());
@@ -103,7 +97,6 @@ public class ChatController {
         return "redirect:/chat/room/" + room.getId();
     }
 
-    // POST /chat/faculty  — open faculty channel
     @PostMapping("/faculty")
     public String openFacultyChat(@AuthenticationPrincipal UserDetailsImpl principal) {
         AppUser user = userService.getById(principal.getId());
@@ -111,7 +104,6 @@ public class ChatController {
         return "redirect:/chat/faculty-group/" + room.getId();
     }
 
-    // GET /chat/faculty-group/{roomId}
     @GetMapping("/faculty-group/{roomId}")
     public String facultyGroup(@PathVariable UUID roomId,
                                @AuthenticationPrincipal UserDetailsImpl principal,
@@ -119,11 +111,9 @@ public class ChatController {
         AppUser currentUser = userService.getById(principal.getId());
         ChatRoom room = chatService.getOrCreateFacultyRoom(currentUser);
         chatService.joinRoom(currentUser, room.getId());
-
         List<AppUser> facultyMembers = currentUser.getFaculty() != null
                 ? userRepo.findByFacultyIdAndStatus(currentUser.getFaculty().getId(), UserStatus.ACTIVE)
                 : List.of();
-
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("room",        room);
         model.addAttribute("messages",    chatService.getRoomHistory(room.getId(), 0));
@@ -133,10 +123,9 @@ public class ChatController {
         return "chat/faculty-group";
     }
 
-    // POST /chat/upload — upload image/file/voice, return URL
     @PostMapping("/upload")
     @ResponseBody
-    public ResponseEntity<java.util.Map<String,String>> uploadChatFile(
+    public ResponseEntity<Map<String, String>> uploadChatFile(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
             @RequestParam(value = "type", defaultValue = "FILE") String type,
             @AuthenticationPrincipal UserDetailsImpl principal) {
@@ -149,43 +138,36 @@ public class ChatController {
             } else {
                 url = cloudinaryService.uploadDocument(file, "chat/files");
             }
-            return ResponseEntity.ok(java.util.Map.of("url", url));
+            return ResponseEntity.ok(Map.of("url", url));
         } catch (Exception e) {
             log.error("Chat file upload failed: {}", e.getMessage());
-            return ResponseEntity.internalServerError().body(java.util.Map.of("error", e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // DELETE /chat/message/{id}
     @DeleteMapping("/message/{id}")
     @ResponseBody
-    public ResponseEntity<Void> deleteMessage(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal UserDetailsImpl principal) {
-        AppUser user = userService.getById(principal.getId());
-        chatService.deleteMessage(id, user);
+    public ResponseEntity<Void> deleteMessage(@PathVariable UUID id,
+                                              @AuthenticationPrincipal UserDetailsImpl principal) {
+        chatService.deleteMessage(id, userService.getById(principal.getId()));
         return ResponseEntity.ok().build();
     }
 
-    // POST /chat/message/{id}/pin  — toggle pin
     @PostMapping("/message/{id}/pin")
     @ResponseBody
-    public ResponseEntity<Void> pinMessage(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal UserDetailsImpl principal) {
-        AppUser user = userService.getById(principal.getId());
-        chatService.togglePin(id, user);
+    public ResponseEntity<Void> pinMessage(@PathVariable UUID id,
+                                           @AuthenticationPrincipal UserDetailsImpl principal) {
+        chatService.togglePin(id, userService.getById(principal.getId()));
         return ResponseEntity.ok().build();
     }
 
-    // GET /chat/rooms  — returns user's rooms as JSON (for share modal)
     @GetMapping("/rooms")
     @ResponseBody
-    public ResponseEntity<List<java.util.Map<String,Object>>> getRoomsJson(
+    public ResponseEntity<List<Map<String, Object>>> getRoomsJson(
             @AuthenticationPrincipal UserDetailsImpl principal) {
         List<ChatRoom> rooms = chatService.getUserRooms(principal.getId());
-        List<java.util.Map<String,Object>> result = rooms.stream().map(r -> {
-            java.util.Map<String,Object> m = new HashMap<>();
+        List<Map<String, Object>> result = rooms.stream().map(r -> {
+            Map<String, Object> m = new HashMap<>();
             m.put("id",       r.getId());
             m.put("name",     chatService.getRoomDisplayName(r, principal.getId()));
             m.put("roomType", r.getRoomType().name());
@@ -194,16 +176,40 @@ public class ChatController {
         return ResponseEntity.ok(result);
     }
 
-    // POST /chat/share  — send a post share message to a room
     @PostMapping("/share")
     @ResponseBody
     public ResponseEntity<Void> shareToRoom(
-            @RequestBody java.util.Map<String,String> body,
+            @RequestBody Map<String, String> body,
             @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
             UUID roomId = UUID.fromString(body.get("roomId"));
-            String content = body.get("content");
             AppUser user = userService.getById(principal.getId());
+
+            String postIdStr = body.get("postId");
+            if (postIdStr != null && !postIdStr.isBlank()) {
+                try {
+                    Post post = postService.getById(UUID.fromString(postIdStr));
+                    String text = post.getLocalizedContent("en");
+                    if (text == null) text = post.getLocalizedContent("ru");
+                    if (text == null) text = "";
+                    String preview = text.length() > 200 ? text.substring(0, 200) + "\u2026" : text;
+                    String imageVal = post.getImageUrl() != null
+                            ? "\"" + escJson(post.getImageUrl()) + "\""
+                            : "null";
+                    String json = "{"
+                            + "\"postId\":\"" + post.getId() + "\","
+                            + "\"author\":\"" + escJson(post.getAuthor().getFullName()) + "\","
+                            + "\"content\":\"" + escJson(preview) + "\","
+                            + "\"imageUrl\":" + imageVal + ","
+                            + "\"postUrl\":\"/feed/post/" + post.getId() + "\""
+                            + "}";
+                    chatService.sendMessage(user, roomId, json, "POST_SHARE", null, null);
+                    return ResponseEntity.ok().build();
+                } catch (Exception ex) {
+                    log.warn("Rich share fallback: {}", ex.getMessage());
+                }
+            }
+            String content = body.getOrDefault("content", "");
             chatService.sendMessage(user, roomId, content, "TEXT", null, null);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
@@ -212,7 +218,6 @@ public class ChatController {
         }
     }
 
-    // GET /chat/users/search?q=...  — search any user by name or email (for new DM)
     @GetMapping("/users/search")
     @ResponseBody
     public ResponseEntity<List<Map<String, Object>>> searchUsers(
@@ -229,15 +234,22 @@ public class ChatController {
             m.put("fullName", u.getFullName());
             m.put("role",     u.getRole().name());
             m.put("email",    u.getEmail());
-            String avatar = (u.getProfile() != null && u.getProfile().getAvatarUrl() != null)
-                    ? u.getProfile().getAvatarUrl() : null;
-            m.put("avatarUrl", avatar);
+            m.put("avatarUrl", u.getProfile() != null ? u.getProfile().getAvatarUrl() : null);
             return m;
         }).toList();
         return ResponseEntity.ok(result);
     }
 
-    // ── helpers ───────────────────────────────────────────────
+    // -- helpers ---------------------------------------------------
+
+    /** Escape a string for embedding inside a JSON string value. */
+    private String escJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "");
+    }
 
     private Map<UUID, String> buildRoomNames(List<ChatRoom> rooms, UUID userId) {
         Map<UUID, String> names = new HashMap<>();

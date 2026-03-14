@@ -44,6 +44,13 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, UUID> {
             "WHERE cr.id = :roomId")
     Optional<ChatRoom> findByIdWithParticipants(@Param("roomId") UUID roomId);
 
+    /** Channels visible to a user: public ones + private ones they belong to */
+    @Query("SELECT cr FROM ChatRoom cr LEFT JOIN cr.participants cp " +
+            "WHERE cr.roomType = 'CHANNEL' " +
+            "AND (cr.isPrivate = false OR cp.user.id = :userId) " +
+            "ORDER BY cr.createdAt DESC")
+    List<ChatRoom> findVisibleChannels(@Param("userId") UUID userId);
+
     /** Returns every participant user ID — native SQL, works for any role, zero lazy-load risk */
     @Query(value = "SELECT user_id FROM chat_participant WHERE room_id = :roomId", nativeQuery = true)
     List<UUID> findParticipantUserIds(@Param("roomId") UUID roomId);

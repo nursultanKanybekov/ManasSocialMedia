@@ -1,97 +1,595 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/header :: head(#{admin.title})}"></head>
-<body class="app-layout">
+<body class="app-layout admin-dash">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<!-- layout-body removed: sidebar is now fixed positioned -->
-  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-  <main class="main-content">
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
-    <h2 th:text="#{admin.dashboard}">Admin Dashboard</h2>
+<style>
+  .admin-dash .main-content {
+    background: #f0f3f9;
+    min-height: 100vh;
+    padding: 32px 28px 60px;
+    font-family: 'Open Sans', sans-serif;
+  }
 
-    <!-- Stats Cards -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h4 th:text="#{admin.total_users}">Total Users</h4>
-        <span class="stat-number" th:text="${totalUsers}">0</span>
+  /* ── PAGE HEADER ────────────────────────────────── */
+  .adm-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .adm-header-left h1 {
+    font-family: Montserrat, sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: #0d1b4b;
+    margin: 0 0 4px;
+    letter-spacing: -0.5px;
+  }
+  .adm-header-left p {
+    font-size: 13px;
+    color: #8a92a8;
+    margin: 0;
+  }
+  .adm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #1b2a6b, #2d4a9e);
+    color: #fff;
+    padding: 7px 16px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .adm-badge span {
+    width: 7px; height: 7px;
+    background: #4ade80;
+    border-radius: 50%;
+    animation: adPulse 2s infinite;
+  }
+  @keyframes adPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.5)} }
+
+  /* ── STAT CARDS ─────────────────────────────────── */
+  .adm-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .adm-stat {
+    background: #fff;
+    border-radius: 18px;
+    padding: 22px 20px 18px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(13,27,75,0.07);
+    transition: transform .2s, box-shadow .2s;
+    cursor: default;
+  }
+  .adm-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(13,27,75,0.12);
+  }
+  .adm-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 18px 18px 0 0;
+  }
+  .adm-stat.blue::before  { background: linear-gradient(90deg,#1b2a6b,#4f6ef7); }
+  .adm-stat.amber::before { background: linear-gradient(90deg,#f59e0b,#fbbf24); }
+  .adm-stat.green::before { background: linear-gradient(90deg,#10b981,#34d399); }
+  .adm-stat.red::before   { background: linear-gradient(90deg,#ef4444,#f87171); }
+  .adm-stat.indigo::before{ background: linear-gradient(90deg,#6366f1,#a5b4fc); }
+
+  .adm-stat-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+    font-size: 18px;
+  }
+  .blue  .adm-stat-icon { background: #e8edff; }
+  .amber .adm-stat-icon { background: #fef9e7; }
+  .green .adm-stat-icon { background: #e8faf4; }
+  .red   .adm-stat-icon { background: #fef2f2; }
+  .indigo.adm-stat-icon { background: #eef2ff; }
+  .indigo .adm-stat-icon { background: #eef2ff; }
+
+  .adm-stat-num {
+    font-family: Montserrat, sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: #0d1b4b;
+    line-height: 1;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .adm-stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #8a92a8;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .adm-stat-action {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1b2a6b;
+    text-decoration: none;
+    background: #e8edff;
+    padding: 4px 10px;
+    border-radius: 20px;
+    transition: background .15s;
+  }
+  .adm-stat-action:hover { background: #c7d2fe; }
+
+  /* ── MAIN GRID ──────────────────────────────────── */
+  .adm-main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+  }
+
+  /* ── LEADERBOARD CARD ───────────────────────────── */
+  .adm-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(13,27,75,0.07);
+    overflow: hidden;
+  }
+  .adm-card-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #f0f3f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .adm-card-title {
+    font-family: Montserrat, sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0d1b4b;
+  }
+  .adm-card-sub {
+    font-size: 12px;
+    color: #8a92a8;
+    margin-top: 2px;
+  }
+
+  /* Leaderboard rows */
+  .adm-lb-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    border-bottom: 1px solid #f8f9fd;
+    transition: background .14s;
+  }
+  .adm-lb-row:hover { background: #f8f9fd; }
+  .adm-lb-row:last-child { border-bottom: none; }
+
+  .adm-lb-rank {
+    width: 28px; height: 28px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: Montserrat, sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .rank-1 { background: linear-gradient(135deg,#f59e0b,#fbbf24); color: #fff; }
+  .rank-2 { background: linear-gradient(135deg,#94a3b8,#cbd5e1); color: #fff; }
+  .rank-3 { background: linear-gradient(135deg,#cd7c47,#e8a87c); color: #fff; }
+  .rank-n { background: #f0f3f9; color: #8a92a8; }
+
+  .adm-lb-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid #e8edff;
+  }
+  .adm-lb-avatar-init {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,#1b2a6b,#4f6ef7);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .adm-lb-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0d1b4b;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .adm-lb-name:hover { color: #1b2a6b; text-decoration: underline; }
+  .adm-lb-role {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #eef2ff;
+    color: #4f6ef7;
+    flex-shrink: 0;
+  }
+  .adm-lb-pts {
+    font-family: Montserrat, sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0d1b4b;
+    min-width: 50px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── QUICK ACTIONS ──────────────────────────────── */
+  .adm-actions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+  }
+  .adm-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all .18s;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font-family: 'Open Sans', sans-serif;
+  }
+  .adm-action-btn .icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: transform .18s;
+  }
+  .adm-action-btn:hover .icon { transform: scale(1.1) rotate(-5deg); }
+
+  .adm-action-btn.navy   { background: #e8edff; color: #1b2a6b; }
+  .adm-action-btn.navy:hover   { background: #d0d9ff; }
+  .adm-action-btn.navy .icon   { background: #1b2a6b; color: #fff; }
+
+  .adm-action-btn.amber  { background: #fef9e7; color: #92400e; }
+  .adm-action-btn.amber:hover  { background: #fef3c7; }
+  .adm-action-btn.amber .icon  { background: #f59e0b; color: #fff; }
+
+  .adm-action-btn.green  { background: #e8faf4; color: #065f46; }
+  .adm-action-btn.green:hover  { background: #d1fae5; }
+  .adm-action-btn.green .icon  { background: #10b981; color: #fff; }
+
+  .adm-action-btn.purple { background: #f5f3ff; color: #4c1d95; }
+  .adm-action-btn.purple:hover { background: #ede9fe; }
+  .adm-action-btn.purple .icon { background: #7c3aed; color: #fff; }
+
+  .adm-action-btn.red    { background: #fef2f2; color: #991b1b; }
+  .adm-action-btn.red:hover    { background: #fee2e2; }
+  .adm-action-btn.red .icon    { background: #ef4444; color: #fff; }
+
+  .adm-action-btn.slate  { background: #f1f5f9; color: #334155; }
+  .adm-action-btn.slate:hover  { background: #e2e8f0; }
+  .adm-action-btn.slate .icon  { background: #64748b; color: #fff; }
+
+  .adm-action-meta {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: .65;
+    margin-top: 2px;
+  }
+  .adm-action-arrow {
+    margin-left: auto;
+    font-size: 16px;
+    opacity: .4;
+    transition: opacity .18s, transform .18s;
+  }
+  .adm-action-btn:hover .adm-action-arrow { opacity: 1; transform: translateX(3px); }
+
+  /* ── RECALCULATE FORM ──────────────────────────── */
+  .adm-recalc-form { padding: 16px; padding-top: 0; }
+  .adm-recalc-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    font-family: 'Open Sans', sans-serif;
+    transition: background .18s;
+  }
+  .adm-recalc-btn:hover { background: #e2e8f0; }
+  .adm-recalc-btn .icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: #64748b;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  /* ── RESPONSIVE ──────────────────────────────────── */
+  @media(max-width:1100px){
+    .adm-stats { grid-template-columns: repeat(3,1fr); }
+    .adm-main-grid { grid-template-columns: 1fr; }
+  }
+  @media(max-width:640px){
+    .adm-stats { grid-template-columns: repeat(2,1fr); }
+    .admin-dash .main-content { padding: 20px 14px 60px; }
+  }
+
+  /* ── ENTRY ANIMATION ─────────────────────────────── */
+  .adm-stat, .adm-card {
+    animation: adSlideUp .35s ease both;
+  }
+  .adm-stat:nth-child(1){animation-delay:.04s}
+  .adm-stat:nth-child(2){animation-delay:.08s}
+  .adm-stat:nth-child(3){animation-delay:.12s}
+  .adm-stat:nth-child(4){animation-delay:.16s}
+  .adm-stat:nth-child(5){animation-delay:.20s}
+  @keyframes adSlideUp {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+</style>
+
+<main class="main-content">
+
+  <!-- Header -->
+  <div class="adm-header">
+    <div class="adm-header-left">
+      <h1>Admin Dashboard</h1>
+      <p>ManasMezun University Ecosystem · System Overview</p>
+    </div>
+    <div class="adm-badge">
+      <span></span> System Online
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="adm-stats">
+
+    <div class="adm-stat blue">
+      <div class="adm-stat-icon">👥</div>
+      <span class="adm-stat-num" th:text="${totalUsers}" data-count="${totalUsers}">0</span>
+      <div class="adm-stat-label" th:text="#{admin.total_users}">Total Users</div>
+    </div>
+
+    <div class="adm-stat amber">
+      <div class="adm-stat-icon">⏳</div>
+      <span class="adm-stat-num" th:text="${pendingUsers}">0</span>
+      <div class="adm-stat-label" th:text="#{admin.pending_users}">Pending</div>
+      <a th:href="@{/secretary}" class="adm-stat-action" th:text="#{admin.review}">Review →</a>
+    </div>
+
+    <div class="adm-stat green">
+      <div class="adm-stat-icon">✅</div>
+      <span class="adm-stat-num" th:text="${activeUsers}">0</span>
+      <div class="adm-stat-label" th:text="#{admin.active_users}">Active</div>
+    </div>
+
+    <div class="adm-stat red">
+      <div class="adm-stat-icon">🚫</div>
+      <span class="adm-stat-num" th:text="${suspendedUsers}">0</span>
+      <div class="adm-stat-label" th:text="#{admin.suspended_users}">Suspended</div>
+    </div>
+
+    <div class="adm-stat indigo">
+      <div class="adm-stat-icon">📝</div>
+      <span class="adm-stat-num" th:text="${totalPosts}">0</span>
+      <div class="adm-stat-label" th:text="#{admin.total_posts}">Total Posts</div>
+    </div>
+
+  </div>
+
+  <!-- Main Grid -->
+  <div class="adm-main-grid">
+
+    <!-- Leaderboard -->
+    <div class="adm-card">
+      <div class="adm-card-header">
+        <div>
+          <div class="adm-card-title">🏆 Global Top 10</div>
+          <div class="adm-card-sub">Highest scoring users this period</div>
+        </div>
+        <a th:href="@{/leaderboard}"
+           style="font-size:12px;font-weight:700;color:#1b2a6b;text-decoration:none;background:#e8edff;padding:6px 14px;border-radius:20px;">
+          Full Board →
+        </a>
       </div>
-      <div class="stat-card stat-card--warning">
-        <h4 th:text="#{admin.pending_users}">Pending Validation</h4>
-        <span class="stat-number" th:text="${pendingUsers}">0</span>
-        <a th:href="@{/secretary}" class="stat-link" th:text="#{admin.review}">Review</a>
-      </div>
-      <div class="stat-card stat-card--success">
-        <h4 th:text="#{admin.active_users}">Active Users</h4>
-        <span class="stat-number" th:text="${activeUsers}">0</span>
-      </div>
-      <div class="stat-card stat-card--danger">
-        <h4 th:text="#{admin.suspended_users}">Suspended</h4>
-        <span class="stat-number" th:text="${suspendedUsers}">0</span>
-      </div>
-      <div class="stat-card">
-        <h4 th:text="#{admin.total_posts}">Total Posts</h4>
-        <span class="stat-number" th:text="${totalPosts}">0</span>
+
+      <div th:each="p, i : ${globalTop10}" class="adm-lb-row">
+        <!-- Rank -->
+        <div class="adm-lb-rank"
+             th:classappend="${i.index == 0} ? ' rank-1' : (${i.index == 1} ? ' rank-2' : (${i.index == 2} ? ' rank-3' : ' rank-n'))"
+             th:text="${i.index + 1}">1</div>
+        <!-- Avatar -->
+        <img th:if="${p.user.profile != null and p.user.profile.avatarUrl != null}"
+             th:src="${p.user.profile.avatarUrl}" class="adm-lb-avatar" alt="avatar"/>
+        <div th:if="${p.user.profile == null or p.user.profile.avatarUrl == null}"
+             class="adm-lb-avatar-init"
+             th:text="${#strings.substring(p.user.fullName,0,1)}">A</div>
+        <!-- Name -->
+        <a th:href="@{/admin/users/{id}(id=${p.user.id})}"
+           class="adm-lb-name"
+           th:text="${p.user.fullName}">Name</a>
+        <!-- Role -->
+        <span class="adm-lb-role" th:text="${p.user.role}">STUDENT</span>
+        <!-- Points -->
+        <span class="adm-lb-pts" th:text="${p.totalPoints} + ' pts'">0 pts</span>
+        <!-- View -->
+        <a th:href="@{/admin/users/{id}(id=${p.user.id})}"
+           style="font-size:11px;font-weight:700;color:#8a92a8;text-decoration:none;padding:4px 10px;border-radius:8px;background:#f0f3f9;transition:background .14s;"
+           onmouseover="this.style.background='#e8edff';this.style.color='#1b2a6b'"
+           onmouseout="this.style.background='#f0f3f9';this.style.color='#8a92a8'">View</a>
       </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="admin-actions">
-      <a th:href="@{/admin/users}" class="btn btn-secondary" th:text="#{admin.manage_users}">Manage Users</a>
-      <a th:href="@{/secretary}" class="btn btn-secondary" th:text="#{admin.validation_queue}">Validation Queue</a>
-      <a th:href="@{/admin/create-secretary}" class="btn btn-primary">+ Create Secretary</a>
+    <!-- Right column: Quick Actions -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
 
-                <!-- University News -->
-                <a th:href="@{/admin/news}" style="display:block;text-decoration:none;">
-                    <div class="stat-card" style="cursor:pointer;">
-                        <div class="stat-icon" style="background:#FEF3C7;">
-                            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#F59E0B" stroke-width="2">
-                                <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="stat-num">News</div>
-                            <div class="stat-lbl">Manage University News</div>
-                        </div>
-                    </div>
-                </a>
-                <a th:href="@{/admin/import-mezuns}" class="btn btn-secondary" style="background:#27ae60;color:white;border-color:#27ae60;">📥 Import Mezuns (Excel)</a>
-      <form th:action="@{/admin/rankings/recalculate}" method="post" style="display:inline">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-        <button type="submit" class="btn btn-secondary" th:text="#{admin.recalculate}">Recalculate Rankings</button>
-      </form>
+      <div class="adm-card">
+        <div class="adm-card-header">
+          <div>
+            <div class="adm-card-title">⚡ Quick Actions</div>
+            <div class="adm-card-sub">Common admin tasks</div>
+          </div>
+        </div>
+
+        <div class="adm-actions-grid">
+
+          <a th:href="@{/admin/users}" class="adm-action-btn navy">
+            <div class="icon">👤</div>
+            <div>
+              <div>Manage Users</div>
+              <div class="adm-action-meta">View, edit, suspend accounts</div>
+            </div>
+            <span class="adm-action-arrow">›</span>
+          </a>
+
+          <a th:href="@{/secretary}" class="adm-action-btn amber">
+            <div class="icon">📋</div>
+            <div>
+              <div th:text="#{admin.validation_queue}">Validation Queue</div>
+              <div class="adm-action-meta">
+                <span th:text="${pendingUsers}">0</span> pending approval
+              </div>
+            </div>
+            <span class="adm-action-arrow">›</span>
+          </a>
+
+          <a th:href="@{/admin/create-secretary}" class="adm-action-btn green">
+            <div class="icon">🛡</div>
+            <div>
+              <div>Create Secretary</div>
+              <div class="adm-action-meta">Add validation staff</div>
+            </div>
+            <span class="adm-action-arrow">›</span>
+          </a>
+
+          <a th:href="@{/admin/news}" class="adm-action-btn purple">
+            <div class="icon">📰</div>
+            <div>
+              <div>University News</div>
+              <div class="adm-action-meta">Manage announcements</div>
+            </div>
+            <span class="adm-action-arrow">›</span>
+          </a>
+
+          <a th:href="@{/admin/import-mezuns}" class="adm-action-btn green">
+            <div class="icon">📥</div>
+            <div>
+              <div>Import Mezuns</div>
+              <div class="adm-action-meta">Bulk import via Excel</div>
+            </div>
+            <span class="adm-action-arrow">›</span>
+          </a>
+
+        </div>
+
+        <div class="adm-recalc-form">
+          <form th:action="@{/admin/rankings/recalculate}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="adm-recalc-btn">
+              <div class="icon">🔄</div>
+              <div style="text-align:left;">
+                <div th:text="#{admin.recalculate}">Recalculate Rankings</div>
+                <div style="font-size:11px;font-weight:400;opacity:.6;margin-top:2px;">Rebuild leaderboard scores</div>
+              </div>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Mini stats overview -->
+      <div class="adm-card" style="padding:20px;">
+        <div style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:800;color:#0d1b4b;margin-bottom:14px;">User Distribution</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+              <span style="font-size:12px;font-weight:600;color:#475569;">Active</span>
+              <span style="font-size:12px;font-weight:700;color:#10b981;" th:text="${activeUsers}">0</span>
+            </div>
+            <div style="background:#f0f3f9;border-radius:10px;height:6px;overflow:hidden;">
+              <div th:style="'width:' + (${totalUsers} > 0 ? (${activeUsers} * 100 / ${totalUsers}) : 0) + '%;height:100%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:10px;transition:width 1s ease;'"></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+              <span style="font-size:12px;font-weight:600;color:#475569;">Pending</span>
+              <span style="font-size:12px;font-weight:700;color:#f59e0b;" th:text="${pendingUsers}">0</span>
+            </div>
+            <div style="background:#f0f3f9;border-radius:10px;height:6px;overflow:hidden;">
+              <div th:style="'width:' + (${totalUsers} > 0 ? (${pendingUsers} * 100 / ${totalUsers}) : 0) + '%;height:100%;background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:10px;'"></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+              <span style="font-size:12px;font-weight:600;color:#475569;">Suspended</span>
+              <span style="font-size:12px;font-weight:700;color:#ef4444;" th:text="${suspendedUsers}">0</span>
+            </div>
+            <div style="background:#f0f3f9;border-radius:10px;height:6px;overflow:hidden;">
+              <div th:style="'width:' + (${totalUsers} > 0 ? (${suspendedUsers} * 100 / ${totalUsers}) : 0) + '%;height:100%;background:linear-gradient(90deg,#ef4444,#f87171);border-radius:10px;'"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
+  </div>
 
-    <!-- Top 10 Leaderboard -->
-    <section class="admin-section">
-      <h3 th:text="#{admin.top10}">Global Top 10</h3>
-      <table class="admin-table">
-        <thead>
-        <tr>
-          <th>#</th>
-          <th th:text="#{table.user}">User</th>
-          <th th:text="#{table.role}">Role</th>
-          <th th:text="#{table.points}">Points</th>
-          <th th:text="#{table.actions}">Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="p, i : ${globalTop10}">
-          <td th:text="${i.index + 1}">1</td>
-          <td><a th:href="@{/admin/users/{id}(id=${p.user.id})}"
-                 th:text="${p.user.fullName}">Name</a></td>
-          <td><span class="role-badge" th:text="${p.user.role}">STUDENT</span></td>
-          <td th:text="${p.totalPoints}">0</td>
-          <td>
-            <a th:href="@{/admin/users/{id}(id=${p.user.id})}"
-               class="btn btn-sm btn-outline" th:text="#{common.view}">View</a>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-    </section>
+</main>
 
-  </main>
-</div>
+<script>
+  // Animated number counters
+  document.querySelectorAll('.adm-stat-num').forEach(el => {
+    const target = parseInt(el.textContent) || 0;
+    if (target === 0) return;
+    let current = 0;
+    const step = Math.max(1, Math.floor(target / 40));
+    const interval = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current.toLocaleString();
+      if (current >= target) clearInterval(interval);
+    }, 20);
+  });
+</script>
+
 <div th:replace="~{fragments/footer :: footer}"></div>
 </body>
 </html>

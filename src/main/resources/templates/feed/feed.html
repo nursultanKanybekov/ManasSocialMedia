@@ -573,8 +573,8 @@
                             💬 <span th:id="${'ccount-' + post.id}" th:text="${post.commentsCount}">0</span>
                         </button>
                         <button class="fd-foot-btn"
-                                th:attr="data-post-id=${post.id}, data-post-author=${post.author.fullName}, data-post-content=${post.getLocalizedContent('en')}"
-                                onclick="openShareModal(this.dataset.postId, this.dataset.postAuthor, this.dataset.postContent)">
+                                th:attr="data-post-id=${post.id}, data-post-author=${post.author.fullName}, data-post-content=${post.getLocalizedContent('en')}, data-post-image=${post.imageUrl}"
+                                onclick="openShareModal(this.dataset.postId, this.dataset.postAuthor, this.dataset.postContent, this.dataset.postImage)">
                             🔗 Share
                         </button>
                     </div>
@@ -860,17 +860,18 @@
 <script th:inline="javascript">
     /*<![CDATA[*/
     // ── SHARE MODAL ──────────────────────────────────────────────
-    let _sharePostId = null, _shareAuthor = null, _shareContent = null;
+    let _sharePostId = null, _shareAuthor = null, _shareContent = null, _shareImageUrl = null;
     const SHARE_CSRF_TOKEN  = /*[[${_csrf != null ? _csrf.token : ''}]]*/ '';
     const SHARE_CSRF_HEADER = /*[[${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}]]*/ 'X-CSRF-TOKEN';
 
     const ROLE_BG = { STUDENT:'#e8f4fd', TEACHER:'#e8f5e9', MEZUN:'#fff3e0',
         ADMIN:'#fce4ec', SUPERADMIN:'#f3e5f5', SECRETARY:'#e0f7fa' };
 
-    function openShareModal(postId, author, content) {
+    function openShareModal(postId, author, content, imageUrl) {
         _sharePostId  = postId;
         _shareAuthor  = author;
         _shareContent = content;
+        _shareImageUrl = imageUrl || null;
 
         document.getElementById('share-link-input').value = window.location.origin + '/feed/post/' + postId;
 
@@ -948,9 +949,6 @@
 
     async function shareToUser(userId) {
         closeShareModal();
-        const postUrl = window.location.origin + '/feed/post/' + _sharePostId;
-        const preview = _shareContent ? _shareContent.substring(0, 100) + (_shareContent.length > 100 ? '…' : '') : '';
-        const message = '🔗 Shared post by ' + _shareAuthor + ':\n' + preview + '\n' + postUrl;
         try {
             const dmRes = await fetch('/chat/direct/' + userId, {
                 method: 'POST',
@@ -963,7 +961,7 @@
                 await fetch('/chat/share', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', [SHARE_CSRF_HEADER]: SHARE_CSRF_TOKEN },
-                    body: JSON.stringify({ roomId, content: message })
+                    body: JSON.stringify({ roomId, postId: _sharePostId })
                 });
                 showFeedToast('Shared! Opening chat… 🔗');
                 setTimeout(() => window.location.href = '/chat/room/' + roomId, 700);
@@ -1002,14 +1000,11 @@
 
     async function shareToRoom(roomId) {
         closeShareModal();
-        const postUrl = window.location.origin + '/feed/post/' + _sharePostId;
-        const preview = _shareContent ? _shareContent.substring(0, 100) + (_shareContent.length > 100 ? '…' : '') : '';
-        const message = '🔗 Shared post by ' + _shareAuthor + ':\n' + preview + '\n' + postUrl;
         try {
             const res = await fetch('/chat/share', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', [SHARE_CSRF_HEADER]: SHARE_CSRF_TOKEN },
-                body: JSON.stringify({ roomId, content: message })
+                body: JSON.stringify({ roomId, postId: _sharePostId })
             });
             if (res.ok) {
                 showFeedToast('Shared to chat! 🔗');

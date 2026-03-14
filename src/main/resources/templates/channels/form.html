@@ -3,30 +3,219 @@
 <head th:replace="~{fragments/header :: head('Create Channel')}"></head>
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
-        <a th:href="@{/channels}" style="display:inline-flex;align-items:center;gap:6px;color:#1b2a6b;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;margin-bottom:20px;">← Back to Channels</a>
-        <div style="max-width:520px;">
-            <div style="background:white;border-radius:16px;padding:32px;box-shadow:0 2px 16px rgba(27,42,107,0.09);">
-                <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:20px;color:#1b2a6b;margin-bottom:24px;">📢 Create Channel</h2>
-                <form th:action="@{/channels/new}" method="post">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                    <div style="margin-bottom:18px;">
-                        <label style="display:block;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;margin-bottom:8px;">Channel Name *</label>
-                        <input type="text" name="name" required maxlength="100" placeholder="e.g. Class of 2020, Engineering Alumni..."
-                               style="width:100%;padding:12px 16px;border:1.5px solid #e2e5f0;border-radius:10px;font-family:Montserrat,sans-serif;font-size:14px;color:#1b2a6b;outline:none;box-sizing:border-box;"/>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
+    <a th:href="@{/channels}" style="display:inline-flex;align-items:center;gap:6px;color:#1b2a6b;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;margin-bottom:20px;">← Back to Channels</a>
+
+    <div style="max-width:560px;">
+        <div style="background:white;border-radius:18px;padding:32px;box-shadow:0 2px 20px rgba(27,42,107,0.10);">
+            <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:20px;color:#1b2a6b;margin-bottom:24px;">📢 Create Channel</h2>
+
+            <form id="channelForm" th:action="@{/channels/new}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div id="memberIdsContainer"></div>
+
+                <!-- Name -->
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;margin-bottom:8px;">Channel Name *</label>
+                    <input type="text" name="name" required maxlength="100" placeholder="e.g. Class of 2020, Engineering Alumni…"
+                           style="width:100%;padding:12px 16px;border:1.5px solid #e2e5f0;border-radius:10px;font-family:Montserrat,sans-serif;font-size:14px;color:#1b2a6b;outline:none;box-sizing:border-box;"
+                           onfocus="this.style.borderColor='#1b2a6b'" onblur="this.style.borderColor='#e2e5f0'"/>
+                </div>
+
+                <!-- Description -->
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;margin-bottom:8px;">Description (optional)</label>
+                    <textarea name="description" maxlength="300" placeholder="What is this channel about?"
+                              style="width:100%;padding:12px 16px;border:1.5px solid #e2e5f0;border-radius:10px;font-family:Montserrat,sans-serif;font-size:14px;color:#1b2a6b;outline:none;box-sizing:border-box;min-height:80px;resize:vertical;"
+                              onfocus="this.style.borderColor='#1b2a6b'" onblur="this.style.borderColor='#e2e5f0'"></textarea>
+                </div>
+
+                <!-- Private toggle -->
+                <div style="margin-bottom:20px;display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8f9ff;border-radius:12px;border:1.5px solid #e2e5f0;">
+                    <label style="position:relative;width:42px;height:24px;flex-shrink:0;cursor:pointer;">
+                        <input type="checkbox" name="isPrivate" id="isPrivateToggle" value="true"
+                               style="opacity:0;width:0;height:0;position:absolute;"
+                               onchange="document.getElementById('privacyLabel').textContent=this.checked?'Private – invite only':'Public – anyone can join'"/>
+                        <span id="toggleTrack" style="position:absolute;inset:0;background:#cbd5e1;border-radius:12px;transition:.2s;"></span>
+                        <span id="toggleThumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.2);"></span>
+                    </label>
+                    <div>
+                        <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;">🔒 Private Channel</div>
+                        <div id="privacyLabel" style="font-size:11px;color:#8a91a8;margin-top:2px;">Public – anyone can join</div>
                     </div>
-                    <div style="margin-bottom:24px;">
-                        <label style="display:block;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;margin-bottom:8px;">Description (optional)</label>
-                        <textarea name="description" maxlength="300" placeholder="What is this channel about?"
-                                  style="width:100%;padding:12px 16px;border:1.5px solid #e2e5f0;border-radius:10px;font-family:Montserrat,sans-serif;font-size:14px;color:#1b2a6b;outline:none;box-sizing:border-box;min-height:90px;resize:vertical;"></textarea>
+                </div>
+
+                <!-- Add Members -->
+                <div style="margin-bottom:24px;">
+                    <label style="display:block;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;margin-bottom:10px;">Add Members</label>
+
+                    <!-- Search -->
+                    <div style="position:relative;margin-bottom:10px;">
+                        <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#8a91a8" stroke-width="2.2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input id="memberSearch" type="text" placeholder="Search by name or email…" autocomplete="off"
+                               oninput="formSearchDebounce(this.value)"
+                               style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid #e2e5f0;border-radius:10px;font-family:Montserrat,sans-serif;font-size:13px;outline:none;box-sizing:border-box;"
+                               onfocus="this.style.borderColor='#1b2a6b'" onblur="this.style.borderColor='#e2e5f0'"/>
                     </div>
-                    <button type="submit" style="width:100%;padding:13px;background:#1b2a6b;color:white;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;cursor:pointer;">Create Channel</button>
-                </form>
-            </div>
+
+                    <!-- Suggested / search results -->
+                    <div id="memberSearchResults" style="max-height:220px;overflow-y:auto;border:1.5px solid #e2e5f0;border-radius:10px;background:#fafbff;">
+                        <!-- Populated by JS or initial server list -->
+                        <div th:each="u : ${suggestedUsers}"
+                             th:id="'sug-' + ${u.id}"
+                             th:data-id="${u.id}"
+                             th:data-name="${u.fullName}"
+                             th:data-role="${u.role}"
+                             class="member-candidate"
+                             style="display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;transition:background .13s;"
+                             onmouseover="this.style.background='#f0f2f8'" onmouseout="this.style.background='transparent'"
+                             onclick="toggleMemberSelect(this)">
+                            <div th:if="${u.profile != null and u.profile.avatarUrl != null}"
+                                 style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;">
+                                <img th:src="${u.profile.avatarUrl}" style="width:100%;height:100%;object-fit:cover;" alt=""/>
+                            </div>
+                            <div th:if="${u.profile == null or u.profile.avatarUrl == null}"
+                                 style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;flex-shrink:0;"
+                                 th:text="${#strings.substring(u.fullName,0,1)}">A</div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-family:Montserrat,sans-serif;font-weight:600;font-size:13px;color:#1b2a6b;" th:text="${u.fullName}">Name</div>
+                                <div style="font-size:11px;color:#8a91a8;" th:text="${u.role}">ROLE</div>
+                            </div>
+                            <span class="check-icon" style="font-size:16px;color:#ccc;">○</span>
+                        </div>
+                        <div th:if="${#lists.isEmpty(suggestedUsers)}" id="noSuggest"
+                             style="padding:18px;text-align:center;color:#8a91a8;font-size:13px;font-family:Montserrat,sans-serif;">
+                            Search for users to add
+                        </div>
+                    </div>
+
+                    <!-- Selected chips -->
+                    <div id="selectedChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:32px;"></div>
+                </div>
+
+                <button type="submit"
+                        style="width:100%;padding:13px;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:white;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;cursor:pointer;">
+                    🚀 Create Channel
+                </button>
+            </form>
         </div>
-    </main>
-</div>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const CSRF_TOKEN  = /*[[${_csrf.token}]]*/ '';
+    const CSRF_HEADER = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
+    const ROLE_BG = {STUDENT:'#e8f4fd',TEACHER:'#e8f5e9',MEZUN:'#fff3e0',ADMIN:'#fce4ec',SUPERADMIN:'#f3e5f5',SECRETARY:'#e0f7fa',EMPLOYER:'#fff8e1'};
+    const selectedIds = new Set();
+
+    // Toggle switch styling
+    const toggle = document.getElementById('isPrivateToggle');
+    const track  = document.getElementById('toggleTrack');
+    const thumb  = document.getElementById('toggleThumb');
+    toggle.addEventListener('change', () => {
+        track.style.background = toggle.checked ? '#1b2a6b' : '#cbd5e1';
+        thumb.style.left       = toggle.checked ? '21px' : '3px';
+    });
+
+    // Member select from list
+    function toggleMemberSelect(row) {
+        const id   = row.dataset.id;
+        const name = row.dataset.name;
+        const role = row.dataset.role;
+        const icon = row.querySelector('.check-icon');
+        if (selectedIds.has(id)) {
+            selectedIds.delete(id);
+            icon.textContent = '○';
+            icon.style.color = '#ccc';
+            row.style.background = 'transparent';
+            document.getElementById('chip-' + id)?.remove();
+            document.getElementById('hid-' + id)?.remove();
+        } else {
+            selectedIds.add(id);
+            icon.textContent = '✓';
+            icon.style.color = '#1b2a6b';
+            row.style.background = '#f0f2f8';
+            addChip(id, name, role);
+        }
+    }
+
+    function addChip(id, name, role) {
+        const chip = document.createElement('div');
+        chip.id = 'chip-' + id;
+        chip.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 10px;background:#f0f2f8;border-radius:20px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:600;color:#1b2a6b;';
+        chip.innerHTML = `<span>${esc(name)}</span><span style="font-size:9px;background:${ROLE_BG[role]||'#eee'};padding:1px 6px;border-radius:10px;">${esc(role)}</span><button type="button" onclick="removeChip('${id}')" style="background:none;border:none;cursor:pointer;color:#8a91a8;font-size:14px;padding:0;line-height:1;">×</button>`;
+        document.getElementById('selectedChips').appendChild(chip);
+        // hidden input
+        const hid = document.createElement('input');
+        hid.type = 'hidden'; hid.name = 'memberIds'; hid.value = id; hid.id = 'hid-' + id;
+        document.getElementById('memberIdsContainer').appendChild(hid);
+    }
+
+    function removeChip(id) {
+        selectedIds.delete(id);
+        document.getElementById('chip-' + id)?.remove();
+        document.getElementById('hid-' + id)?.remove();
+        const row = document.getElementById('sug-' + id);
+        if (row) { const ic = row.querySelector('.check-icon'); ic.textContent='○'; ic.style.color='#ccc'; row.style.background='transparent'; }
+        // also clear from dynamic results
+        const dyn = document.getElementById('dyn-' + id);
+        if (dyn) { const ic = dyn.querySelector('.check-icon'); ic.textContent='○'; ic.style.color='#ccc'; dyn.style.background='transparent'; }
+    }
+
+    // Search debounce
+    let _ft = null;
+    function formSearchDebounce(val) {
+        clearTimeout(_ft);
+        _ft = setTimeout(() => formSearch(val.trim()), 300);
+    }
+
+    async function formSearch(q) {
+        const res = document.getElementById('memberSearchResults');
+        if (q.length < 2) {
+            // Restore suggested list
+            res.querySelectorAll('.dyn-row').forEach(r => r.remove());
+            res.querySelectorAll('.member-candidate').forEach(r => r.style.display='flex');
+            document.getElementById('noSuggest') && (document.getElementById('noSuggest').style.display='');
+            return;
+        }
+        // Hide static rows
+        res.querySelectorAll('.member-candidate').forEach(r => r.style.display='none');
+        res.querySelectorAll('.dyn-row').forEach(r => r.remove());
+        res.innerHTML += '<div class="dyn-row" style="padding:14px;text-align:center;color:#8a91a8;font-size:13px;">Searching…</div>';
+        try {
+            const r = await fetch('/chat/users/search?q=' + encodeURIComponent(q), { headers:{[CSRF_HEADER]:CSRF_TOKEN} });
+            const users = await r.json();
+            res.querySelectorAll('.dyn-row').forEach(r2 => r2.remove());
+            if (!users.length) {
+                res.innerHTML += '<div class="dyn-row" style="padding:14px;text-align:center;color:#8a91a8;font-size:13px;">No users found</div>';
+                return;
+            }
+            users.forEach(u => {
+                const init = (u.fullName||'?').charAt(0).toUpperCase();
+                const av = u.avatarUrl ? `<img src="${esc(u.avatarUrl)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" alt=""/>` : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1b2a6b,#2d4a9e);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;">${esc(init)}</div>`;
+                const already = selectedIds.has(u.id);
+                const row = document.createElement('div');
+                row.className = 'dyn-row';
+                row.id = 'dyn-' + u.id;
+                row.dataset.id   = u.id;
+                row.dataset.name = u.fullName;
+                row.dataset.role = u.role;
+                row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;transition:background .13s;' + (already?'background:#f0f2f8':'');
+                row.innerHTML = `${av}<div style="flex:1;min-width:0;"><div style="font-family:Montserrat,sans-serif;font-weight:600;font-size:13px;color:#1b2a6b;">${esc(u.fullName)}</div><div style="font-size:11px;color:#8a91a8;">${esc(u.email)}</div></div><span class="check-icon" style="font-size:16px;color:${already?'#1b2a6b':'#ccc'};">${already?'✓':'○'}</span>`;
+                row.onmouseover = () => { if(!selectedIds.has(u.id)) row.style.background='#f0f2f8'; };
+                row.onmouseout  = () => { if(!selectedIds.has(u.id)) row.style.background='transparent'; };
+                row.onclick     = () => toggleMemberSelect(row);
+                res.appendChild(row);
+            });
+        } catch(e) { res.querySelectorAll('.dyn-row').forEach(r2=>r2.remove()); }
+    }
+
+    function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    /*]]>*/
+</script>
 </body>
 </html>
