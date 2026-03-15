@@ -379,23 +379,26 @@
   </div>
 </div>
 
-<script th:inline="javascript">
+<script th:inline="none">
   /*<![CDATA[*/
-  const CSRF = document.querySelector('meta[name="_csrf"]')?.content
-          || document.cookie.split(';').find(c=>c.trim().startsWith('XSRF-TOKEN='))?.split('=')[1] || '';
-  const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+  // CSRF token read from cookie — works without th:inline
+  function getCsrf() {
+    const m = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  const CSRF_HEADER = 'X-XSRF-TOKEN';
 
   async function createRoom(type) {
     try {
       const r = await fetch('/games/create', {
-        method:'POST',
-        headers:{'Content-Type':'application/json',[CSRF_HEADER]:CSRF},
-        body:JSON.stringify({gameType:type})
+        method: 'POST',
+        headers: {'Content-Type':'application/json', [CSRF_HEADER]: getCsrf()},
+        body: JSON.stringify({gameType: type})
       });
       if (!r.ok) throw new Error('Server error ' + r.status);
       const d = await r.json();
       window.location.href = '/games/room/' + d.code;
-    } catch(e) { alert('Could not create room. Please try again.'); }
+    } catch(e) { alert('Could not create room: ' + e.message); }
   }
 
   async function showRooms(type, label) {

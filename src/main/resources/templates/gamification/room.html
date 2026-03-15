@@ -2235,11 +2235,22 @@
             const state = {deck: fullDeck, discard, turn: playerList[0].userId, direction:1, drawStack:0, hands};
             // Send each player their hand privately
             playerList.forEach(p => {
-                if (stomp && stomp.connected) stomp.publish({destination: '/app/game.uno.say/'+ROOM_CODE, body: JSON.stringify({text:'DEAL:'+p.userId+':'+JSON.stringify(hands[p.userId])+':'+JSON.stringify(discard)+':'+playerList[0].userId})});
+                if (stomp && stomp.connected) stomp.publish({destination: '/app/game.uno.say/'+ROOM_CODE, body: JSON.stringify({text:'DEAL|'+p.userId+'|'+JSON.stringify(hands[p.userId])+'|'+JSON.stringify(discard)+'|'+playerList[0].userId})});
             });
             uno.gameState=state;
         }
         renderUnoOpponents();
+    }
+
+    function findMatchingBracket(str, start) {
+        const open  = str[start];
+        const close = open === '[' ? ']' : '}';
+        let depth   = 0;
+        for (let i = start; i < str.length; i++) {
+            if (str[i] === open)  depth++;
+            if (str[i] === close) { depth--; if (depth === 0) return i; }
+        }
+        return str.length - 1;
     }
 
     function buildUnoDeck() {
@@ -2259,21 +2270,48 @@
     function unoHandleMsg(msg) {
         if (msg.type==='UNO_SAY') {
             const text=msg.text||'';
-            if (text.startsWith('DEAL:')) {
-                const parts=text.split(':');
-                if (parts[1]===ME_ID) {
-                    uno.hand=JSON.parse(parts[2]);
-                    uno.discard=JSON.parse(parts[3]);
-                    uno.turn=parts[4];
-                    renderUnoHand();
-                    renderDiscardPile();
-                    updateUnoTurn();
+            if (text.startsWith('DEAL|') || text.startsWith('DEAL:')) {
+                // Use | as separator (safe — | never appears in JSON card data)
+                // Fall back to splitting at first 4 separators for backward compat
+                const sep = text.startsWith('DEAL|') ? '|' : null;
+                let dealUserId, handJson, discardJson, turnUserId;
+                if (sep) {
+                    const parts = text.split('|');
+                    dealUserId  = parts[1];
+                    handJson    = parts[2];
+                    discardJson = parts[3];
+                    turnUserId  = parts[4];
+                } else {
+                    // Legacy colon format — find boundaries carefully
+                    const after  = text.slice(5); // remove "DEAL:"
+                    const uid1End = after.indexOf(':');
+                    dealUserId   = after.slice(0, uid1End);
+                    const rest1  = after.slice(uid1End + 1);
+                    // Hand JSON array ends at the matching ]
+                    const handEnd = findMatchingBracket(rest1, 0) + 1;
+                    handJson     = rest1.slice(0, handEnd);
+                    const rest2  = rest1.slice(handEnd + 1);
+                    // Discard JSON object ends at matching }
+                    const discEnd = findMatchingBracket(rest2, 0) + 1;
+                    discardJson  = rest2.slice(0, discEnd);
+                    turnUserId   = rest2.slice(discEnd + 1);
+                }
+                if (dealUserId === ME_ID) {
+                    try {
+                        uno.hand    = JSON.parse(handJson);
+                        uno.discard = JSON.parse(discardJson);
+                        uno.turn    = turnUserId;
+                        renderUnoHand();
+                        renderDiscardPile();
+                        updateUnoTurn();
+                    } catch(e) { console.error('UNO DEAL parse error', e, handJson, discardJson); }
                 }
                 renderUnoOpponents();
                 return;
             }
-            if (text.startsWith('WIN:')) {
-                const parts = text.split(':');
+            if (text.startsWith('WIN|') || text.startsWith('WIN:')) {
+                const sep2 = text.startsWith('WIN|') ? '|' : ':';
+                const parts = text.split(sep2);
                 const winnerId = parts[1]; const winnerName = parts[2]||'Someone';
                 notif('🏆', winnerName+' won UNO!');
                 const scores = Object.values(players)
@@ -2365,7 +2403,7 @@
         renderUnoHand(); renderDiscardPile(); updateUnoTurn();
         if (uno.hand.length===0) {
             notif('🏆','You won! 🃏');
-            send('uno.say',{text:'WIN:'+ME_ID+':'+ME_NAME});
+            send('uno.say',{text:'WIN|'+ME_ID+'|'+ME_NAME});
         }
     }
 
