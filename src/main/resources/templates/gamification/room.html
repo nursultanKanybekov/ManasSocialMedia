@@ -1,0 +1,2389 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <title th:text="${gameType} + ' — Room ' + ${roomCode}">Game Room</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Montserrat:wght@700;800&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@6.1.2/bundles/stomp.umd.min.js" crossorigin="anonymous"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--s1:#1e293b;--s2:#334155;--s3:#475569;--sub:#94a3b8;
+            --blue:#1B2A6B;--green:#22c55e;--red:#C0392B;--amber:#f59e0b;--teal:#14b8a6;--purple:#a855f7}
+        body{background:#f4f6fb;color:#1a1a2e;font-family:'Open Sans',sans-serif;height:100dvh;
+            display:flex;flex-direction:column;overflow:hidden}
+
+        /* ── HEADER ── */
+        .rh{height:52px;background:#1B2A6B;border-bottom:1px solid rgba(255,255,255,.15);
+            display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0}
+        .rh-back{color:rgba(255,255,255,.7);text-decoration:none;font-size:18px;padding:4px;border-radius:8px;transition:color .15s}
+        .rh-back:hover{color:#fff}
+        .rh-title{font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#fff}
+        .rh-code{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;
+            border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;letter-spacing:.1em;cursor:pointer}
+        .rh-code:hover{background:rgba(255,255,255,.25)}
+        .rh-sp{flex:1}
+        .rh-chip{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:20px;
+            padding:5px 12px;font-size:12px;font-weight:600;color:#fff}
+
+        /* ── LAYOUT ── */
+        .room-body{flex:1;display:flex;overflow:hidden}
+        .game-area{flex:1;overflow:hidden;display:flex;flex-direction:column}
+        .right-panel{width:300px;background:#fff;border-left:1.5px solid #dde1ee;
+            display:flex;flex-direction:column;flex-shrink:0}
+
+        /* ── LOBBY ── */
+        #lobby-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:20px}
+        .lobby-title{font-family:Montserrat,sans-serif;font-weight:800;font-size:28px;text-align:center;color:#1B2A6B}
+        .lobby-code-big{font-size:40px;font-weight:800;font-family:Montserrat,sans-serif;letter-spacing:.2em;
+            color:#1B2A6B;background:#eef1fb;border:2px dashed rgba(27,42,107,.3);
+            border-radius:14px;padding:14px 32px;cursor:pointer;transition:background .15s}
+        .lobby-code-big:hover{background:#e0e5f6}
+        .lobby-players{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:600px}
+        .lobby-player{display:flex;flex-direction:column;align-items:center;gap:6px;
+            background:#fff;border:1.5px solid #dde1ee;border-radius:14px;padding:16px;width:110px;position:relative;box-shadow:0 2px 8px rgba(27,42,107,.07)}
+        .lobby-player.host-player{border:2px solid var(--amber)}
+        .lp-av{width:44px;height:44px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700}
+        .lp-av img{width:100%;height:100%;object-fit:cover}
+        .lp-name{font-size:12px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;color:#1B2A6B}
+        .lp-host-badge{position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+            background:var(--amber);color:#000;font-size:9px;font-weight:800;padding:1px 8px;border-radius:10px}
+        .lp-ready{width:8px;height:8px;border-radius:50%;background:var(--s3);margin-top:2px}
+        .lp-ready.is-ready{background:var(--green)}
+        .lobby-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+        .lobby-btn{padding:12px 28px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+        .lobby-btn.primary{background:#1B2A6B;color:#fff}
+        .lobby-btn.primary:hover{background:#111c4e}
+        .lobby-btn.secondary{background:#eef1fb;color:#1B2A6B;border:1.5px solid #dde1ee}
+        .lobby-btn.secondary:hover{background:#e0e5f6}
+        .lobby-btn.ready{background:var(--green);color:#fff}
+        .lobby-btn.ready:hover{background:#16a34a}
+        .lobby-hint{font-size:13px;color:#8a91a8;text-align:center;max-width:400px}
+
+        /* ── GAME SCREENS (each hidden by default) ── */
+        .game-screen{flex:1;display:none;overflow:hidden;background:#f4f6fb}
+        .game-screen.active{display:flex;flex-direction:column}
+
+        /* ── TYPING RACER ── */
+        #typing-screen{padding:20px;gap:16px}
+        .tr-track{background:#fff;border-radius:14px;padding:16px;position:relative;overflow:hidden;border:1.5px solid #dde1ee;box-shadow:0 2px 8px rgba(27,42,107,.07)}
+        .tr-car-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+        .tr-car-row:last-child{border-bottom:none}
+        .tr-car-label{font-size:12px;font-weight:600;width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1B2A6B}
+        .tr-lane{flex:1;background:#f0f3fa;border-radius:20px;height:28px;overflow:hidden;position:relative}
+        .tr-lane-fill{height:100%;border-radius:20px;transition:width .3s ease;display:flex;align-items:center;
+            justify-content:flex-end;padding-right:8px;font-size:16px}
+        .tr-wpm-badge{font-size:10px;font-weight:700;background:rgba(0,0,0,.3);border-radius:10px;padding:2px 6px;margin-left:4px}
+        .tr-nitro-btn{width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;font-size:16px;
+            background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);transition:all .15s;flex-shrink:0}
+        .tr-nitro-btn:hover:not(:disabled){background:rgba(245,158,11,.4)}
+        .tr-nitro-btn:disabled{opacity:.3;cursor:default}
+
+        .tr-text-box{background:#fff;border-radius:14px;padding:20px;flex:1;overflow-y:auto;border:1.5px solid #dde1ee;box-shadow:0 2px 8px rgba(27,42,107,.07)}
+        .tr-passage{font-size:17px;line-height:1.8;letter-spacing:.01em;margin-bottom:16px;color:#334155;font-family:'Open Sans',sans-serif}
+        .tr-passage .char-correct{color:var(--green)}
+        .tr-passage .char-wrong{color:var(--red);background:rgba(239,68,68,.15);border-radius:2px}
+        .tr-passage .char-current{background:rgba(99,102,241,.4);border-radius:2px}
+        .tr-input{width:100%;background:#f4f6fb;border:2px solid #dde1ee;border-radius:10px;
+            color:#1a1a2e;padding:12px 16px;font-size:15px;outline:none;font-family:'Open Sans',sans-serif;
+            transition:border-color .2s}
+        .tr-input:focus{border-color:#1B2A6B}
+        .tr-stats{display:flex;gap:20px;font-size:13px}
+        .tr-stat-val{font-family:Montserrat,sans-serif;font-weight:800;font-size:24px;color:#1B2A6B}
+        .tr-stat-lbl{font-size:10px;color:#8a91a8;text-transform:uppercase;letter-spacing:.06em}
+        .tr-countdown{font-family:Montserrat,sans-serif;font-size:80px;font-weight:800;color:var(--blue);
+            text-align:center;animation:pulse .8s ease infinite}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+
+        /* ── CHESS ── */
+        #chess-screen{align-items:center;justify-content:center;padding:16px;gap:16px}
+        .chess-layout{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+        .chess-board{display:grid;grid-template-columns:repeat(8,1fr);width:min(480px,calc(100vw - 340px));
+            border:2px solid var(--s2);border-radius:4px;overflow:hidden;flex-shrink:0}
+        .chess-sq{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:clamp(22px,3vw,36px);
+            cursor:pointer;transition:background .15s;position:relative}
+        .chess-sq.light{background:#f0d9b5}
+        .chess-sq.dark{background:#b58863}
+        .chess-sq.selected{background:#f6f669!important}
+        .chess-sq.move-hint::after{content:'';width:30%;height:30%;border-radius:50%;
+            background:rgba(0,0,0,.2);position:absolute}
+        .chess-sq.capture-hint{background:rgba(239,68,68,.5)!important}
+        .chess-sq.last-move{background:#cdd26a!important}
+        .chess-sq.check{background:rgba(239,68,68,.7)!important}
+        .chess-info{width:200px;display:flex;flex-direction:column;gap:12px}
+        .chess-player-card{background:#fff;border:1.5px solid #dde1ee;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px}
+        .chess-player-card.active{border:2px solid var(--green)}
+        .chess-timer{font-family:Montserrat,sans-serif;font-size:28px;font-weight:800;text-align:center;
+            background:#fff;border:1.5px solid #dde1ee;border-radius:10px;padding:10px;margin-top:auto;color:#1B2A6B}
+        .chess-timer.active{color:var(--green)}
+        .chess-history{background:#f4f6fb;border:1.5px solid #dde1ee;border-radius:10px;padding:10px;height:140px;overflow-y:auto;font-size:12px;color:#475569}
+        .chess-history::-webkit-scrollbar{width:4px}
+        .chess-history::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+        .chess-actions{display:flex;gap:8px;flex-wrap:wrap}
+        .chess-act-btn{background:#eef1fb;border:1.5px solid #dde1ee;color:#1B2A6B;
+            border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Open Sans',sans-serif}
+        .chess-act-btn:hover{background:#e0e5f6}
+        .chess-act-btn.danger{color:var(--red);border-color:rgba(192,57,43,.3);background:#fef2f2}
+
+        /* ── TETRIS ── */
+        #tetris-screen{align-items:center;justify-content:center;padding:16px;gap:20px;flex-direction:row;flex-wrap:wrap}
+        .tetris-player{display:flex;flex-direction:column;align-items:center;gap:8px}
+        .tetris-label{font-size:13px;font-weight:700;color:var(--sub)}
+        .tetris-board{border:2px solid var(--s2);background:#000;border-radius:6px;position:relative}
+        .tetris-cell{width:24px;height:24px;border:1px solid rgba(255,255,255,.05)}
+        .tetris-stats{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--sub);min-width:70px}
+        .tetris-stat-val{font-family:Montserrat,sans-serif;font-weight:700;color:var(--text);font-size:16px}
+        .tetris-next{width:72px;height:72px;background:var(--s2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px}
+        .tetris-garbage{position:absolute;right:-12px;top:0;width:8px;height:0;background:var(--red);border-radius:4px;transition:height .3s;right:-10px}
+
+        /* ── WORDLE ── */
+        #wordle-screen{align-items:center;padding:16px;gap:16px;overflow-y:auto}
+        .wordle-players-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;width:100%}
+        .wordle-player-board{background:#fff;border:1.5px solid #dde1ee;border-radius:14px;padding:14px;min-width:160px;box-shadow:0 2px 4px rgba(27,42,107,.05)}
+        .wordle-mini-label{font-size:11px;font-weight:700;color:var(--sub);margin-bottom:8px;text-align:center}
+        .wordle-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:0}
+        .wordle-cell{width:36px;height:36px;border:2px solid #dde1ee;border-radius:4px;
+            display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;
+            text-transform:uppercase;transition:all .3s}
+        .wordle-cell.correct{background:#538d4e;border-color:#538d4e;color:#fff}
+        .wordle-cell.present{background:#b59f3b;border-color:#b59f3b;color:#fff}
+        .wordle-cell.absent{background:var(--s3);border-color:var(--s3);color:#fff}
+        .wordle-cell.filled{border-color:var(--sub)}
+        .wordle-cell.current{border-color:var(--text)}
+        .my-wordle{background:#fff;border:1.5px solid #dde1ee;border-radius:14px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px;min-width:200px;box-shadow:0 2px 8px rgba(27,42,107,.07)}
+        .wordle-my-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+        .wordle-key-row{display:flex;gap:5px;justify-content:center}
+        .wk{height:40px;min-width:30px;padding:0 6px;background:#e8eaf6;border:none;color:#1B2A6B;
+            border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;transition:all .15s}
+        .wk:hover{background:#d0d5ec}
+        .wk.wk-correct{background:#538d4e;color:#fff}
+        .wk.wk-present{background:#b59f3b;color:#fff}
+        .wk.wk-absent{background:var(--s3);opacity:.5}
+        .wk.wk-wide{min-width:52px;font-size:11px}
+
+        /* ── SUDOKU ── */
+        #sudoku-screen{align-items:center;justify-content:center;padding:16px;gap:20px;flex-direction:row;flex-wrap:wrap}
+        .sudoku-board{display:grid;grid-template-columns:repeat(9,1fr);width:min(380px,calc(100vw - 340px));
+            border:3px solid var(--text);border-radius:4px;overflow:hidden;flex-shrink:0}
+        .sd-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+            background:#fff;font-size:clamp(12px,2vw,18px);font-weight:700;cursor:pointer;
+            border:1px solid #dde1ee;transition:background .15s;position:relative}
+        .sd-cell.given{color:#1B2A6B;cursor:default;font-weight:800}
+        .sd-cell.user{color:#2d5be3}
+        .sd-cell.selected{background:#eef1fb}
+        .sd-cell.related{background:#f8f9fd}
+        .sd-cell.wrong{color:var(--red)}
+        .sd-cell.box-right{border-right:2px solid #1B2A6B}
+        .sd-cell.box-bottom{border-bottom:2px solid #1B2A6B}
+        .sd-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:140px}
+        .sd-num{background:#eef1fb;border:1.5px solid #dde1ee;color:#1B2A6B;border-radius:10px;aspect-ratio:1;
+            font-size:20px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Open Sans',sans-serif}
+        .sd-num:hover{background:#e0e5f6;border-color:#1B2A6B}
+        .sd-progress{background:#fff;border:1.5px solid #dde1ee;border-radius:12px;padding:14px;min-width:160px;box-shadow:0 2px 8px rgba(27,42,107,.07)}
+        .sd-prog-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
+        .sd-prog-bar{flex:1;height:4px;background:var(--s2);border-radius:2px;overflow:hidden}
+        .sd-prog-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .3s}
+
+        /* ── DRAW & GUESS ── */
+        #draw-screen{padding:12px;gap:10px;overflow:hidden}
+        .draw-layout{display:flex;gap:10px;flex:1;overflow:hidden}
+        .draw-canvas-wrap{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+        #draw-canvas{border:2px solid var(--s2);border-radius:10px;flex:1;cursor:crosshair;background:#fff;touch-action:none}
+        .draw-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .draw-tool{background:#eef1fb;border:1.5px solid #dde1ee;color:#1B2A6B;
+            border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+        .draw-tool:hover,.draw-tool.active{background:#1B2A6B;color:#fff;border-color:#1B2A6B}
+        #draw-color-input{width:36px;height:36px;border:none;border-radius:50%;cursor:pointer;padding:0;overflow:hidden}
+        #draw-size{background:#eef1fb;border:1.5px solid #dde1ee;color:#1B2A6B;
+            border-radius:8px;padding:6px;font-size:12px;width:60px;outline:none}
+        .draw-word-banner{background:#1B2A6B;border-radius:10px;padding:10px 16px;text-align:center;
+            font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;color:#fff}
+        .draw-word-hint{font-size:22px;letter-spacing:.2em;color:var(--blue);font-weight:800}
+        .draw-round-info{font-size:12px;color:var(--sub)}
+        .draw-scores{display:flex;flex-direction:column;gap:6px;padding:10px 0}
+        .draw-score-row{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#eef1fb;
+            border-radius:8px;font-size:13px;color:#1B2A6B}
+        .draw-score-row.drawing-now{border:2px solid var(--amber);background:rgba(245,158,11,.08)}
+
+        /* ── MAFIA ── */
+        #mafia-screen{padding:16px;gap:14px;overflow-y:auto}
+        .mafia-phase-banner{border-radius:14px;padding:14px 20px;text-align:center;font-family:Montserrat,sans-serif;
+            font-weight:800;font-size:20px;background:#fff;border:1.5px solid #dde1ee}
+        .mafia-phase-banner.day{background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);color:#fbbf24}
+        .mafia-phase-banner.night{background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);color:#818cf8}
+        .mafia-players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+        .mafia-player{background:#fff;border:1.5px solid #dde1ee;border-radius:12px;padding:12px;text-align:center;cursor:pointer;
+            transition:all .15s;position:relative;box-shadow:0 2px 4px rgba(27,42,107,.06)}
+        .mafia-player:hover:not(.eliminated){border-color:#1B2A6B;background:#eef1fb}
+        .mafia-player.eliminated{opacity:.35;cursor:default;text-decoration:line-through}
+        .mafia-player.voted{border-color:var(--amber)}
+        .mafia-player.selected{border-color:var(--red)}
+        .mp-role-badge{position:absolute;top:6px;right:6px;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700}
+        .mp-role-badge.mafia{background:rgba(239,68,68,.2);color:var(--red)}
+        .mp-role-badge.detective{background:rgba(59,130,246,.2);color:#60a5fa}
+        .mp-role-badge.doctor{background:rgba(34,197,94,.2);color:var(--green)}
+        .mp-role-badge.villager{background:rgba(148,163,184,.1);color:var(--sub)}
+        .mafia-role-reveal{background:#fff;border:1.5px solid #dde1ee;border-radius:14px;padding:20px;text-align:center;box-shadow:0 2px 8px rgba(27,42,107,.07)}
+        .mafia-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+        .mafia-act-btn{padding:10px 20px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+
+        /* ── UNO ── */
+        #uno-screen{padding:12px;gap:10px;overflow:hidden}
+        .uno-table{flex:1;background:linear-gradient(135deg,#1B2A6B,#2d4a9e);border-radius:16px;padding:16px;display:flex;flex-direction:column;
+            align-items:center;justify-content:center;gap:16px;position:relative;overflow:hidden}
+        .uno-table::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(34,197,94,.08) 0%,transparent 70%);pointer-events:none}
+        .uno-opponents{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+        .uno-opponent{background:rgba(255,255,255,.15);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:13px;color:#fff}
+        .uno-deck-area{display:flex;gap:24px;align-items:center}
+        .uno-pile{width:72px;height:104px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;border:3px solid rgba(255,255,255,.1);cursor:pointer;transition:transform .15s;position:relative;flex-shrink:0}
+        .uno-pile:hover{transform:scale(1.05)}
+        .uno-pile.deck{background:linear-gradient(135deg,#1e3a5f,#1a56db)}
+        .uno-card{width:68px;height:98px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:24px;font-weight:800;cursor:pointer;transition:transform .15s,box-shadow .15s;border:3px solid rgba(0,0,0,.2);flex-shrink:0;position:relative}
+        .uno-card:hover{transform:translateY(-8px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+        .uno-card.selected{transform:translateY(-14px);border-color:rgba(255,255,255,.6)}
+        .uno-card.playable{box-shadow:0 0 0 2px rgba(255,255,255,.3)}
+        .uno-hand{display:flex;gap:-16px;overflow-x:auto;padding:8px 16px;justify-content:center;flex-wrap:nowrap}
+        .uno-hand .uno-card{margin-left:-16px}
+        .uno-hand .uno-card:first-child{margin-left:0}
+        .uno-turn-indicator{font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;
+            padding:6px 14px;border-radius:20px;background:rgba(34,197,94,.15);
+            border:1px solid rgba(34,197,94,.3);color:var(--green)}
+        .uno-color-picker{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;
+            display:flex;align-items:center;justify-content:center;display:none}
+        .uno-color-picker.open{display:flex}
+        .uno-color-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:24px}
+        .uno-color-btn{width:100px;height:100px;border-radius:16px;border:none;font-size:32px;cursor:pointer;transition:transform .15s;font-weight:800}
+        .uno-color-btn:hover{transform:scale(1.1)}
+
+        /* ── RIGHT PANEL ── */
+        .rp-head{padding:12px 14px;border-bottom:1.5px solid #dde1ee;display:flex;gap:0}
+        .rp-tab{flex:1;text-align:center;padding:7px;font-size:12px;font-weight:700;color:#8a91a8;
+            cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+        .rp-tab.active{color:#1B2A6B;border-color:#1B2A6B}
+        .rp-players{flex:1;overflow-y:auto;padding:8px}
+        .rp-player{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;
+            margin-bottom:4px;font-size:13px;color:#1a1a2e}
+        .rp-player.me{background:#eef1fb}
+        .rp-av{width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;
+            display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+        .rp-av img{width:100%;height:100%;object-fit:cover}
+        .rp-score{margin-left:auto;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1B2A6B}
+        .rp-chat{flex:1;display:none;flex-direction:column}
+        .rp-chat.active-tab{display:flex}
+        .rp-chat-msgs{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+        .rp-chat-msgs::-webkit-scrollbar{width:4px}
+        .rp-chat-msgs::-webkit-scrollbar-thumb{background:#dde1ee;border-radius:2px}
+        .rp-msg{display:flex;gap:6px;align-items:flex-start}
+        .rp-msg-name{font-size:10px;font-weight:700;margin-bottom:2px}
+        .rp-msg-text{font-size:12px;background:#f4f6fb;border-radius:0 8px 8px 8px;padding:6px 9px;line-height:1.4;color:#1a1a2e;border:1px solid #dde1ee}
+        .rp-input-row{padding:8px 10px;border-top:1px solid rgba(255,255,255,.07);display:flex;gap:6px;flex-shrink:0}
+        .rp-input{flex:1;background:#f4f6fb;border:1.5px solid #dde1ee;border-radius:8px;
+            color:#1a1a2e;padding:8px 10px;font-size:12px;outline:none;font-family:'Open Sans',sans-serif}
+        .rp-input:focus{border-color:#1B2A6B}
+        .rp-send{background:#1B2A6B;border:none;color:#fff;border-radius:8px;width:32px;height:32px;
+            cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+        /* ── GAME OVER ── */
+        #gameover-screen{position:fixed;inset:0;background:rgba(17,28,78,.85);z-index:50;
+            display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px}
+        #gameover-screen.open{display:flex}
+        .go-title{font-family:Montserrat,sans-serif;font-weight:800;font-size:36px;background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .go-card{background:#fff;border:1.5px solid #dde1ee;border-radius:20px;padding:28px;max-width:440px;width:100%}
+        .go-podium{display:flex;gap:12px;justify-content:center;align-items:flex-end;margin-bottom:20px}
+        .go-place{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+        .go-place-num{font-family:Montserrat,sans-serif;font-weight:800;font-size:28px}
+        .go-place-name{font-size:13px;font-weight:600;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1B2A6B}
+        .go-place-score{font-size:12px;color:#8a91a8}
+        .go-btn{background:#1B2A6B;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;margin:0 6px}
+        .go-btn:hover{opacity:.9}
+        .go-btn.secondary{background:#eef1fb;color:#1B2A6B;border:1.5px solid #dde1ee}
+
+        /* ── MISC ── */
+        .countdown-overlay{position:absolute;inset:0;background:rgba(17,28,78,.8);z-index:10;
+            display:flex;align-items:center;justify-content:center;
+            font-family:Montserrat,sans-serif;font-weight:800;font-size:100px;color:#fff;display:none}
+        .countdown-overlay.open{display:flex}
+        .notif-stack{position:fixed;top:60px;right:16px;display:flex;flex-direction:column;gap:6px;z-index:999;pointer-events:none}
+        .notif{background:#fff;border:1.5px solid #dde1ee;border-radius:10px;
+            padding:10px 14px;font-size:13px;color:#1a1a2e;box-shadow:0 4px 24px rgba(27,42,107,.12);
+            animation:slideIn .3s ease;pointer-events:auto;display:flex;align-items:center;gap:8px}
+        @keyframes slideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+        .emoji-rain{position:fixed;pointer-events:none;z-index:998}
+        .emoji-particle{position:fixed;font-size:28px;animation:emojiFloat 2s ease forwards;pointer-events:none}
+        @keyframes emojiFloat{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-100px)}}
+        ::-webkit-scrollbar{width:4px;height:4px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:var(--s2);border-radius:2px}
+        @media(max-width:768px){.right-panel{display:none}.chess-board{width:min(340px,95vw)}.tetris-board .tetris-cell{width:18px;height:18px}}
+    </style>
+</head>
+<body>
+<!-- Thymeleaf server variables — read by JS below, avoids entirely -->
+<span id="_rv" style="display:none"
+      data-room-code="[[${roomCode}]]"
+      data-game-type="[[${gameType}]]"
+      data-me-id="[[${currentUser.id}]]"
+      data-me-name="[[${currentUser.fullName}]]"
+      data-me-avatar="[[${currentAvatar}]]"
+      data-is-host="[[${isHost}]]"
+      th:attr="data-room-code=${roomCode},data-game-type=${gameType},data-me-id=${currentUser.id},data-me-name=${currentUser.fullName},data-me-avatar=${currentAvatar},data-is-host=${isHost}"></span>
+
+<!-- HEADER -->
+<div class="rh">
+    <a href="/games" class="rh-back">←</a>
+    <span class="rh-title" id="game-title-label">Game Room</span>
+    <div class="rh-code" id="room-code-display" onclick="copyRoomCode()"
+         th:text="${roomCode}">CODE</div>
+    <div class="rh-sp"></div>
+    <div class="rh-chip" id="status-chip">Waiting</div>
+    <div class="rh-chip" id="player-chip">1 player</div>
+</div>
+
+<!-- GAME OVER OVERLAY -->
+<div id="gameover-screen">
+    <div style="font-size:56px">🏆</div>
+    <div class="go-title">Game Over!</div>
+    <div class="go-card">
+        <div class="go-podium" id="go-podium"></div>
+        <div style="text-align:center">
+            <button class="go-btn" onclick="playAgain()">Play Again</button>
+            <button class="go-btn secondary" onclick="window.location='/games'">Back to Hub</button>
+        </div>
+    </div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div class="notif-stack" id="notif-stack"></div>
+
+<!-- MAIN BODY -->
+<div class="room-body">
+
+    <!-- GAME AREA -->
+    <div class="game-area" style="position:relative">
+
+        <!-- COUNTDOWN OVERLAY -->
+        <div class="countdown-overlay" id="countdown-overlay"></div>
+
+        <!-- LOBBY -->
+        <div id="lobby-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:20px;flex:1;overflow-y:auto">
+            <div class="lobby-title" id="lobby-game-icon" style="font-size:48px">🎮</div>
+            <div class="lobby-title" id="lobby-game-name">Loading…</div>
+            <div style="font-size:14px;color:var(--sub);text-align:center">Share the room code with friends to play together</div>
+            <div class="lobby-code-big" id="lobby-code" onclick="copyRoomCode()"
+                 th:text="${roomCode}">XXXXXX</div>
+            <div id="lobby-players" class="lobby-players"></div>
+            <div id="lobby-hint" class="lobby-hint"></div>
+            <div class="lobby-actions" id="lobby-actions"></div>
+        </div>
+
+        <!-- TYPING RACER -->
+        <div class="game-screen" id="typing-screen">
+            <div style="padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+                <div style="display:flex;gap:24px">
+                    <div><div class="tr-stat-val" id="tr-wpm">0</div><div class="tr-stat-lbl">WPM</div></div>
+                    <div><div class="tr-stat-val" id="tr-acc">100</div><div class="tr-stat-lbl">Accuracy %</div></div>
+                    <div><div class="tr-stat-val" id="tr-timer">60</div><div class="tr-stat-lbl">Seconds</div></div>
+                </div>
+                <button class="tr-nitro-btn" id="tr-nitro" onclick="useNitro()" title="Use Nitro!" disabled>⚡</button>
+            </div>
+            <div class="tr-track" style="margin:12px 16px 0;flex-shrink:0" id="tr-track"></div>
+            <div class="tr-text-box" style="margin:10px 16px;min-height:0">
+                <div class="tr-passage" id="tr-passage"></div>
+                <input id="tr-input" class="tr-input" placeholder="Start typing when the race begins…"
+                       oninput="onTyping()" disabled autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+            </div>
+        </div>
+
+        <!-- CHESS -->
+        <div class="game-screen" id="chess-screen">
+            <div class="chess-layout">
+                <div>
+                    <div class="chess-board" id="chess-board"></div>
+                    <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
+                        <button class="chess-act-btn" onclick="chessOfferDraw()">½ Draw</button>
+                        <button class="chess-act-btn danger" onclick="chessResign()">⚑ Resign</button>
+                    </div>
+                </div>
+                <div class="chess-info">
+                    <div class="chess-player-card" id="chess-black-card">
+                        <div class="rp-av" id="chess-black-av">♛</div>
+                        <div><div style="font-size:13px;font-weight:700" id="chess-black-name">Black</div>
+                            <div style="font-size:11px;color:var(--sub)">Black pieces</div></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                        <div class="chess-timer" id="chess-white-timer">10:00</div>
+                        <div class="chess-timer" id="chess-black-timer">10:00</div>
+                    </div>
+                    <div class="chess-player-card" id="chess-white-card">
+                        <div class="rp-av" id="chess-white-av">♔</div>
+                        <div><div style="font-size:13px;font-weight:700" id="chess-white-name">White</div>
+                            <div style="font-size:11px;color:var(--sub)">White pieces</div></div>
+                    </div>
+                    <div style="font-size:11px;color:var(--sub);text-align:center" id="chess-turn-label">Waiting…</div>
+                    <div class="chess-history" id="chess-history"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TETRIS -->
+        <div class="game-screen" id="tetris-screen">
+            <div id="tetris-boards" style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;justify-content:center;padding:8px;overflow-y:auto;flex:1"></div>
+        </div>
+
+        <!-- WORDLE -->
+        <div class="game-screen" id="wordle-screen">
+            <div style="display:flex;gap:20px;flex:1;overflow:hidden;padding:12px;flex-wrap:wrap;justify-content:center">
+                <div class="my-wordle">
+                    <div style="font-size:13px;font-weight:700;color:var(--sub)">Your Board</div>
+                    <div class="wordle-my-grid" id="wordle-my-grid"></div>
+                    <div style="display:flex;flex-direction:column;gap:5px" id="wordle-keyboard">
+                        <div class="wordle-key-row" data-row="0"></div>
+                        <div class="wordle-key-row" data-row="1"></div>
+                        <div class="wordle-key-row" data-row="2"></div>
+                    </div>
+                </div>
+                <div style="flex:1;min-width:200px;overflow-y:auto">
+                    <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:10px">OPPONENTS</div>
+                    <div id="wordle-opponents" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUDOKU -->
+        <div class="game-screen" id="sudoku-screen">
+            <div style="display:flex;gap:20px;align-items:flex-start;padding:12px;flex-wrap:wrap;justify-content:center;flex:1;overflow-y:auto">
+                <div>
+                    <div class="sudoku-board" id="sudoku-board"></div>
+                    <div class="sd-numpad" id="sd-numpad" style="margin-top:12px"></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:12px;min-width:160px">
+                    <div class="sd-progress" id="sd-progress">
+                        <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:10px">Progress</div>
+                    </div>
+                    <div style="background:var(--s1);border-radius:12px;padding:14px">
+                        <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:28px;color:var(--blue);text-align:center" id="sd-timer">0:00</div>
+                        <div style="font-size:11px;color:var(--sub);text-align:center">Time</div>
+                    </div>
+                    <div style="background:var(--s1);border-radius:12px;padding:12px;font-size:13px;color:var(--sub);text-align:center">
+                        <kbd style="background:var(--s2);padding:3px 7px;border-radius:5px">Del</kbd> to erase
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DRAW &amp; GUESS -->
+        <div class="game-screen" id="draw-screen">
+            <div class="draw-word-banner" id="draw-banner">
+                <div class="draw-round-info" id="draw-round-info">Round 1</div>
+                <div class="draw-word-hint" id="draw-word-hint">_ _ _ _ _</div>
+            </div>
+            <div class="draw-layout">
+                <div class="draw-canvas-wrap">
+                    <div class="draw-toolbar" id="draw-toolbar">
+                        <button class="draw-tool active" id="dt-pen" onclick="setDrawTool('pen')">✏️ Pen</button>
+                        <button class="draw-tool" id="dt-eraser" onclick="setDrawTool('eraser')">🧹 Eraser</button>
+                        <button class="draw-tool" id="dt-fill" onclick="setDrawTool('fill')">🪣 Fill</button>
+                        <input type="color" id="draw-color-input" value="#000000" title="Color" style="display:none"/>
+                        <div style="width:28px;height:28px;border-radius:50%;background:#000;border:2px solid rgba(255,255,255,.2);cursor:pointer" id="draw-color-swatch" onclick="document.getElementById('draw-color-input').click()"></div>
+                        <input type="range" id="draw-size" min="2" max="40" value="4" style="width:80px"/>
+                        <button class="draw-tool" onclick="clearCanvas()">🗑 Clear</button>
+                    </div>
+                    <canvas id="draw-canvas"></canvas>
+                </div>
+                <div style="width:160px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;overflow-y:auto">
+                    <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.05em">Scores</div>
+                    <div id="draw-scores" class="draw-scores"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAFIA -->
+        <div class="game-screen" id="mafia-screen">
+            <div class="mafia-phase-banner day" id="mafia-phase-banner">☀️ Day Phase — Discuss &amp; Vote</div>
+            <div class="mafia-role-reveal" id="mafia-role-reveal">Your role will be revealed when the game starts</div>
+            <div class="mafia-players-grid" id="mafia-players-grid"></div>
+            <div class="mafia-actions" id="mafia-actions"></div>
+        </div>
+
+        <!-- UNO -->
+        <div class="game-screen" id="uno-screen">
+            <div class="uno-table">
+                <div class="uno-opponents" id="uno-opponents"></div>
+                <div class="uno-turn-indicator" id="uno-turn">Waiting for game to start…</div>
+                <div class="uno-deck-area">
+                    <div class="uno-pile deck" onclick="unoDraw()" title="Draw card">🂠</div>
+                    <div class="uno-pile" id="uno-discard-pile" style="background:#374151">?</div>
+                </div>
+            </div>
+            <div id="uno-hand" class="uno-hand"></div>
+            <!-- Color picker for wild cards -->
+            <div class="uno-color-picker" id="uno-color-picker">
+                <div style="background:var(--s1);border-radius:20px;padding:24px;text-align:center">
+                    <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:18px;margin-bottom:16px">Choose a color</div>
+                    <div class="uno-color-grid">
+                        <button class="uno-color-btn" style="background:#ef4444" onclick="unoPickColor('RED')">🔴</button>
+                        <button class="uno-color-btn" style="background:#3b82f6" onclick="unoPickColor('BLUE')">🔵</button>
+                        <button class="uno-color-btn" style="background:#22c55e" onclick="unoPickColor('GREEN')">🟢</button>
+                        <button class="uno-color-btn" style="background:#f59e0b" onclick="unoPickColor('YELLOW')">🟡</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /game-area -->
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+        <div class="rp-head">
+            <div class="rp-tab active" id="rt-players" onclick="rpTab('players')">Players</div>
+            <div class="rp-tab" id="rt-chat" onclick="rpTab('chat')">Chat</div>
+        </div>
+        <div id="rp-players-view" style="flex:1;overflow-y:auto;padding:8px;display:block"></div>
+        <div id="rp-chat-view" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+            <div id="rp-chat-msgs" class="rp-chat-msgs" style="flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:6px"></div>
+            <div class="rp-input-row">
+                <input id="rp-chat-input" class="rp-input" placeholder="Say something…"
+                       onkeydown="if(event.key==='Enter')sendChat()"/>
+                <button class="rp-send" onclick="sendChat()">▶</button>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /room-body -->
+
+<script th:inline="none">
+    /*<![CDATA[*/
+    /* ════════════════════════════════════════════════════════════════
+       MANAS GAME ROOM — All 8 Games in One Page
+       ════════════════════════════════════════════════════════════════ */
+    // Read server variables from hidden DOM element (no th:inline needed)
+    var _rv = document.getElementById('_rv');
+    const ROOM_CODE  = _rv ? _rv.dataset.roomCode  : '';
+    const GAME_TYPE  = _rv ? _rv.dataset.gameType  : '';
+    const ME_ID      = _rv ? _rv.dataset.meId      : '';
+    const ME_NAME    = _rv ? _rv.dataset.meName    : '';
+    const ME_AVATAR  = _rv ? _rv.dataset.meAvatar  : '';
+    const IS_HOST    = _rv ? (_rv.dataset.isHost === 'true') : false;
+
+    const GAME_META = {
+        TYPING_RACER:{icon:'🏎️', name:'Typing Racer'},
+        CHESS:{icon:'♟️', name:'Chess'},
+        TETRIS:{icon:'🟪', name:'Battle Tetris'},
+        WORDLE:{icon:'🟩', name:'Wordle Race'},
+        SUDOKU:{icon:'🔢', name:'Sudoku Race'},
+        DRAW_GUESS:{icon:'🎨', name:'Draw & Guess'},
+        MAFIA:{icon:'🕵️', name:'Mafia'},
+        UNO:{icon:'🃏', name:'UNO'}
+    };
+
+    /* ── State ──────────────────────────────────────────────────────── */
+    let stomp       = null;
+    let players     = {};      // userId → {name,avatar,score,ready,host}
+    let gameState   = {};      // game-specific shared state
+    let myRole      = null;    // mafia role
+    let gameStarted = false;
+
+    /* ── Game State Variables (hoisted to avoid TDZ errors) ── */
+    const PASSAGES = [
+        "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump.",
+        "In the beginning was the Word, and the Word was with knowledge. To type fast is to think fast, and to think fast is to live fully.",
+        "Technology is best when it brings people together. The advance of technology is based on making it fit in so that you don't really even notice it.",
+        "Programming is not about typing, it is about thinking. Code is like humor: when you have to explain it, it is bad. Make it work, make it right, make it fast.",
+        "The greatest danger for most of us is not that our aim is too high and we miss it, but that it is too low and we reach it. Dream big and work hard."
+    ];
+    let trPassage = '', trTyped = '', trStart = 0, trInterval = null, trNitro = 2, trFinished = false, trSecondsLeft = 60, trCountCorrect = 0;
+    let trFinishedCount = 0;
+    let trFinishedPlayers = new Set();
+    let chess = { board: null, turn: 'w', selected: null, hints: [], myColor: 'w', history: [], timers: {w:600,b:600}, timerInterval: null };
+    const CHESS_PIECES = {
+        wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙',
+        bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟'
+    };
+    const TETROMINOES = {
+        I:{shape:[S([1,1,1,1])],color:'#00f0f0'},
+        O:{shape:[S([1,1]),S([1,1])],color:'#f0f000'},
+        T:{shape:[S([0,1,0]),S([1,1,1])],color:'#a000f0'},
+        S:{shape:[S([0,1,1]),S([1,1,0])],color:'#00f000'},
+        Z:{shape:[S([1,1,0]),S([0,1,1])],color:'#f00000'},
+        J:{shape:[S([1,0,0]),S([1,1,1])],color:'#0000f0'},
+        L:{shape:[S([0,0,1]),S([1,1,1])],color:'#f0a000'}
+    };
+    const TET_KEYS = Object.keys(TETROMINOES);
+    let tet = {board:null, piece:null, x:0, y:0, gameOver:false, score:0, lines:0, level:1, interval:null, nextPiece:null, garbageQueue:0};
+    const BOARD_W=10, BOARD_H=20;
+    let wl = {word:'', guesses:[], current:'', row:0, solved:false, keyColors:{}};
+    let sd = {puzzle:null, solution:null, userFills:{}, selected:-1, timerSecs:0, timerInt:null};
+    let draw = {ctx:null, drawing:false, tool:'pen', color:'#000', size:4, isDrawer:false, word:'', round:1, wordHint:''};
+    let mafia = {phase:'DAY', myRole:'', eliminated:new Set(), votes:{}, nightAction:null};
+    let uno = {hand:[], deck:[], discard:null, turn:null, direction:1, drawStack:0, selectedCard:null, pendingWild:null, gameState:null};
+    const WORDLE_WORDS = ['CRANE','SLATE','AUDIO','BEACH','FLINT','GROAN','BLAZE','CRIMP','DWARF','EPOCH','FJORD','GLYPH','HERBS','IAMBS','JAZZY','KNACK','LAPSE','MIRTH','NYMPH','OPING','PERKY','QUAFF','REVEL','SHELF','TRYST','ULCER','VIGOR','WALTZ','XYLEM','YACHT','ZEBRA'];
+    const DRAW_WORDS = ['elephant','pizza','rainbow','guitar','castle','dolphin','volcano','umbrella','bicycle','diamond','robot','tornado','penguin','telescope','butterfly','submarine','cactus','violin','pyramid','compass'];
+    const MAFIA_ROLES = ['MAFIA','DETECTIVE','DOCTOR','VILLAGER'];
+    const UNO_COLORS=['RED','BLUE','GREEN','YELLOW'];
+    const UNO_SPECIAL=['SKIP','REVERSE','DRAW2','WILD','WILD4'];
+    const UNO_COLOR_CSS={RED:'#ef4444',BLUE:'#3b82f6',GREEN:'#22c55e',YELLOW:'#f59e0b',WILD:'#1e293b'};
+
+    const COLORS = ['#6366f1','#14b8a6','#f59e0b','#ef4444','#22c55e','#a855f7','#3b82f6','#ec4899'];
+    function colorFor(id){ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))&0x7fffffff; return COLORS[h%COLORS.length]; }
+    function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    /* ── Init ───────────────────────────────────────────────────────── */
+    /* ── Init runs immediately — script is at bottom of body so DOM is ready ── */
+    (function initGameRoom() {
+        var meta = GAME_META[GAME_TYPE] || {icon:'🎮', name: GAME_TYPE || 'Game Room'};
+        document.getElementById('game-title-label').textContent = meta.name;
+        document.getElementById('lobby-game-icon').textContent  = meta.icon;
+        document.getElementById('lobby-game-name').textContent  = meta.name;
+        document.getElementById('room-code-display').textContent = ROOM_CODE;
+        document.getElementById('lobby-code').textContent        = ROOM_CODE;
+        buildLobbyActions();
+        connectStomp();
+        // Game-specific init
+        if (GAME_TYPE === 'CHESS')      initChess();
+        if (GAME_TYPE === 'TETRIS')     initTetris();
+        if (GAME_TYPE === 'WORDLE')     initWordle();
+        if (GAME_TYPE === 'SUDOKU')     initSudoku();
+        if (GAME_TYPE === 'DRAW_GUESS') initDrawGuess();
+        if (GAME_TYPE === 'UNO')        initUno();
+    })();
+
+    /* ═══════════════════════════════════════════════════════════════
+       WEBSOCKET
+       ═══════════════════════════════════════════════════════════════ */
+    function connectStomp() {
+        // Show self in lobby immediately before STOMP connects
+        if (!players[ME_ID]) {
+            players[ME_ID] = {userId:ME_ID,name:ME_NAME,avatar:ME_AVATAR,ready:false,host:IS_HOST,score:0};
+            updateLobbyPlayers();
+            updateRpPlayers();
+            updateStatusChips();
+        }
+        stomp = new StompJs.Client({
+            webSocketFactory: () => new SockJS('/ws'),
+            debug: () => {},
+            reconnectDelay: 3000,
+            onConnect: () => {
+                stomp.subscribe('/topic/game.' + ROOM_CODE, f => {
+                    try { handleRoom(JSON.parse(f.body)); } catch(e) { console.error('handleRoom error', e); }
+                });
+                stomp.subscribe('/topic/game.private.' + ME_ID, f => {
+                    try { handlePrivate(JSON.parse(f.body)); } catch(e) { console.error('handlePrivate error', e); }
+                });
+                // Add self to local players map immediately
+                players[ME_ID] = {userId:ME_ID,name:ME_NAME,avatar:ME_AVATAR,ready:false,host:IS_HOST,score:0};
+                updateLobbyPlayers();
+                updateRpPlayers();
+                // Announce join — include full player info so others can render us immediately
+                send('ready', {ready: false, name: ME_NAME, avatar: ME_AVATAR, host: IS_HOST});
+                pollStatus();
+            },
+            onStompError: (frame) => { console.error('STOMP error', frame); setTimeout(connectStomp, 3000); }
+        });
+        stomp.activate();
+    }
+
+    function send(action, payload) {
+        if (stomp && stomp.connected) stomp.publish({destination: '/app/game.' + action + '/' + ROOM_CODE, body: JSON.stringify(payload || {})});
+    }
+
+    async function pollStatus() {
+        try {
+            const r = await fetch('/games/room/' + ROOM_CODE + '/status');
+            if (!r.ok) return;
+            const d = await r.json();
+            (d.players||[]).forEach(p => { players[p.userId] = p; });
+            if (!players[ME_ID]) players[ME_ID] = {userId:ME_ID,name:ME_NAME,avatar:ME_AVATAR,ready:false,host:IS_HOST,score:0};
+            updateLobbyPlayers();
+            updateRpPlayers();
+            updateStatusChips();
+            if (d.status === 'IN_PROGRESS') { gameStarted=true; showGameScreen(); }
+        } catch(e) {}
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       MESSAGE HANDLERS
+       ═══════════════════════════════════════════════════════════════ */
+    function handleRoom(msg) {
+        switch(msg.type) {
+            case 'PLAYER_READY': {
+                // Merge full player info if provided (name/avatar/host)
+                const existing = players[msg.userId] || {};
+                players[msg.userId] = {
+                    userId: msg.userId,
+                    name:   msg.name   || existing.name   || '?',
+                    avatar: msg.avatar || existing.avatar || '',
+                    host:   msg.host   !== undefined ? msg.host : existing.host || false,
+                    ready:  msg.ready,
+                    score:  existing.score || 0
+                };
+                // If this is a new player joining (not just a ready toggle), notify
+                if (!existing.name && msg.name && msg.userId !== ME_ID) {
+                    notif('👋', msg.name + ' joined the room!');
+                }
+                updateLobbyPlayers(); updateRpPlayers(); updateStatusChips();
+                break;
+            }
+            case 'LOBBY_SYNC':
+                // Full player list broadcast — merge all players
+                (msg.players||[]).forEach(p => {
+                    players[p.userId] = {...(players[p.userId]||{}), ...p};
+                });
+                // Ensure self is always in the map
+                if (!players[ME_ID]) {
+                    players[ME_ID] = {userId:ME_ID,name:ME_NAME,avatar:ME_AVATAR,ready:false,host:IS_HOST,score:0};
+                }
+                updateLobbyPlayers(); updateRpPlayers(); updateStatusChips();
+                break;
+            case 'ALL_READY':
+                startCountdown(msg.countdown || 3); break;
+            case 'GAME_STARTED':
+                (msg.players||[]).forEach(p => { players[p.userId] = {...(players[p.userId]||{}), ...p}; });
+                gameStarted = true;
+                showGameScreen();
+                if (GAME_TYPE === 'CHESS') chessAssignColors();
+                if (GAME_TYPE === 'TETRIS') { renderTetBoards(); startTetrisForMe(); }
+                if (GAME_TYPE === 'DRAW_GUESS') { updateDrawScores(); }
+                updateRpPlayers();
+                updateStatusChips();
+                break;
+            case 'PLAYER_LEFT':
+                if (msg.userId !== ME_ID) {
+                    notif('👋', (players[msg.userId]?.name || msg.name || 'Someone') + ' left');
+                }
+                delete players[msg.userId];
+                // Re-sync from server's authoritative list if provided
+                if (msg.players) {
+                    (msg.players).forEach(p => { players[p.userId] = {...(players[p.userId]||{}), ...p}; });
+                }
+                updateLobbyPlayers(); updateRpPlayers(); updateStatusChips();
+                break;
+            case 'CHAT':
+                appendChat(msg.userId, msg.name, msg.avatar, msg.text); break;
+            case 'EMOJI':
+                showEmojiRain(msg.emoji); break;
+            case 'GAME_OVER':
+                showGameOver(msg); break;
+            default:
+                routeGameMsg(msg);
+        }
+    }
+
+    function handlePrivate(msg) {
+        switch(msg.type) {
+            case 'ERROR': notif('⚠️', msg.msg); break;
+            case 'DRAW_YOUR_WORD': receiveDrawWord(msg.word); break;
+            case 'MAFIA_NIGHT_ACTION': mafiaHandleNightResult(msg); break;
+            case 'TETRIS_GARBAGE': tetrisReceiveGarbage(msg.from, msg.lines); break;
+            default: routeGameMsg(msg);
+        }
+    }
+
+    function routeGameMsg(msg) {
+        const t = msg.type;
+        if (t.startsWith('TYPING_'))  typingHandleMsg(msg);
+        else if (t.startsWith('CHESS_')) chessHandleMsg(msg);
+        else if (t.startsWith('TETRIS_')) tetrisHandleMsg(msg);
+        else if (t.startsWith('WORDLE_')) wordleHandleMsg(msg);
+        else if (t.startsWith('SUDOKU_')) sudokuHandleMsg(msg);
+        else if (t.startsWith('DRAW_'))  drawHandleMsg(msg);
+        else if (t.startsWith('MAFIA_')) mafiaHandleMsg(msg);
+        else if (t.startsWith('UNO_'))  unoHandleMsg(msg);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       LOBBY
+       ═══════════════════════════════════════════════════════════════ */
+    function buildLobbyActions() {
+        const actions = document.getElementById('lobby-actions');
+        const canStart = Object.keys(players).length >= 2;
+        if (IS_HOST) {
+            actions.innerHTML =
+                '<button class="lobby-btn primary" id="start-btn" onclick="hostStartGame()" ' +
+                (canStart ? '' : 'disabled ') +
+                'style="' + (canStart ? '' : 'opacity:.55;cursor:not-allowed;') + '">' +
+                (canStart ? '&#9654; Start Game' : '&#9654; Start Game &nbsp;<small style="font-weight:500;font-size:12px">(waiting for players...)</small>') +
+                '</button> ' +
+                '<button class="lobby-btn secondary" onclick="sendReady(true)" id="ready-btn">&#10003; Ready</button>';
+        } else {
+            actions.innerHTML =
+                '<button class="lobby-btn ready" onclick="sendReady(true)" id="ready-btn">&#10003; Ready</button>';
+        }
+        document.getElementById('lobby-hint').textContent = IS_HOST
+            ? 'Invite friends with the code above, then click Start when everyone is ready.'
+            : "Click Ready when you're set to play!";
+    }
+
+    function sendReady(ready) {
+        send('ready', {ready, name: ME_NAME, avatar: ME_AVATAR, host: IS_HOST});
+        if (players[ME_ID]) players[ME_ID].ready = ready;
+        updateLobbyPlayers();
+        const btn = document.getElementById('ready-btn');
+        if (btn) { btn.textContent = ready ? '✓ Ready!' : '○ Not Ready'; btn.disabled = ready; }
+    }
+
+    function hostStartGame() {
+        if (Object.keys(players).length < 2) { notif('⚠️','Need at least 2 players!'); return; }
+        send('start', {});
+    }
+
+    function updateLobbyPlayers() {
+        const container = document.getElementById('lobby-players');
+        container.innerHTML = Object.values(players).map(p => {
+            const av = p.avatar
+                ? `<img src="${esc(p.avatar)}" alt=""/>`
+                : (p.name||'?').charAt(0).toUpperCase();
+            return `<div class="lobby-player ${p.host?'host-player':''}">
+            ${p.host?'<div class="lp-host-badge">HOST</div>':''}
+            <div class="lp-av" style="background:${colorFor(p.userId)}">${av}</div>
+            <div class="lp-name">${esc(p.name||'?')}</div>
+            <div class="lp-ready ${p.ready?'is-ready':''}"></div>
+        </div>`;
+        }).join('');
+        // Refresh Start button state whenever player list changes
+        if (!gameStarted) buildLobbyActions();
+    }
+
+    function updateStatusChips() {
+        document.getElementById('status-chip').textContent = gameStarted ? 'In Progress' : 'Lobby';
+        document.getElementById('player-chip').textContent = Object.keys(players).length + ' players';
+    }
+
+    function startCountdown(from) {
+        const overlay = document.getElementById('countdown-overlay');
+        overlay.classList.add('open');
+        let n = from;
+        overlay.textContent = n;
+        const iv = setInterval(() => {
+            n--;
+            if (n <= 0) { overlay.classList.remove('open'); clearInterval(iv); }
+            else overlay.textContent = n;
+        }, 1000);
+    }
+
+    function showGameScreen() {
+        document.getElementById('lobby-screen').style.display = 'none';
+        const screens = {
+            TYPING_RACER: 'typing-screen',
+            CHESS: 'chess-screen',
+            TETRIS: 'tetris-screen',
+            WORDLE: 'wordle-screen',
+            SUDOKU: 'sudoku-screen',
+            DRAW_GUESS: 'draw-screen',
+            MAFIA: 'mafia-screen',
+            UNO: 'uno-screen'
+        };
+        const id = screens[GAME_TYPE];
+        if (id) { document.getElementById(id).classList.add('active'); }
+        // Game-specific start
+        if (GAME_TYPE === 'TYPING_RACER') startTypingGame();
+        if (GAME_TYPE === 'MAFIA')        startMafia();
+        if (GAME_TYPE === 'UNO')          startUno();
+        if (GAME_TYPE === 'WORDLE')       startWordle();
+        if (GAME_TYPE === 'SUDOKU')       startSudoku();
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       RIGHT PANEL
+       ═══════════════════════════════════════════════════════════════ */
+
+    function updateRpPlayers() {
+        const el = document.getElementById('rp-players-view');
+        el.innerHTML = Object.values(players).map(p => {
+            const av = p.avatar ? `<img src="${esc(p.avatar)}" alt=""/>` : (p.name||'?').charAt(0);
+            const me = p.userId === ME_ID;
+            return `<div class="rp-player ${me?'me':''}">
+            <div class="rp-av" style="background:${colorFor(p.userId)}">${av}</div>
+            <span style="font-size:13px;font-weight:${me?700:500}">${esc(p.name||'?')}${me?' (You)':''}${p.host?' 👑':''}</span>
+            ${p.score?`<span class="rp-score">${p.score}</span>`:''}
+        </div>`;
+        }).join('');
+    }
+
+    function rpTab(tab) {
+        document.getElementById('rt-players').classList.toggle('active', tab==='players');
+        document.getElementById('rt-chat').classList.toggle('active', tab==='chat');
+        document.getElementById('rp-players-view').style.display = tab==='players'?'flex':'none';
+        const cv = document.getElementById('rp-chat-view');
+        if (cv) {
+            cv.style.display = tab==='chat'?'flex':'none';
+            if (tab==='chat') {
+                const inp = document.getElementById('rp-chat-input');
+                if (inp) inp.focus();
+                // Scroll to bottom
+                const msgs = document.getElementById('rp-chat-msgs');
+                if (msgs) msgs.scrollTop = msgs.scrollHeight;
+            }
+        }
+    }
+
+    function sendChat() {
+        const input = document.getElementById('rp-chat-input');
+        const text = input.value.trim(); if (!text) return;
+        input.value = '';
+        send('chat', {text});
+        appendChat(ME_ID, ME_NAME, ME_AVATAR, text);
+    }
+
+    function appendChat(userId, name, avatar, text) {
+        const msgs = document.getElementById('rp-chat-msgs');
+        const av = avatar ? `<img src="${esc(avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>` : (name||'?').charAt(0);
+        const div = document.createElement('div');
+        div.className = 'rp-msg';
+        div.innerHTML = `<div class="rp-av" style="background:${colorFor(userId)};width:24px;height:24px;font-size:10px;flex-shrink:0;border-radius:50%">${av}</div>
+        <div><div class="rp-msg-name" style="color:${colorFor(userId)}">${esc(name)}</div>
+        <div class="rp-msg-text">${esc(text)}</div></div>`;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function notif(icon, text) {
+        const el = document.createElement('div');
+        el.className = 'notif';
+        el.innerHTML = `<span style="font-size:18px">${icon}</span><span style="font-size:13px">${esc(text)}</span>`;
+        document.getElementById('notif-stack').appendChild(el);
+        setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); }, 3500);
+    }
+
+    function showEmojiRain(emoji) {
+        for (let i = 0; i < 6; i++) {
+            const el = document.createElement('div');
+            el.className = 'emoji-particle';
+            el.textContent = emoji;
+            el.style.left = (20 + Math.random() * 60) + 'vw';
+            el.style.top  = (40 + Math.random() * 40) + 'vh';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 2100);
+        }
+    }
+
+    function copyRoomCode() {
+        navigator.clipboard.writeText(ROOM_CODE).catch(()=>{});
+        notif('🔗', 'Room code copied!');
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       GAME OVER
+       ═══════════════════════════════════════════════════════════════ */
+    function showGameOver(msg) {
+        const screen = document.getElementById('gameover-screen');
+        const podium = document.getElementById('go-podium');
+        const scores = msg.scores || [];
+        const medals = ['🥇','🥈','🥉'];
+        podium.innerHTML = scores.slice(0,3).map((s,i) =>
+            `<div class="go-place">
+            <div class="go-place-num">${medals[i]||'4️⃣'}</div>
+            <div class="go-place-name">${esc(s.name||'?')}</div>
+            <div class="go-place-score">${s.score} pts</div>
+        </div>`
+        ).join('');
+        screen.classList.add('open');
+
+        // Determine if I am the winner
+        const winner = msg.winner || '';
+        const isDraw = winner === 'Draw';
+        const iWon = !isDraw && scores.length > 0 && scores[0].userId === ME_ID;
+
+        if (isDraw) {
+            notif('🤝', "It's a draw!");
+        } else {
+            notif('🏆', (winner || 'Someone') + ' wins!');
+        }
+
+        // Award 5 rating points to the winner via HTTP
+        if (iWon) {
+            fetch('/award-game-win', {method:'POST', headers:{'Content-Type':'application/json'}})
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) notif('⭐', '+5 rating points awarded!');
+                })
+                .catch(() => {});
+        }
+
+        showEmojiRain(iWon ? '🏆' : isDraw ? '🤝' : '🎉');
+    }
+
+    function playAgain() {
+        window.location.reload();
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TYPING RACER
+       ═══════════════════════════════════════════════════════════════ */
+
+
+
+
+
+    function startTypingGame() {
+        trPassage = PASSAGES[Math.floor(Math.random() * PASSAGES.length)];
+        // Host picks passage and sends it — for now all use same random (deterministic by room code hash)
+        const hash = ROOM_CODE.split('').reduce((h,c) => h*31+c.charCodeAt(0), 0) >>> 0;
+        trPassage = PASSAGES[hash % PASSAGES.length];
+
+        renderPassage();
+        const input = document.getElementById('tr-input');
+        input.disabled = false;
+        input.focus();
+        trStart = Date.now();
+        trInterval = setInterval(trTick, 200);
+        initTrack();
+    }
+
+    function renderPassage() {
+        const el = document.getElementById('tr-passage');
+        el.innerHTML = trPassage.split('').map((ch, i) => {
+            let cls = '';
+            if (i < trTyped.length) cls = trTyped[i] === trPassage[i] ? 'char-correct' : 'char-wrong';
+            else if (i === trTyped.length) cls = 'char-current';
+            return `<span class="${cls}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`;
+        }).join('');
+    }
+
+    function onTyping() {
+        if (trFinished) return;
+        const input = document.getElementById('tr-input');
+        trTyped = input.value;
+
+        // Validate
+        const correct = trPassage.substring(0, trTyped.length);
+        const isRight = trTyped === correct;
+        input.style.borderColor = isRight ? 'var(--green)' : 'var(--red)';
+        renderPassage();
+
+        const elapsed = (Date.now() - trStart) / 60000;
+        const words = trTyped.trim().split(/\s+/).length;
+        const wpm = Math.round(words / Math.max(elapsed, 0.01));
+        document.getElementById('tr-wpm').textContent = wpm;
+
+        const progress = Math.round(trTyped.length / trPassage.length * 100);
+        send('typing.progress', {progress, wpm});
+
+        if (trTyped === trPassage) {
+            trFinished = true;
+            clearInterval(trInterval);
+            input.disabled = true;
+            trFinishedCount++;
+            const accuracy = Math.round(trCountCorrect / Math.max(trTyped.length, 1) * 100);
+            send('typing.finish', {wpm, time: Date.now()-trStart, accuracy, finishedCount: trFinishedCount});
+            notif('🏁', 'Finished! WPM: ' + wpm);
+        }
+    }
+
+    function trTick() {
+        trSecondsLeft = Math.max(0, 60 - Math.floor((Date.now() - trStart) / 1000));
+        document.getElementById('tr-timer').textContent = trSecondsLeft;
+        if (trSecondsLeft <= 0 && !trFinished) {
+            trFinished = true; clearInterval(trInterval);
+            document.getElementById('tr-input').disabled = true;
+            const wpm = parseInt(document.getElementById('tr-wpm').textContent) || 0;
+            send('typing.finish', {wpm, time: 60000, accuracy: 100, finishedCount: ++trFinishedCount});
+        }
+    }
+
+    function initTrack() {
+        const track = document.getElementById('tr-track');
+        track.innerHTML = Object.values(players).map(p => {
+            const car = p.userId === ME_ID ? '🏎️' : '🚗';
+            return `<div class="tr-car-row" id="tr-row-${p.userId}">
+            <span class="tr-car-label">${esc(p.name)}</span>
+            <div class="tr-lane">
+                <div class="tr-lane-fill" id="tr-fill-${p.userId}" style="width:0%;background:${colorFor(p.userId)}">
+                    <span>${car}</span><span class="tr-wpm-badge" id="tr-wpm-${p.userId}">0</span>
+                </div>
+            </div>
+        </div>`;
+        }).join('');
+        document.getElementById('tr-nitro').disabled = trNitro <= 0;
+    }
+
+    function useNitro() {
+        if (trNitro <= 0) return;
+        trNitro--;
+        document.getElementById('tr-nitro').disabled = trNitro <= 0;
+        document.getElementById('tr-nitro').textContent = trNitro > 0 ? `⚡${trNitro}` : '⚡';
+        // Boost WPM visually for 3s
+        notif('⚡', 'NITRO BOOST!');
+        send('typing.progress', {progress: Math.round(trTyped.length/trPassage.length*100), wpm: 999, nitro:true});
+        setTimeout(() => {}, 3000);
+    }
+
+
+
+    function typingHandleMsg(msg) {
+        if (msg.type === 'TYPING_PROGRESS') {
+            const fill = document.getElementById('tr-fill-'+msg.userId);
+            const wpmEl = document.getElementById('tr-wpm-'+msg.userId);
+            if (fill) fill.style.width = msg.progress + '%';
+            if (wpmEl) wpmEl.textContent = msg.wpm;
+            if (msg.nitro) showEmojiRain('⚡');
+        } else if (msg.type === 'TYPING_FINISH') {
+            notif('🏁', (msg.name||'Someone') + ' finished! ' + msg.wpm + ' WPM');
+            if (players[msg.userId]) players[msg.userId].score = msg.wpm;
+            trFinishedPlayers.add(msg.userId);
+            updateRpPlayers();
+            // Show game over when all players have finished
+            if (trFinishedPlayers.size >= Object.keys(players).length) {
+                const scores = Object.values(players)
+                    .sort((a,b) => (b.score||0) - (a.score||0))
+                    .map(p => ({...p, score: p.score||0}));
+                const winner = scores[0]?.name || '';
+                setTimeout(() => showGameOver({scores, winner}), 800);
+            }
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       CHESS (Full implementation with legal moves)
+       ═══════════════════════════════════════════════════════════════ */
+
+
+
+
+    function initChess() {
+        chess.board = [
+            ['bR','bN','bB','bQ','bK','bB','bN','bR'],
+            ['bP','bP','bP','bP','bP','bP','bP','bP'],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            ['wP','wP','wP','wP','wP','wP','wP','wP'],
+            ['wR','wN','wB','wQ','wK','wB','wN','wR']
+        ];
+        // Don't render yet — screen is hidden. Board renders in chessAssignColors after game starts.
+    }
+
+    function renderChessBoard() {
+        const board = document.getElementById('chess-board');
+        board.innerHTML = '';
+        // Black sees the board flipped (rank 1 at top, rank 8 at bottom)
+        const flipped = chess.myColor === 'b';
+        for (let ri = 0; ri < 8; ri++) {
+            for (let ci = 0; ci < 8; ci++) {
+                const r = flipped ? 7 - ri : ri;
+                const c = flipped ? 7 - ci : ci;
+                const sq = document.createElement('div');
+                const isLight = (r + c) % 2 === 0;
+                sq.className = 'chess-sq ' + (isLight ? 'light' : 'dark');
+                sq.dataset.r = r; sq.dataset.c = c;
+                const piece = chess.board[r][c];
+                if (piece) sq.textContent = CHESS_PIECES[piece] || '';
+                if (chess.selected && chess.selected[0]===r && chess.selected[1]===c) sq.classList.add('selected');
+                if (chess.hints.some(([hr,hc]) => hr===r && hc===c)) {
+                    sq.classList.add(chess.board[r][c] ? 'capture-hint' : 'move-hint');
+                }
+                // Add rank/file labels on edge squares
+                if (ci === 0) {
+                    const label = document.createElement('span');
+                    label.style.cssText = 'position:absolute;top:2px;left:3px;font-size:9px;font-weight:700;opacity:.6;pointer-events:none;';
+                    label.textContent = flipped ? (r + 1) : (8 - r);
+                    sq.style.position = 'relative';
+                    sq.appendChild(label);
+                }
+                if (ri === 7) {
+                    const label = document.createElement('span');
+                    label.style.cssText = 'position:absolute;bottom:2px;right:3px;font-size:9px;font-weight:700;opacity:.6;pointer-events:none;';
+                    label.textContent = 'abcdefgh'[c];
+                    sq.style.position = 'relative';
+                    sq.appendChild(label);
+                }
+                sq.onclick = () => chessClickSquare(r, c);
+                board.appendChild(sq);
+            }
+        }
+    }
+
+    function chessClickSquare(r, c) {
+        if (chess.turn !== chess.myColor) return; // not our turn
+        const piece = chess.board[r][c];
+
+        if (chess.selected) {
+            const [sr, sc] = chess.selected;
+            // Try to move
+            if (chess.hints.some(([hr,hc]) => hr===r && hc===c)) {
+                const move = {from:`${sr},${sc}`, to:`${r},${c}`, piece: chess.board[sr][sc]};
+                // Execute move
+                chess.board[r][c] = chess.board[sr][sc];
+                chess.board[sr][sc] = null;
+                handlePawnPromotion(r, c, chess.board[r][c]?.[0]||chess.myColor);
+                chess.selected = null;
+                chess.hints = [];
+                const movedColor = chess.turn;
+                chess.turn = chess.turn === 'w' ? 'b' : 'w';
+                chess.history.push(piece2notation(move));
+                renderChessBoard();
+                updateChessHistory();
+                updateChessTimers();
+                detectCheckAndMate(movedColor);
+                send('chess.move', {...move, fen: encodeFen(), promotion: chess.board[r][c]});
+                return;
+            }
+            chess.selected = null; chess.hints = [];
+        }
+
+        if (piece && piece[0] === chess.myColor) {
+            chess.selected = [r, c];
+            chess.hints = getLegalMoves(r, c);
+        }
+        renderChessBoard();
+    }
+
+    // ── Raw pseudo-legal moves (no check filtering) ─────────────────
+    function getRawMoves(board, r, c) {
+        const piece = board[r][c]; if (!piece) return [];
+        const type = piece[1], color = piece[0];
+        const moves = [];
+        const enemy  = (pr,pc) => board[pr]?.[pc] && board[pr][pc][0] !== color;
+        const empty  = (pr,pc) => board[pr]?.[pc] == null;
+        const ok     = (pr,pc) => pr>=0&&pr<8&&pc>=0&&pc<8;
+        const slide  = (dr,dc) => {
+            let nr=r+dr, nc=c+dc;
+            while(ok(nr,nc)){ if(empty(nr,nc)){moves.push([nr,nc]);nr+=dr;nc+=dc;}
+            else{if(enemy(nr,nc))moves.push([nr,nc]);break;} }
+        };
+        if (type==='P') {
+            const d=color==='w'?-1:1, s=color==='w'?6:1;
+            if(ok(r+d,c)&&empty(r+d,c)){moves.push([r+d,c]);if(r===s&&empty(r+2*d,c))moves.push([r+2*d,c]);}
+            if(ok(r+d,c-1)&&enemy(r+d,c-1))moves.push([r+d,c-1]);
+            if(ok(r+d,c+1)&&enemy(r+d,c+1))moves.push([r+d,c+1]);
+        } else if(type==='R'){[[-1,0],[1,0],[0,-1],[0,1]].forEach(([a,b])=>slide(a,b));}
+        else if(type==='B'){[[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([a,b])=>slide(a,b));}
+        else if(type==='Q'){[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([a,b])=>slide(a,b));}
+        else if(type==='N'){[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([a,b])=>{
+            const nr=r+a,nc=c+b; if(ok(nr,nc)&&(empty(nr,nc)||enemy(nr,nc)))moves.push([nr,nc]);});}
+        else if(type==='K'){[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([a,b])=>{
+            const nr=r+a,nc=c+b; if(ok(nr,nc)&&(empty(nr,nc)||enemy(nr,nc)))moves.push([nr,nc]);});}
+        return moves;
+    }
+
+    // ── Is the given color's king in check on this board? ────────────
+    function isInCheck(board, color) {
+        // Find king position
+        let kr=-1, kc=-1;
+        for(let r=0;r<8;r++) for(let c=0;c<8;c++) if(board[r][c]===color+'K'){kr=r;kc=c;}
+        if(kr===-1) return false; // no king (shouldn't happen)
+        const opp = color==='w'?'b':'w';
+        // Check if any enemy piece can reach king
+        for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+            if(board[r][c]&&board[r][c][0]===opp){
+                const moves=getRawMoves(board,r,c);
+                if(moves.some(([mr,mc])=>mr===kr&&mc===kc)) return true;
+            }
+        }
+        return false;
+    }
+
+    // ── Legal moves = raw moves that don't leave own king in check ───
+    function getLegalMoves(r, c) {
+        const piece = chess.board[r][c]; if (!piece) return [];
+        const color = piece[0];
+        const raw = getRawMoves(chess.board, r, c);
+        // Filter: only keep moves that don't leave own king in check
+        return raw.filter(([tr,tc]) => {
+            const b = chess.board.map(row=>[...row]);
+            b[tr][tc] = b[r][c]; b[r][c] = null;
+            return !isInCheck(b, color);
+        });
+    }
+
+    // ── Does the given color have ANY legal move? ─────────────────────
+    function hasLegalMoves(color) {
+        for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+            if(chess.board[r][c]&&chess.board[r][c][0]===color){
+                if(getLegalMoves(r,c).length>0) return true;
+            }
+        }
+        return false;
+    }
+
+    // ── After each move: detect check, checkmate, stalemate ──────────
+    function detectCheckAndMate(movedColor) {
+        const opp = movedColor==='w'?'b':'w';
+        const inCheck = isInCheck(chess.board, opp);
+        const noMoves = !hasLegalMoves(opp);
+
+        // Highlight king in check
+        for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+            const sq = document.querySelector(`[data-r='${r}'][data-c='${c}']`);
+            if(sq) sq.classList.remove('check');
+        }
+        if(inCheck){
+            for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+                if(chess.board[r][c]===opp+'K'){
+                    const sq = document.querySelector(`[data-r='${r}'][data-c='${c}']`);
+                    if(sq) sq.classList.add('check');
+                }
+            }
+        }
+
+        if(inCheck && noMoves) {
+            // CHECKMATE — mover wins
+            clearInterval(chess.timerInterval);
+            const winnerColor = movedColor;
+            const pList = Object.values(players);
+            const hostIsWhite = pList.find(p=>p.host);
+            const winnerPlayer = winnerColor==='w' ? hostIsWhite : pList.find(p=>!p.host);
+            const loserPlayer  = winnerColor==='w' ? pList.find(p=>!p.host) : hostIsWhite;
+            notif('♚', 'Checkmate! ' + (winnerPlayer?.name||'White') + ' wins!');
+            send('chess.checkmate', {winner: winnerPlayer?.userId||'', loser: loserPlayer?.userId||''});
+            setTimeout(()=>showGameOver({
+                scores: Object.values(players).map(p=>({...p,score:p.userId===winnerPlayer?.userId?10:0})),
+                winner: winnerPlayer?.name||''
+            }), 1200);
+        } else if(!inCheck && noMoves) {
+            // STALEMATE — draw
+            clearInterval(chess.timerInterval);
+            notif('🤝', "Stalemate! It's a draw.");
+            setTimeout(()=>showGameOver({
+                scores: Object.values(players).map(p=>({...p,score:5})),
+                winner: 'Draw'
+            }), 1200);
+        } else if(inCheck) {
+            notif('♚', 'Check!');
+        }
+    }
+
+    // ── Pawn promotion ───────────────────────────────────────────────
+    function handlePawnPromotion(r, c, color) {
+        if(chess.board[r][c]!==color+'P') return;
+        if((color==='w'&&r===0)||(color==='b'&&r===7)){
+            // Auto-promote to queen (simplest UX)
+            chess.board[r][c] = color+'Q';
+        }
+    }
+
+    function piece2notation(move) {
+        const files = 'abcdefgh';
+        const [sr,sc] = move.from.split(',').map(Number);
+        const [er,ec] = move.to.split(',').map(Number);
+        return `${files[sc]}${8-sr}-${files[ec]}${8-er}`;
+    }
+
+    function encodeFen() { return 'board-state'; } // simplified
+
+    function updateChessHistory() {
+        const el = document.getElementById('chess-history');
+        el.innerHTML = chess.history.map((m,i) =>
+            `<span style="color:${i%2===0?'var(--text)':'var(--sub)'};">${i%2===0?(Math.floor(i/2)+1)+'. ':' '}${m} </span>`
+        ).join('');
+        el.scrollTop = el.scrollHeight;
+    }
+
+    function chessHandleMsg(msg) {
+        if (msg.type === 'CHESS_MOVE') {
+            if (msg.userId !== ME_ID) {
+                const [fr, fc] = msg.from.split(',').map(Number);
+                const [tr, tc] = msg.to.split(',').map(Number);
+                chess.board[tr][tc] = msg.promotion || chess.board[fr][fc];
+                chess.board[fr][fc] = null;
+                const movedColor2 = chess.board[tr][tc]?.[0] || (chess.turn==='w'?'w':'b');
+                chess.turn = chess.turn === 'w' ? 'b' : 'w';
+                chess.history.push(piece2notation(msg));
+                renderChessBoard();
+                updateChessHistory();
+                updateChessTimers();
+                detectCheckAndMate(movedColor2);
+            }
+        } else if (msg.type === 'CHESS_RESIGN') {
+            notif('🏳️', (players[msg.userId]?.name||'Opponent') + ' resigned');
+            showGameOver({scores: Object.values(players).map(p => ({...p, score: p.userId===msg.userId?0:10})),
+                winner: Object.values(players).find(p=>p.userId!==msg.userId)?.name||''});
+        } else if (msg.type === 'CHESS_DRAW_OFFER') {
+            if (msg.userId !== ME_ID) {
+                // Show a non-blocking draw offer banner instead of confirm()
+                showDrawOffer();
+            } else {
+                notif('🤝', 'Draw offer sent — waiting for opponent...');
+            }
+        } else if (msg.type === 'CHESS_DRAW_ACCEPTED') {
+            clearInterval(chess.timerInterval);
+            notif('🤝', 'Draw agreed! Game over.');
+            const scores = Object.values(players).map(p => ({...p, score: 5}));
+            setTimeout(() => showGameOver({scores, winner: 'Draw'}), 600);
+        }
+    }
+
+    function chessAssignColors() {
+        const pList = Object.values(players);
+        // Host (marked with host:true) always plays white
+        const hostIdx = pList.findIndex(p => p.host);
+        const isHost = pList[hostIdx]?.userId === ME_ID;
+        chess.myColor = isHost ? 'w' : 'b';
+        const idx = isHost ? 0 : 1;
+
+        // Populate player name cards — host is white, guest is black
+        const whitePlayer = pList[hostIdx !== -1 ? hostIdx : 0] || {name:'White', avatar:''};
+        const blackPlayer = pList[hostIdx !== -1 ? (hostIdx === 0 ? 1 : 0) : 1] || {name:'Black', avatar:''};
+
+        const wAv = document.getElementById('chess-white-av');
+        const bAv = document.getElementById('chess-black-av');
+        const wName = document.getElementById('chess-white-name');
+        const bName = document.getElementById('chess-black-name');
+
+        if (wName) wName.textContent = whitePlayer.name + (chess.myColor==='w' ? ' (You)' : '');
+        if (bName) bName.textContent = blackPlayer.name + (chess.myColor==='b' ? ' (You)' : '');
+        if (wAv) {
+            wAv.innerHTML = whitePlayer.avatar
+                ? `<img src="${esc(whitePlayer.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
+                : whitePlayer.name.charAt(0).toUpperCase();
+            wAv.style.background = colorFor(whitePlayer.userId||'w');
+        }
+        if (bAv) {
+            bAv.innerHTML = blackPlayer.avatar
+                ? `<img src="${esc(blackPlayer.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
+                : blackPlayer.name.charAt(0).toUpperCase();
+            bAv.style.background = colorFor(blackPlayer.userId||'b');
+        }
+
+        document.getElementById('chess-turn-label').textContent =
+            chess.turn === chess.myColor ? 'Your turn' : "Opponent's turn";
+
+        // Now render the board (screen is visible at this point)
+        renderChessBoard();
+        // Start chess clock
+        startChessClock();
+    }
+
+    function startChessClock() {
+        if (chess.timerInterval) clearInterval(chess.timerInterval);
+        chess.timerInterval = setInterval(() => {
+            if (!gameStarted) return;
+            chess.timers[chess.turn] = Math.max(0, chess.timers[chess.turn] - 1);
+            updateChessTimers();
+            if (chess.timers[chess.turn] <= 0) {
+                clearInterval(chess.timerInterval);
+                const loser = chess.turn;
+                const winner = Object.values(players).find(p => {
+                    // white is pList[0], black is pList[1]
+                    const pList = Object.values(players);
+                    return chess.turn === 'w' ? p.userId === pList[1]?.userId : p.userId === pList[0]?.userId;
+                });
+                notif('⏰', 'Time out!');
+                showGameOver({
+                    scores: Object.values(players).map(p => ({...p, score: p === winner ? 10 : 0})),
+                    winner: winner?.name || ''
+                });
+            }
+        }, 1000);
+    }
+
+    function updateChessTimers() {
+        const fmt = s => String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+        const wt = document.getElementById('chess-white-timer');
+        const bt = document.getElementById('chess-black-timer');
+        if (wt) { wt.textContent = fmt(chess.timers.w); wt.classList.toggle('active', chess.turn==='w'); }
+        if (bt) { bt.textContent = fmt(chess.timers.b); bt.classList.toggle('active', chess.turn==='b'); }
+        // Highlight active player card
+        const wCard = document.getElementById('chess-white-card');
+        const bCard = document.getElementById('chess-black-card');
+        if (wCard) wCard.classList.toggle('active', chess.turn==='w');
+        if (bCard) bCard.classList.toggle('active', chess.turn==='b');
+        // Update turn label — must check myColor correctly
+        const tl = document.getElementById('chess-turn-label');
+        if (tl) {
+            const isMyTurn = chess.turn === chess.myColor;
+            tl.textContent = isMyTurn ? '♟ Your turn!' : "Opponent's turn…";
+            tl.style.color = isMyTurn ? 'var(--green)' : 'var(--sub)';
+            tl.style.fontWeight = isMyTurn ? '700' : '500';
+        }
+    }
+
+    function chessOfferDraw() { send('chess.draw', {accept:false}); }
+
+    function showDrawOffer() {
+        // Remove any existing offer banner
+        const existing = document.getElementById('draw-offer-banner');
+        if (existing) existing.remove();
+
+        const banner = document.createElement('div');
+        banner.id = 'draw-offer-banner';
+        banner.style.cssText = [
+            'position:fixed', 'bottom:80px', 'left:50%', 'transform:translateX(-50%)',
+            'background:#fff', 'border:2px solid var(--amber)', 'border-radius:14px',
+            'padding:16px 24px', 'box-shadow:0 8px 32px rgba(0,0,0,.18)',
+            'z-index:200', 'display:flex', 'align-items:center', 'gap:16px',
+            'font-family:Inter,sans-serif', 'animation:slideIn .3s ease'
+        ].join(';');
+        banner.innerHTML =
+            '<span style="font-size:22px">🤝</span>' +
+            '<div>' +
+            '<div style="font-weight:700;font-size:14px;color:#1B2A6B">Opponent offers a draw</div>' +
+            '<div style="font-size:12px;color:#8a91a8;margin-top:2px">Accept or decline?</div>' +
+            '</div>' +
+            '<button onclick="acceptDraw()" style="background:#22c55e;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px">✓ Accept</button>' +
+            '<button onclick="declineDraw()" style="background:#f4f6fb;color:#1B2A6B;border:1.5px solid #dde1ee;border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px">✕ Decline</button>';
+        document.body.appendChild(banner);
+
+        // Auto-dismiss after 30s
+        setTimeout(() => { if (banner.parentNode) banner.remove(); }, 30000);
+    }
+
+    function acceptDraw() {
+        const banner = document.getElementById('draw-offer-banner');
+        if (banner) banner.remove();
+        send('chess.draw', {accept: true});
+    }
+
+    function declineDraw() {
+        const banner = document.getElementById('draw-offer-banner');
+        if (banner) banner.remove();
+        notif('✕', 'Draw declined');
+    }
+
+    function chessResign() {
+        if (confirm('Resign this game?')) send('chess.resign', {});
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TETRIS (Full Tetris with multiplayer)
+       ═══════════════════════════════════════════════════════════════ */
+    function S(r){return r;} // row helper prevents double-bracket in Thymeleaf
+
+
+
+
+    function initTetris() {
+        tet.board = Array.from({length:BOARD_H}, ()=>Array(BOARD_W).fill(0));
+    }
+
+    function startTetrisForMe() {
+        tet.board = Array.from({length:BOARD_H}, ()=>Array(BOARD_W).fill(0));
+        tet.score=0; tet.lines=0; tet.level=1; tet.gameOver=false;
+        tet.piece = randomPiece(); tet.nextPiece = randomPiece();
+        tet.x = Math.floor((BOARD_W - tet.piece.shape[0].length)/2);
+        tet.y = 0;
+        clearInterval(tet.interval);
+        tet.interval = setInterval(tetDrop, 800);
+        renderTetBoards();
+    }
+
+    function randomPiece() {
+        const key = TET_KEYS[Math.floor(Math.random()*TET_KEYS.length)];
+        return {type:key, shape: TETROMINOES[key].shape.map(r=>[...r]), color: TETROMINOES[key].color};
+    }
+
+    function tetDrop() {
+        if (tet.gameOver) return;
+        if (canMove(tet.piece.shape, tet.x, tet.y+1)) { tet.y++; }
+        else { lockPiece(); }
+        renderTetBoards();
+        sendTetState();
+    }
+
+    function canMove(shape, nx, ny) {
+        return shape.every((row, r) => row.every((cell, c) => {
+            if (!cell) return true;
+            const br = ny+r, bc = nx+c;
+            return br>=0 && br<BOARD_H && bc>=0 && bc<BOARD_W && !tet.board[br][bc];
+        }));
+    }
+
+    function lockPiece() {
+        tet.piece.shape.forEach((row,r) => row.forEach((cell,c) => {
+            if (cell) tet.board[tet.y+r][tet.x+c] = tet.piece.color;
+        }));
+        // Clear lines
+        let cleared = 0;
+        for (let r = BOARD_H-1; r >= 0; r--) {
+            if (tet.board[r].every(c => c)) {
+                tet.board.splice(r, 1);
+                tet.board.unshift(Array(BOARD_W).fill(0));
+                cleared++; r++;
+            }
+        }
+        if (cleared > 0) {
+            tet.lines += cleared;
+            tet.score += [0,100,300,500,800][cleared] * tet.level;
+            tet.level = Math.floor(tet.lines/10)+1;
+            if (cleared >= 2) {
+                send('tetris.garbage', {target:'all', lines: cleared-1});
+            }
+        }
+        // Add pending garbage
+        if (tet.garbageQueue > 0) {
+            for (let i=0; i<tet.garbageQueue; i++) {
+                tet.board.shift();
+                const gRow = Array(BOARD_W).fill('#334155');
+                gRow[Math.floor(Math.random()*BOARD_W)] = 0;
+                tet.board.push(gRow);
+            }
+            tet.garbageQueue = 0;
+        }
+        tet.piece = tet.nextPiece; tet.nextPiece = randomPiece();
+        tet.x = Math.floor((BOARD_W - tet.piece.shape[0].length)/2); tet.y = 0;
+        if (!canMove(tet.piece.shape, tet.x, tet.y)) {
+            tet.gameOver = true;
+            clearInterval(tet.interval);
+            send('tetris.dead', {});
+            notif('💀','Game over!');
+        }
+        clearInterval(tet.interval);
+        tet.interval = setInterval(tetDrop, Math.max(100, 800 - tet.level*70));
+    }
+
+    function tetrisReceiveGarbage(from, lines) {
+        tet.garbageQueue += lines;
+        notif('🗑️', (players[from]?.name||'Opponent')+' sent '+lines+' garbage line'+( lines>1?'s':''));
+    }
+
+    function sendTetState() {
+        const boardStr = tet.board.map(r=>r.map(c=>c?'1':'0').join('')).join('|');
+        send('tetris.state', {board:boardStr, score:tet.score, lines:tet.lines, level:tet.level});
+    }
+
+    function renderTetBoards() {
+        const el = document.getElementById('tetris-boards');
+        if (el.children.length === 0) {
+            Object.values(players).forEach(p => {
+                const wrap = document.createElement('div');
+                wrap.className='tetris-player'; wrap.id='tetris-player-'+p.userId;
+                wrap.innerHTML = `<div class="tetris-label">${esc(p.name)}${p.userId===ME_ID?' (You)':''}</div>
+                <canvas id="tetris-canvas-${p.userId}" width="${BOARD_W*24}" height="${BOARD_H*24}" style="border:2px solid var(--s2);border-radius:6px;background:#000;display:block"></canvas>
+                <div class="tetris-stats">
+                    <div><div class="tetris-stat-val" id="tet-score-${p.userId}">0</div><div style="font-size:10px">Score</div></div>
+                    <div><div class="tetris-stat-val" id="tet-lines-${p.userId}">0</div><div style="font-size:10px">Lines</div></div>
+                </div>`;
+                el.appendChild(wrap);
+            });
+        }
+        // Render my board
+        drawTetBoard(ME_ID, tet.board, tet.piece, tet.x, tet.y);
+        document.getElementById('tet-score-'+ME_ID)?.setAttribute('textContent', tet.score);
+        const sc = document.getElementById('tet-score-'+ME_ID);
+        const ln = document.getElementById('tet-lines-'+ME_ID);
+        if (sc) sc.textContent = tet.score;
+        if (ln) ln.textContent = tet.lines;
+        document.getElementById('tr-stat-lbl')?.textContent;
+    }
+
+    function drawTetBoard(userId, board, piece, px, py) {
+        const canvas = document.getElementById('tetris-canvas-'+userId); if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const CW = 24, CH = 24;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Draw board
+        board.forEach((row, r) => row.forEach((cell, c) => {
+            if (cell) { ctx.fillStyle=cell; ctx.fillRect(c*CW,r*CH,CW-1,CH-1); }
+        }));
+        // Draw active piece
+        if (piece && userId === ME_ID) {
+            piece.shape.forEach((row, r) => row.forEach((cell, c) => {
+                if (cell) { ctx.fillStyle=piece.color; ctx.fillRect((px+c)*CW,(py+r)*CH,CW-1,CH-1); }
+            }));
+        }
+    }
+
+    document.addEventListener('keydown', e => {
+        if (GAME_TYPE !== 'TETRIS' || tet.gameOver) return;
+        if (e.key === 'ArrowLeft')  { if(canMove(tet.piece.shape,tet.x-1,tet.y)) tet.x--; }
+        else if (e.key === 'ArrowRight') { if(canMove(tet.piece.shape,tet.x+1,tet.y)) tet.x++; }
+        else if (e.key === 'ArrowDown')  { if(canMove(tet.piece.shape,tet.x,tet.y+1)) tet.y++; else lockPiece(); }
+        else if (e.key === 'ArrowUp' || e.key === 'x') {
+            const rotated = tet.piece.shape[0].map((_,i) => tet.piece.shape.map(r=>r[i]).reverse());
+            if (canMove(rotated,tet.x,tet.y)) tet.piece.shape = rotated;
+        }
+        else if (e.key === ' ') {
+            while(canMove(tet.piece.shape,tet.x,tet.y+1)) tet.y++;
+            lockPiece();
+        }
+        renderTetBoards(); sendTetState();
+    });
+
+    function tetrisHandleMsg(msg) {
+        if (msg.type === 'TETRIS_STATE' && msg.userId !== ME_ID) {
+            const canvas = document.getElementById('tetris-canvas-'+msg.userId); if (!canvas) return;
+            const board = (msg.board||'').split('|').map(r => r.split('').map(c => c==='1' ? '#6366f1' : null));
+            drawTetBoard(msg.userId, board, null, 0, 0);
+            const sc=document.getElementById('tet-score-'+msg.userId);
+            const ln=document.getElementById('tet-lines-'+msg.userId);
+            if(sc) sc.textContent=msg.score; if(ln) ln.textContent=msg.lines;
+        } else if (msg.type === 'TETRIS_DEAD') {
+            notif('💀', (players[msg.userId]?.name||'Player') + ' topped out!');
+            // If opponent died, we win; if we died, show game over
+            const alive = Object.values(players).filter(p => p.userId !== msg.userId);
+            if (msg.userId === ME_ID || alive.length <= 1) {
+                const scores = Object.values(players)
+                    .sort((a,b)=>(b.score||0)-(a.score||0))
+                    .map(p=>({...p, score: p.score||0}));
+                setTimeout(()=>showGameOver({scores, winner: alive[0]?.name||scores[0]?.name||''}), 1000);
+            }
+        } else if (msg.type === 'TETRIS_GARBAGE') {
+            if (msg.from !== ME_ID) { tet.garbageQueue += msg.lines; }
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       WORDLE
+       ═══════════════════════════════════════════════════════════════ */
+
+
+
+    function startWordle() {
+        const hash = ROOM_CODE.split('').reduce((h,c)=>h*31+c.charCodeAt(0),0)>>>0;
+        wl.word = WORDLE_WORDS[hash % WORDLE_WORDS.length];
+        buildWordleGrid(); buildWordleKeyboard();
+        notif('🟩','Wordle started! 6 attempts to guess the word');
+    }
+
+    function initWordle() {
+        buildWordleGrid(); buildWordleKeyboard();
+        document.addEventListener('keydown', wordleKey);
+    }
+
+    function buildWordleGrid() {
+        const grid = document.getElementById('wordle-my-grid');
+        grid.innerHTML = '';
+        for (let r=0; r<6; r++) for (let c=0; c<5; c++) {
+            const cell = document.createElement('div');
+            cell.className='wordle-cell'; cell.id=`wc-${r}-${c}`;
+            grid.appendChild(cell);
+        }
+    }
+
+    function buildWordleKeyboard() {
+        const wkRow0 = ['Q','W','E','R','T','Y','U','I','O','P'];
+        const wkRow1 = ['A','S','D','F','G','H','J','K','L'];
+        const wkRow2 = ['↵','Z','X','C','V','B','N','M','⌫'];
+        const rows = [wkRow0, wkRow1, wkRow2];
+        rows.forEach((row, ri) => {
+            const el = document.getElementById('wordle-keyboard').querySelector(`[data-row="${ri}"]`);
+            if (!el) return;
+            row.forEach(k => {
+                const btn = document.createElement('button');
+                btn.className='wk' + (k==='↵'||k==='⌫'?' wk-wide':'');
+                btn.textContent=k; btn.dataset.key=k;
+                btn.onclick = () => wordleKey({key: k==='↵'?'Enter':k==='⌫'?'Backspace':k});
+                el.appendChild(btn);
+            });
+        });
+    }
+
+    function wordleKey(e) {
+        if (GAME_TYPE !== 'WORDLE' || wl.solved || wl.row >= 6 || !gameStarted) return;
+        const k = e.key.toUpperCase();
+        if (k === 'ENTER') {
+            if (wl.current.length < 5) { notif('⚠️','5 letters needed'); return; }
+            const result = wl.current.split('').map((ch, i) => {
+                if (ch === wl.word[i]) return 'correct';
+                if (wl.word.includes(ch)) return 'present';
+                return 'absent';
+            });
+            // Animate row
+            for (let c=0; c<5; c++) {
+                const cell = document.getElementById(`wc-${wl.row}-${c}`);
+                if (cell) { cell.textContent=wl.current[c]; cell.className='wordle-cell '+result[c]; }
+            }
+            // Update keyboard
+            wl.current.split('').forEach((ch, i) => {
+                const cur = wl.keyColors[ch];
+                const r = result[i];
+                if (!cur || (cur==='present'&&r==='correct') || (cur==='absent')) wl.keyColors[ch] = r;
+            });
+            updateWordleKeyboard();
+            const solved = result.every(r=>r==='correct');
+            if (solved) { wl.solved=true; notif('🎉','Got it in '+(wl.row+1)+'!'); }
+            send('wordle.guess', {guess:wl.current, result, row:wl.row, solved, name:ME_NAME});
+            wl.guesses.push(wl.current);
+            wl.row++;
+            wl.current = '';
+            if (wl.row >= 6 && !solved) {
+                notif('😔','The word was: '+wl.word);
+                // All guesses used up — check if everyone failed
+                const scores = Object.values(players).sort((a,b)=>(b.score||0)-(a.score||0)).map(p=>({...p,score:p.score||0}));
+                setTimeout(()=>showGameOver({scores, winner: scores[0]?.name||''}), 800);
+            }
+        } else if (k === 'BACKSPACE' && wl.current.length > 0) {
+            wl.current = wl.current.slice(0,-1);
+            updateCurrentRow();
+        } else if (/^[A-Z]$/.test(k) && wl.current.length < 5) {
+            wl.current += k;
+            updateCurrentRow();
+        }
+    }
+
+    function updateCurrentRow() {
+        for (let c=0; c<5; c++) {
+            const cell = document.getElementById(`wc-${wl.row}-${c}`);
+            if (cell) { cell.textContent=wl.current[c]||''; cell.className='wordle-cell '+(wl.current[c]?'filled':'')+(c===wl.current.length?' current':''); }
+        }
+    }
+
+    function updateWordleKeyboard() {
+        document.querySelectorAll('.wk').forEach(btn => {
+            const k = btn.dataset.key;
+            if (wl.keyColors[k]) btn.className = 'wk wk-'+wl.keyColors[k];
+        });
+    }
+
+    function wordleHandleMsg(msg) {
+        if (msg.type === 'WORDLE_GUESS' && msg.userId !== ME_ID) {
+            let opp = document.getElementById('wordle-opp-'+msg.userId);
+            if (!opp) {
+                opp = document.createElement('div');
+                opp.id='wordle-opp-'+msg.userId;
+                opp.className='wordle-player-board';
+                opp.innerHTML=`<div class="wordle-mini-label">${esc(msg.name||players[msg.userId]?.name||'?')}</div>
+                <div class="wordle-grid" id="wordle-opp-grid-${msg.userId}"></div>`;
+                document.getElementById('wordle-opponents').appendChild(opp);
+                // Pre-fill 6x5 grid
+                const grid = opp.querySelector('.wordle-grid');
+                for (let r=0;r<6;r++) for(let c=0;c<5;c++) {
+                    const cell=document.createElement('div');
+                    cell.className='wordle-cell';cell.id=`wop-${msg.userId}-${r}-${c}`;
+                    grid.appendChild(cell);
+                }
+            }
+            const result = msg.result || [];
+            for (let c=0;c<5;c++) {
+                const cell=document.getElementById(`wop-${msg.userId}-${msg.row}-${c}`);
+                if (cell) { cell.textContent=(msg.guess||'')[c]||''; cell.className='wordle-cell '+(result[c]||''); }
+            }
+            if (msg.solved) {
+                notif('🏆', (msg.name||'Opponent')+' solved the Wordle!');
+                const scores = Object.values(players).sort((a,b)=>(b.score||0)-(a.score||0)).map(p=>({...p,score:p.score||0}));
+                setTimeout(()=>showGameOver({scores, winner: msg.name||''}), 800);
+            }
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       SUDOKU
+       ═══════════════════════════════════════════════════════════════ */
+
+
+    function generateSudoku() {
+        // Simple valid puzzle
+        const base = [
+            [5,3,0,0,7,0,0,0,0],[6,0,0,1,9,5,0,0,0],[0,9,8,0,0,0,0,6,0],
+            [8,0,0,0,6,0,0,0,3],[4,0,0,8,0,3,0,0,1],[7,0,0,0,2,0,0,0,6],
+            [0,6,0,0,0,0,2,8,0],[0,0,0,4,1,9,0,0,5],[0,0,0,0,8,0,0,7,9]
+        ];
+        const sol = [
+            [5,3,4,6,7,8,9,1,2],[6,7,2,1,9,5,3,4,8],[1,9,8,3,4,2,5,6,7],
+            [8,5,9,7,6,1,4,2,3],[4,2,6,8,5,3,7,9,1],[7,1,3,9,2,4,8,5,6],
+            [9,6,1,5,3,7,2,8,4],[2,8,7,4,1,9,6,3,5],[3,4,5,2,8,6,1,7,9]
+        ];
+        // Vary by room code
+        const hash = ROOM_CODE.split('').reduce((h,c)=>h*31+c.charCodeAt(0),0)>>>0;
+        const shift = hash % 9;
+        return {
+            puzzle: base.map(r => r.map(v => v===0?0:((v-1+shift)%9)+1)),
+            solution: sol.map(r => r.map(v => ((v-1+shift)%9)+1))
+        };
+    }
+
+    function initSudoku() {
+        for (let i=1;i<=9;i++) {
+            const btn=document.createElement('button');
+            btn.className='sd-num'; btn.textContent=i;
+            btn.onclick = () => sdFillCell(i);
+            document.getElementById('sd-numpad').appendChild(btn);
+        }
+        const del=document.createElement('button');
+        del.className='sd-num'; del.textContent='⌫'; del.style.gridColumn='span 3'; del.style.aspectRatio='auto'; del.style.padding='10px';
+        del.onclick=()=>sdFillCell(0);
+        document.getElementById('sd-numpad').appendChild(del);
+        document.addEventListener('keydown', e => {
+            if (GAME_TYPE!=='SUDOKU') return;
+            if (/[1-9]/.test(e.key)) sdFillCell(parseInt(e.key));
+            if (e.key==='Delete'||e.key==='Backspace') sdFillCell(0);
+        });
+    }
+
+    function startSudoku() {
+        const {puzzle,solution} = generateSudoku();
+        sd.puzzle=puzzle; sd.solution=solution; sd.userFills={}; sd.selected=-1;
+        renderSudokuBoard();
+        sd.timerSecs=0;
+        clearInterval(sd.timerInt);
+        sd.timerInt=setInterval(()=>{
+            sd.timerSecs++;
+            const m=Math.floor(sd.timerSecs/60),s=sd.timerSecs%60;
+            document.getElementById('sd-timer').textContent=m+':'+(s<10?'0':'')+s;
+        },1000);
+    }
+
+    function renderSudokuBoard() {
+        const board=document.getElementById('sudoku-board'); board.innerHTML='';
+        for(let r=0;r<9;r++) for(let c=0;c<9;c++) {
+            const cell=document.createElement('div');
+            cell.className='sd-cell';
+            const idx=r*9+c;
+            const given=sd.puzzle[r][c];
+            if (given) { cell.textContent=given; cell.classList.add('given'); }
+            else if (sd.userFills[idx]) {
+                cell.textContent=sd.userFills[idx];
+                cell.classList.add('user');
+                if (sd.userFills[idx]!==sd.solution[r][c]) cell.classList.add('wrong');
+            }
+            if (c===2||c===5) cell.classList.add('box-right');
+            if (r===2||r===5) cell.classList.add('box-bottom');
+            if (sd.selected===idx) cell.classList.add('selected');
+            cell.onclick=()=>{ sd.selected=idx; renderSudokuBoard(); };
+            cell.id='sd-cell-'+idx;
+            board.appendChild(cell);
+        }
+    }
+
+    function sdFillCell(value) {
+        if (sd.selected<0||!sd.puzzle) return;
+        const r=Math.floor(sd.selected/9),c=sd.selected%9;
+        if (sd.puzzle[r][c]!==0) return; // given cell
+        if (value===0) { delete sd.userFills[sd.selected]; }
+        else sd.userFills[sd.selected]=value;
+        const correct=value===0||value===sd.solution[r][c];
+        send('sudoku.fill',{cell:sd.selected,value,correct});
+        renderSudokuBoard();
+        // Check complete
+        let done=true;
+        for(let i=0;i<81;i++){const r2=Math.floor(i/9),c2=i%9;if(sd.puzzle[r2][c2]===0&&sd.userFills[i]!==sd.solution[r2][c2]){done=false;break;}}
+        if(done){send('sudoku.complete',{time:sd.timerSecs});clearInterval(sd.timerInt);notif('🎉','Puzzle complete!');}
+        updateSdProgress();
+    }
+
+    function updateSdProgress() {
+        const filled=Object.keys(sd.userFills).filter(i=>{const r=Math.floor(i/9),c=i%9;return sd.userFills[i]===sd.solution[r][c];}).length;
+        const total=sd.puzzle?.flat().filter(v=>v===0).length||45;
+        const pct=Math.round(filled/total*100);
+        const el=document.getElementById('sd-progress');
+        if(el) el.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:10px">Progress</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span>You</span><span style="font-weight:700;color:var(--blue)">${pct}%</span></div>
+        <div style="background:var(--s2);height:6px;border-radius:3px;overflow:hidden">
+            <div style="background:var(--blue);height:100%;width:${pct}%;border-radius:3px;transition:width .3s"></div></div>`;
+    }
+
+    function sudokuHandleMsg(msg) {
+        if (msg.type==='SUDOKU_FILL'&&msg.userId!==ME_ID) {
+            notif(msg.correct?'✅':'❌',(players[msg.userId]?.name||'Opponent')+' filled cell '+(msg.cell+1)+(msg.correct?' ✓':' ✗'));
+        } else if (msg.type==='SUDOKU_COMPLETE') {
+            notif('🏆',(players[msg.userId]?.name||'Someone')+' completed the puzzle!');
+            if (players[msg.userId]) players[msg.userId].score = Math.max(1000 - (msg.time||0), 100);
+            const scores = Object.values(players).sort((a,b)=>(b.score||0)-(a.score||0)).map(p=>({...p,score:p.score||0}));
+            setTimeout(()=>showGameOver({scores, winner: players[msg.userId]?.name||''}), 800);
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       DRAW & GUESS
+       ═══════════════════════════════════════════════════════════════ */
+
+
+
+    function initDrawGuess() {
+        const canvas = document.getElementById('draw-canvas');
+        if (!canvas) return;
+        draw.ctx = canvas.getContext('2d');
+        const resize = () => {
+            const d = canvas.getBoundingClientRect();
+            canvas.width = d.width; canvas.height = d.height;
+        };
+        resize(); new ResizeObserver(resize).observe(canvas);
+
+        document.getElementById('draw-color-input').addEventListener('input', e => {
+            draw.color = e.target.value;
+            document.getElementById('draw-color-swatch').style.background = draw.color;
+        });
+
+        const getPos = e => {
+            const r = canvas.getBoundingClientRect();
+            const pt = e.touches ? e.touches[0] : e;
+            return {x: pt.clientX-r.left, y: pt.clientY-r.top};
+        };
+
+        let lx=0, ly=0;
+        canvas.addEventListener('mousedown', e => {
+            if (!draw.isDrawer) return;
+            draw.drawing=true; const p=getPos(e); lx=p.x; ly=p.y;
+        });
+        canvas.addEventListener('mousemove', e => {
+            if (!draw.drawing || !draw.isDrawer) return;
+            const p=getPos(e);
+            drawLine(lx,ly,p.x,p.y,draw.color,draw.tool==='eraser'?40:draw.size,draw.tool==='eraser');
+            send('draw.stroke',{x1:lx,y1:ly,x2:p.x,y2:p.y,color:draw.color,size:draw.size,eraser:draw.tool==='eraser'});
+            lx=p.x; ly=p.y;
+        });
+        canvas.addEventListener('mouseup', () => draw.drawing=false);
+        canvas.addEventListener('touchstart', e=>{e.preventDefault();if(!draw.isDrawer)return;draw.drawing=true;const p=getPos(e);lx=p.x;ly=p.y;},{passive:false});
+        canvas.addEventListener('touchmove', e=>{e.preventDefault();if(!draw.drawing||!draw.isDrawer)return;const p=getPos(e);drawLine(lx,ly,p.x,p.y,draw.color,draw.size,draw.tool==='eraser');send('draw.stroke',{x1:lx,y1:ly,x2:p.x,y2:p.y,color:draw.color,size:draw.size,eraser:draw.tool==='eraser'});lx=p.x;ly=p.y;},{passive:false});
+        canvas.addEventListener('touchend', ()=>draw.drawing=false);
+    }
+
+    function drawLine(x1,y1,x2,y2,color,size,eraser) {
+        if (!draw.ctx) return;
+        draw.ctx.globalCompositeOperation = eraser?'destination-out':'source-over';
+        draw.ctx.strokeStyle=color; draw.ctx.lineWidth=size;
+        draw.ctx.lineCap='round'; draw.ctx.lineJoin='round';
+        draw.ctx.beginPath(); draw.ctx.moveTo(x1,y1); draw.ctx.lineTo(x2,y2); draw.ctx.stroke();
+        draw.ctx.globalCompositeOperation='source-over';
+    }
+
+    function setDrawTool(t) {
+        draw.tool=t;
+        ['pen','eraser','fill'].forEach(id=>document.getElementById('dt-'+id)?.classList.toggle('active',id===t));
+        document.getElementById('draw-canvas').style.cursor = t==='eraser'?'cell':'crosshair';
+    }
+
+    function clearCanvas() {
+        if (draw.ctx) { draw.ctx.clearRect(0,0,draw.ctx.canvas.width,draw.ctx.canvas.height); draw.ctx.fillStyle='#fff'; draw.ctx.fillRect(0,0,draw.ctx.canvas.width,draw.ctx.canvas.height); }
+        if (draw.isDrawer) send('draw.clear',{});
+    }
+
+    function receiveDrawWord(word) {
+        draw.word=word; draw.isDrawer=true;
+        document.getElementById('draw-banner').style.background='rgba(245,158,11,.15)';
+        document.getElementById('draw-word-hint').textContent='Draw: ' + word.toUpperCase();
+        document.getElementById('draw-toolbar').style.opacity='1';
+        notif('✏️','You are drawing: '+word);
+    }
+
+    function drawHandleMsg(msg) {
+        if (msg.type==='DRAW_STROKE'&&msg.userId!==ME_ID) {
+            const d=msg.data||msg;
+            drawLine(d.x1,d.y1,d.x2,d.y2,d.color||'#000',d.size||4,d.eraser||false);
+        } else if (msg.type==='DRAW_CLEAR') {
+            if (!draw.isDrawer && draw.ctx) { draw.ctx.clearRect(0,0,draw.ctx.canvas.width,draw.ctx.canvas.height); draw.ctx.fillStyle='#fff'; draw.ctx.fillRect(0,0,draw.ctx.canvas.width,draw.ctx.canvas.height); }
+        } else if (msg.type==='DRAW_CORRECT') {
+            notif('🎯', (msg.name||'Someone')+' guessed it!');
+            showEmojiRain('🎯');
+            if (players[msg.userId]) players[msg.userId].score = (players[msg.userId].score||0) + 100;
+            updateRpPlayers();
+            updateDrawScores();
+        } else if (msg.type==='DRAW_NEW_ROUND') {
+            draw.isDrawer=(msg.drawer===ME_ID);
+            draw.round=msg.round||draw.round;
+            document.getElementById('draw-round-info').textContent='Round '+draw.round;
+            const hint = '_ '.repeat(msg.wordLen||5).trim();
+            if (!draw.isDrawer) { draw.word=''; document.getElementById('draw-word-hint').textContent=hint; }
+            clearCanvas();
+            updateDrawScores();
+        } else if (msg.type==='DRAW_GUESS') {
+            appendChat(msg.userId||'',msg.name||'?','',msg.guess||'');
+        }
+    }
+
+    function updateDrawScores() {
+        const el=document.getElementById('draw-scores');
+        el.innerHTML=Object.values(players).map(p=>
+            `<div class="draw-score-row ${p.userId===ME_ID?'drawing-now':''}">
+            <span style="font-size:13px;flex:1">${esc(p.name)}</span>
+            <span style="font-weight:700;color:var(--blue)">${p.score||0}</span>
+        </div>`
+        ).join('');
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       MAFIA
+       ═══════════════════════════════════════════════════════════════ */
+
+
+
+    function startMafia() {
+        if (IS_HOST) {
+            const playerList = Object.values(players);
+            const n = playerList.length;
+            const mafiaCount = Math.max(1, Math.floor(n/4));
+            const roles = Array(n).fill('VILLAGER');
+            roles[0] = 'MAFIA'; if(n>=4) roles[1]='DETECTIVE'; if(n>=5) roles[2]='DOCTOR';
+            for(let i=roles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[roles[i],roles[j]]=[roles[j],roles[i]];}
+            playerList.forEach((p,i) => {
+                messaging.convertAndSend?.('/topic/game.private.'+p.userId, {type:'MAFIA_ROLE',role:roles[i]});
+            });
+        }
+        renderMafiaPlayers();
+    }
+
+    function mafiaHandleMsg(msg) {
+        if (msg.type==='MAFIA_ROLE') {
+            mafia.myRole=msg.role||'VILLAGER';
+            const colors={MAFIA:'var(--red)',DETECTIVE:'#60a5fa',DOCTOR:'var(--green)',VILLAGER:'var(--sub)'};
+            const icons={MAFIA:'🔪',DETECTIVE:'🔍',DOCTOR:'💊',VILLAGER:'👤'};
+            document.getElementById('mafia-role-reveal').innerHTML=`
+            <div style="font-size:32px">${icons[mafia.myRole]||'👤'}</div>
+            <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:20px;color:${colors[mafia.myRole]||'var(--text)'}">You are ${mafia.myRole}</div>
+            <div style="font-size:13px;color:var(--sub);margin-top:8px">${getMafiaRoleDesc(mafia.myRole)}</div>`;
+            notif(icons[mafia.myRole]||'','Your role: '+mafia.myRole);
+        } else if (msg.type==='MAFIA_PHASE') {
+            mafia.phase=msg.phase;
+            const banner=document.getElementById('mafia-phase-banner');
+            banner.textContent=msg.phase==='DAY'?'☀️ Day Phase — Discuss &amp; Vote':'🌙 Night Phase — Roles act';
+            banner.className='mafia-phase-banner '+msg.phase.toLowerCase();
+            renderMafiaActions();
+        } else if (msg.type==='MAFIA_VOTE') {
+            mafia.votes[msg.voter]=msg.target;
+            renderMafiaPlayers();
+        } else if (msg.type==='MAFIA_ELIMINATE') {
+            mafia.eliminated.add(msg.target);
+            notif('☠️',(players[msg.target]?.name||'Someone')+' was eliminated! Role: '+msg.role);
+            renderMafiaPlayers();
+            // Check win conditions
+            const alivePlayers = Object.values(players).filter(p=>!mafia.eliminated.has(p.userId));
+            const aliveMafia = alivePlayers.filter(p=>p.mafiaRole==='MAFIA').length;
+            const aliveVillagers = alivePlayers.filter(p=>p.mafiaRole!=='MAFIA').length;
+            if (aliveMafia === 0) {
+                setTimeout(()=>showGameOver({scores: alivePlayers.map(p=>({...p,score:10})), winner:'Villagers'}), 1200);
+            } else if (aliveMafia >= aliveVillagers) {
+                setTimeout(()=>showGameOver({scores: alivePlayers.map(p=>({...p,score:10})), winner:'Mafia'}), 1200);
+            }
+        }
+    }
+
+    function mafiaHandleNightResult(msg) {
+        if (msg.action==='KILL') notif('🔪',players[msg.target]?.name+' was targeted by Mafia');
+        else if (msg.action==='SAVE') notif('💊',players[msg.target]?.name+' was saved by Doctor');
+        else if (msg.action==='INVESTIGATE') notif('🔍',players[msg.target]?.name+' is '+(Math.random()>0.5?'MAFIA':'INNOCENT'));
+    }
+
+    function getMafiaRoleDesc(role) {
+        return {MAFIA:'Work with other Mafia to eliminate villagers at night.',DETECTIVE:'Each night, investigate one player to learn their role.',DOCTOR:'Each night, protect one player from being killed.',VILLAGER:'During the day, discuss and vote to eliminate the Mafia.'}[role]||'';
+    }
+
+    function renderMafiaPlayers() {
+        const el=document.getElementById('mafia-players-grid');
+        el.innerHTML=Object.values(players).map(p=>{
+            const av=p.avatar?`<img src="${esc(p.avatar)}" style="width:44px;height:44px;border-radius:50%;object-fit:cover" alt=""/>`:`<div style="width:44px;height:44px;border-radius:50%;background:${colorFor(p.userId)};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700">${(p.name||'?').charAt(0)}</div>`;
+            const votes=Object.values(mafia.votes).filter(v=>v===p.userId).length;
+            const el2=mafia.eliminated.has(p.userId)?'eliminated':'';
+            return `<div class="mafia-player ${el2}" onclick="mafiavote('${p.userId}')">
+            ${av}<div style="font-size:12px;font-weight:600;margin-top:6px;max-width:90px;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</div>
+            ${votes?`<div style="font-size:10px;color:var(--amber)">${votes} vote${votes>1?'s':''}</div>`:''}
+        </div>`;
+        }).join('');
+    }
+
+    function renderMafiaActions() {
+        const el=document.getElementById('mafia-actions'); el.innerHTML='';
+        if (IS_HOST) {
+            const btn=document.createElement('button');
+            btn.className='mafia-act-btn'; btn.style.background='var(--s2)'; btn.textContent=mafia.phase==='DAY'?'→ Start Night':'→ Start Day';
+            btn.onclick=()=>send('mafia.action',{action:'PHASE',phase:mafia.phase==='DAY'?'NIGHT':'DAY'});
+            el.appendChild(btn);
+        }
+        if (mafia.phase==='DAY') {
+            const btn=document.createElement('button');
+            btn.className='mafia-act-btn'; btn.style.background='var(--amber)'; btn.style.color='#000'; btn.textContent='Cast Vote';
+            btn.onclick=()=>{const sel=Object.keys(players).find(id=>id!==ME_ID); if(sel)mafiavote(sel);};
+            el.appendChild(btn);
+        }
+    }
+
+    function mafiavote(targetId) {
+        if (mafia.eliminated.has(targetId)||targetId===ME_ID) return;
+        send('mafia.action',{action:'VOTE',target:targetId});
+        notif('🗳️','Voted for '+(players[targetId]?.name||'?'));
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       UNO (Full implementation)
+       ═══════════════════════════════════════════════════════════════ */
+
+
+
+
+
+    function initUno() {}
+
+    function startUno() {
+        if (IS_HOST) {
+            // Host deals cards and sends initial state
+            const fullDeck = buildUnoDeck();
+            shuffleDeck(fullDeck);
+            const playerList = Object.values(players);
+            const hands = {};
+            playerList.forEach(p => { hands[p.userId]=[]; for(let i=0;i<7;i++) hands[p.userId].push(fullDeck.pop()); });
+            const discard = fullDeck.pop();
+            const state = {deck: fullDeck, discard, turn: playerList[0].userId, direction:1, drawStack:0, hands};
+            // Send each player their hand privately
+            playerList.forEach(p => {
+                if (stomp && stomp.connected) stomp.publish({destination: '/app/game.uno.say/'+ROOM_CODE, body: JSON.stringify({text:'DEAL:'+p.userId+':'+JSON.stringify(hands[p.userId])+':'+JSON.stringify(discard)+':'+playerList[0].userId})});
+            });
+            uno.gameState=state;
+        }
+        renderUnoOpponents();
+    }
+
+    function buildUnoDeck() {
+        const deck=[];
+        UNO_COLORS.forEach(color=>{
+            for(let n=0;n<=9;n++){deck.push({color,value:String(n)});if(n>0)deck.push({color,value:String(n)});}
+            ['SKIP','REVERSE','DRAW2'].forEach(s=>{deck.push({color,value:s});deck.push({color,value:s});});
+        });
+        for(let i=0;i<4;i++){deck.push({color:'WILD',value:'WILD'});deck.push({color:'WILD',value:'WILD4'});}
+        return deck;
+    }
+
+    function shuffleDeck(deck) {
+        for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+    }
+
+    function unoHandleMsg(msg) {
+        if (msg.type==='UNO_SAY') {
+            const text=msg.text||'';
+            if (text.startsWith('DEAL:')) {
+                const parts=text.split(':');
+                if (parts[1]===ME_ID) {
+                    uno.hand=JSON.parse(parts[2]);
+                    uno.discard=JSON.parse(parts[3]);
+                    uno.turn=parts[4];
+                    renderUnoHand();
+                    renderDiscardPile();
+                    updateUnoTurn();
+                }
+                renderUnoOpponents();
+                return;
+            }
+            if (text.startsWith('WIN:')) {
+                const parts = text.split(':');
+                const winnerId = parts[1]; const winnerName = parts[2]||'Someone';
+                notif('🏆', winnerName+' won UNO!');
+                const scores = Object.values(players)
+                    .map(p=>({...p, score: p.userId===winnerId ? 100 : 0}))
+                    .sort((a,b)=>b.score-a.score);
+                setTimeout(()=>showGameOver({scores, winner: winnerName}), 800);
+            } else if (text==='UNO!') {
+                notif('🃏',(players[msg.userId]?.name||'?')+' said UNO!');
+            } else {
+                appendChat(msg.userId, players[msg.userId]?.name||'?', '', text);
+            }
+        } else if (msg.type==='UNO_PLAY') {
+            const card=msg.card;
+            if (typeof card === 'string') {
+                try { uno.discard = JSON.parse(card); } catch(e) { uno.discard = {color: msg.color, value: card}; }
+            } else { uno.discard = card; }
+            if (msg.color) uno.discard.color = msg.color;
+            uno.turn = msg.next||uno.turn;
+            renderDiscardPile(); updateUnoTurn();
+            if (msg.gameState) uno.gameState = msg.gameState;
+            // If this is our card being confirmed
+            if (msg.userId !== ME_ID) renderUnoOpponents();
+        } else if (msg.type==='UNO_DRAW') {
+            if (msg.userId===ME_ID && msg.count>0) {
+                // Draw from deck (simplified — use random)
+                for(let i=0;i<(msg.count||1);i++) uno.hand.push(buildUnoDeck()[Math.floor(Math.random()*108)]);
+                renderUnoHand();
+            }
+            notif('🃏',(players[msg.userId]?.name||'?')+' drew '+(msg.count||1)+' card'+(msg.count>1?'s':''));
+        }
+    }
+
+    function renderUnoHand() {
+        const el=document.getElementById('uno-hand'); el.innerHTML='';
+        uno.hand.forEach((card,i)=>{
+            const div=document.createElement('div');
+            div.className='uno-card'+(canPlay(card)?' playable':'');
+            div.style.background=UNO_COLOR_CSS[card.color]||'#334155';
+            div.style.color=card.color==='YELLOW'?'#000':'#fff';
+            div.innerHTML=`<div style="font-size:11px;font-weight:800;position:absolute;top:4px;left:6px">${card.value}</div>
+            <div style="font-size:22px">${getUnoCardIcon(card)}</div>
+            <div style="font-size:11px;font-weight:800;position:absolute;bottom:4px;right:6px;transform:rotate(180deg)">${card.value}</div>`;
+            div.onclick=()=>unoSelectCard(i);
+            if (uno.selectedCard===i) div.classList.add('selected');
+            el.appendChild(div);
+        });
+        if (uno.hand.length===1) setTimeout(()=>notif('🃏','UNO! Say it!'),100);
+    }
+
+    function getUnoCardIcon(card) {
+        if (!isNaN(card.value)) return card.value;
+        return {SKIP:'⊘',REVERSE:'⇄',DRAW2:'+2',WILD:'🌈',WILD4:'🌈+4'}[card.value]||card.value;
+    }
+
+    function canPlay(card) {
+        if (!uno.discard||uno.turn!==ME_ID) return false;
+        return card.color==='WILD'||card.color===uno.discard.color||card.value===uno.discard.value;
+    }
+
+    function unoSelectCard(idx) {
+        if (uno.turn!==ME_ID) { notif('⏳','Not your turn!'); return; }
+        const card=uno.hand[idx];
+        if (!canPlay(card)) { notif('❌','Cannot play that card'); return; }
+        uno.selectedCard=idx;
+        if (card.color==='WILD') {
+            uno.pendingWild=idx;
+            document.getElementById('uno-color-picker').classList.add('open');
+        } else {
+            playUnoCard(idx, card.color);
+        }
+    }
+
+    function unoPickColor(color) {
+        document.getElementById('uno-color-picker').classList.remove('open');
+        if (uno.pendingWild!==null) playUnoCard(uno.pendingWild, color);
+        uno.pendingWild=null;
+    }
+
+    function playUnoCard(idx, chosenColor) {
+        const card = uno.hand[idx];
+        uno.hand.splice(idx,1);
+        const pList=Object.values(players);
+        const myIdx=pList.findIndex(p=>p.userId===ME_ID);
+        const nextIdx=(myIdx+1+pList.length)%pList.length;
+        const nextPlayer=pList[nextIdx]?.userId||'';
+        send('uno.play',{card:JSON.stringify({...card,color:chosenColor}),color:chosenColor,next:nextPlayer,stack:[],gameState:{}});
+        uno.discard={...card,color:chosenColor};
+        uno.turn=nextPlayer;
+        renderUnoHand(); renderDiscardPile(); updateUnoTurn();
+        if (uno.hand.length===0) {
+            notif('🏆','You won! 🃏');
+            send('uno.say',{text:'WIN:'+ME_ID+':'+ME_NAME});
+        }
+    }
+
+    function unoDraw() {
+        if (uno.turn!==ME_ID) { notif('⏳','Not your turn!'); return; }
+        send('uno.draw',{count:1});
+        uno.hand.push(buildUnoDeck()[Math.floor(Math.random()*108)]);
+        // Skip turn
+        const pList=Object.values(players);
+        const myIdx=pList.findIndex(p=>p.userId===ME_ID);
+        uno.turn=pList.at((myIdx+1)%pList.length)?.userId||'';
+        renderUnoHand(); updateUnoTurn();
+    }
+
+    function renderDiscardPile() {
+        const el=document.getElementById('uno-discard-pile');
+        if (!uno.discard) return;
+        el.style.background=UNO_COLOR_CSS[uno.discard.color]||'#334155';
+        el.style.color=uno.discard.color==='YELLOW'?'#000':'#fff';
+        el.innerHTML=`<div style="font-size:32px;font-weight:800">${getUnoCardIcon(uno.discard)}</div>`;
+    }
+
+    function updateUnoTurn() {
+        const myTurn=uno.turn===ME_ID;
+        document.getElementById('uno-turn').textContent = myTurn?'Your turn!':(players[uno.turn]?.name||'...')+' is playing';
+        document.getElementById('uno-turn').style.background=myTurn?'rgba(34,197,94,.2)':'rgba(255,255,255,.05)';
+        document.getElementById('uno-turn').style.borderColor=myTurn?'rgba(34,197,94,.4)':'rgba(255,255,255,.1)';
+        document.getElementById('uno-turn').style.color=myTurn?'var(--green)':'var(--sub)';
+    }
+
+    function renderUnoOpponents() {
+        const el=document.getElementById('uno-opponents'); el.innerHTML='';
+        Object.values(players).filter(p=>p.userId!==ME_ID).forEach(p=>{
+            const div=document.createElement('div'); div.className='uno-opponent';
+            const av=p.avatar?`<img src="${esc(p.avatar)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover" alt=""/>`:`<div style="width:28px;height:28px;border-radius:50%;background:${colorFor(p.userId)};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${(p.name||'?').charAt(0)}</div>`;
+            div.innerHTML=`${av}<span>${esc(p.name)}</span><span style="background:var(--s3);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700">7 🃏</span>`;
+            el.appendChild(div);
+        });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       GAME START ROUTING
+       ═══════════════════════════════════════════════════════════════ */
+    function showGameScreen2() {
+        document.getElementById('lobby-screen').style.display='none';
+        const map={TYPING_RACER:'typing-screen',CHESS:'chess-screen',TETRIS:'tetris-screen',
+            WORDLE:'wordle-screen',SUDOKU:'sudoku-screen',DRAW_GUESS:'draw-screen',
+            MAFIA:'mafia-screen',UNO:'uno-screen'};
+        const id=map[GAME_TYPE]; if(id) document.getElementById(id).classList.add('active');
+    }
+
+
+
+    window.addEventListener('beforeunload', () => {
+        if (stomp && stomp.connected) stomp.publish({destination: '/app/game.leave/'+ROOM_CODE, body: '{}'});
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

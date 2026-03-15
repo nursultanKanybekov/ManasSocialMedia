@@ -158,6 +158,14 @@
             <span class="nav-label" th:text="#{nav.leaderboard}">Rankings</span>
         </a>
 
+        <!-- GAME ZONE -->
+        <a th:href="@{/games}" class="sidebar-link" data-label="Game Zone"
+           th:classappend="${currentURI != null and currentURI.startsWith('/games')} ? ' active'"
+           style="position:relative">
+            <span class="nav-icon">🎮</span>
+            <span class="nav-label">Game Zone</span>
+        </a>
+
         <!-- EVENTS -->
         <div class="nav-section-label">EVENTS</div>
         <a th:href="@{/competitions}" class="sidebar-link" data-label="Competitions"

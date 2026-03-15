@@ -72,7 +72,7 @@
             </div>
             <div class="ps-stat">
                 <div class="ps-num" th:text="${wins}">0</div>
-                <div class="ps-lbl">Quiz Wins</div>
+                <div class="ps-lbl">Total Wins</div>
             </div>
             <div class="ps-stat">
                 <div class="ps-num" th:text="${badgeCount}">0</div>
@@ -223,16 +223,17 @@
             <div class="card" style="margin-bottom:24px;">
                 <table class="data-table">
                     <thead>
-                        <tr><th>Action</th><th>Points</th><th>Frequency</th></tr>
+                    <tr><th>Action</th><th>Points</th><th>Frequency</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td>Daily Login</td><td><strong>+2</strong></td><td>Once per day</td></tr>
-                        <tr><td>Create Post</td><td><strong>+10</strong></td><td>Per post</td></tr>
-                        <tr><td>Leave Comment</td><td><strong>+3</strong></td><td>Per comment</td></tr>
-                        <tr><td>Receive Like</td><td><strong>+1</strong></td><td>Per like received</td></tr>
-                        <tr><td>Pass Quiz</td><td><strong>+20</strong></td><td>Per quiz</td></tr>
-                        <tr><td>Mentorship Session</td><td><strong>+50</strong></td><td>Per session</td></tr>
-                        <tr><td>Help with Job</td><td><strong>+5</strong></td><td>Per referral</td></tr>
+                    <tr><td>Daily Login</td><td><strong>+2</strong></td><td>Once per day</td></tr>
+                    <tr><td>Create Post</td><td><strong>+10</strong></td><td>Per post</td></tr>
+                    <tr><td>Leave Comment</td><td><strong>+3</strong></td><td>Per comment</td></tr>
+                    <tr><td>Receive Like</td><td><strong>+1</strong></td><td>Per like received</td></tr>
+                    <tr><td>Pass Quiz</td><td><strong>+20</strong></td><td>Per quiz</td></tr>
+                    <tr><td>Win a Game</td><td><strong>+5</strong></td><td>Per win</td></tr>
+                    <tr><td>Mentorship Session</td><td><strong>+50</strong></td><td>Per session</td></tr>
+                    <tr><td>Help with Job</td><td><strong>+5</strong></td><td>Per referral</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -278,31 +279,31 @@
             <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden;">
                 <table class="data-table">
                     <thead>
-                        <tr><th>#</th><th>User</th><th>Points</th></tr>
+                    <tr><th>#</th><th>User</th><th>Points</th></tr>
                     </thead>
                     <tbody>
-                        <tr th:each="p, i : ${globalTop}"
-                            th:classappend="${p.user.id == currentUser.id} ? ' row-highlight'">
-                            <td>
-                                <span th:if="${i.index == 0}" style="font-size:16px;">&#127947;</span>
-                                <span th:if="${i.index == 1}" style="font-size:16px;">&#129352;</span>
-                                <span th:if="${i.index == 2}" style="font-size:16px;">&#129353;</span>
-                                <span th:if="${i.index >= 3}" th:text="${i.index + 1}" style="font-family:Montserrat,sans-serif;font-weight:700;color:var(--muted);">4</span>
-                            </td>
-                            <td>
-                                <a th:href="@{/profile/{id}(id=${p.user.id})}"
-                                   style="display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;">
-                                    <div style="width:28px;height:28px;border-radius:50%;background:var(--navy);color:white;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
-                                        <img th:if="${p.avatarUrl != null}" th:src="${p.avatarUrl}"
-                                             style="width:100%;height:100%;object-fit:cover;" alt=""/>
-                                        <span th:unless="${p.avatarUrl != null}"
-                                              th:text="${#strings.substring(p.user.fullName, 0, 1).toUpperCase()}">U</span>
-                                    </div>
-                                    <span style="font-size:12px;font-weight:600;" th:text="${#strings.abbreviate(p.user.fullName, 16)}">Name</span>
-                                </a>
-                            </td>
-                            <td><strong th:text="${#numbers.formatInteger(p.totalPoints, 0, 'COMMA')}">0</strong></td>
-                        </tr>
+                    <tr th:each="p, i : ${globalTop}"
+                        th:classappend="${p.user.id == currentUser.id} ? ' row-highlight'">
+                        <td>
+                            <span th:if="${i.index == 0}" style="font-size:16px;">&#127947;</span>
+                            <span th:if="${i.index == 1}" style="font-size:16px;">&#129352;</span>
+                            <span th:if="${i.index == 2}" style="font-size:16px;">&#129353;</span>
+                            <span th:if="${i.index >= 3}" th:text="${i.index + 1}" style="font-family:Montserrat,sans-serif;font-weight:700;color:var(--muted);">4</span>
+                        </td>
+                        <td>
+                            <a th:href="@{/profile/{id}(id=${p.user.id})}"
+                               style="display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;">
+                                <div style="width:28px;height:28px;border-radius:50%;background:var(--navy);color:white;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                                    <img th:if="${p.avatarUrl != null}" th:src="${p.avatarUrl}"
+                                         style="width:100%;height:100%;object-fit:cover;" alt=""/>
+                                    <span th:unless="${p.avatarUrl != null}"
+                                          th:text="${#strings.substring(p.user.fullName, 0, 1).toUpperCase()}">U</span>
+                                </div>
+                                <span style="font-size:12px;font-weight:600;" th:text="${#strings.abbreviate(p.user.fullName, 16)}">Name</span>
+                            </a>
+                        </td>
+                        <td><strong th:text="${#numbers.formatInteger(p.totalPoints, 0, 'COMMA')}">0</strong></td>
+                    </tr>
                     </tbody>
                 </table>
                 <div th:if="${#lists.isEmpty(globalTop)}" class="empty-state" style="padding:20px;">No data yet.</div>
@@ -316,7 +317,18 @@
             <div class="card">
                 <div th:if="${not #lists.isEmpty(recentHistory)}">
                     <div th:each="row : ${recentHistory}" class="history-item">
-                        <span class="history-reason" th:text="${row[0]}">ACTION</span>
+                        <span class="history-reason" th:text="${
+                            row[0].toString() == 'POST' ? '📝 Posted' :
+                            row[0].toString() == 'COMMENT' ? '💬 Comment' :
+                            row[0].toString() == 'LIKE_RECEIVED' ? '❤️ Like received' :
+                            row[0].toString() == 'MENTOR' ? '🎓 Mentoring' :
+                            row[0].toString() == 'QUIZ' ? '🧠 Quiz' :
+                            row[0].toString() == 'QUIZ_PASS' ? '✅ Quiz passed' :
+                            row[0].toString() == 'JOB_HELP' ? '💼 Job help' :
+                            row[0].toString() == 'LOGIN' ? '🔑 Daily login' :
+                            row[0].toString() == 'GAME_WIN' ? '🏆 Game win' :
+                            row[0].toString()
+                        }">ACTION</span>
                         <span class="history-pts" th:text="'+ ' + ${row[1]} + ' pts'">+ 10 pts</span>
                     </div>
                 </div>
@@ -419,170 +431,170 @@
         </div>
     </div>
 
-<script>
-// ===== MATH GAME =====
-let mathInterval, mathScore = 0, mathA, mathB, mathOp;
-function genMath() {
-    const ops = ['+', '-', '*'];
-    mathOp = ops[Math.floor(Math.random() * 3)];
-    mathA = Math.floor(Math.random() * (mathOp === '*' ? 12 : 50)) + 1;
-    mathB = Math.floor(Math.random() * (mathOp === '*' ? 12 : (mathOp === '-' ? mathA : 50))) + 1;
-    if (mathOp === '-' && mathB > mathA) [mathA, mathB] = [mathB, mathA];
-    document.getElementById('math-display').textContent = mathA + ' ' + mathOp + ' ' + mathB + ' = ?';
-}
-function startMathGame() {
-    mathScore = 0; document.getElementById('math-score').textContent = 0;
-    let t = 30; document.getElementById('math-timer').textContent = t;
-    document.getElementById('math-input').disabled = false;
-    document.getElementById('math-submit-btn').disabled = false;
-    document.getElementById('math-start-btn').disabled = true;
-    document.getElementById('math-input').focus();
-    genMath();
-    mathInterval = setInterval(() => {
-        t--;
-        document.getElementById('math-timer').textContent = t;
-        if (t <= 0) {
-            clearInterval(mathInterval);
-            document.getElementById('math-display').textContent = '⏱️ Time's up! Score: ' + mathScore;
-            document.getElementById('math-input').disabled = true;
-            document.getElementById('math-submit-btn').disabled = true;
-            document.getElementById('math-start-btn').disabled = false;
-            if (mathScore > 0) awardGamePoints('MATH_GAME', mathScore * 2);
+    <script>
+        // ===== MATH GAME =====
+        let mathInterval, mathScore = 0, mathA, mathB, mathOp;
+        function genMath() {
+            const ops = ['+', '-', '*'];
+            mathOp = ops[Math.floor(Math.random() * 3)];
+            mathA = Math.floor(Math.random() * (mathOp === '*' ? 12 : 50)) + 1;
+            mathB = Math.floor(Math.random() * (mathOp === '*' ? 12 : (mathOp === '-' ? mathA : 50))) + 1;
+            if (mathOp === '-' && mathB > mathA) [mathA, mathB] = [mathB, mathA];
+            document.getElementById('math-display').textContent = mathA + ' ' + mathOp + ' ' + mathB + ' = ?';
         }
-    }, 1000);
-}
-function checkMath() {
-    const inp = document.getElementById('math-input');
-    const ans = parseInt(inp.value);
-    let correct;
-    if (mathOp === '+') correct = mathA + mathB;
-    else if (mathOp === '-') correct = mathA - mathB;
-    else correct = mathA * mathB;
-    const fb = document.getElementById('math-feedback');
-    if (ans === correct) { mathScore++; document.getElementById('math-score').textContent = mathScore; fb.style.color='#28a745'; fb.textContent='✅ Correct! +1'; genMath(); }
-    else { fb.style.color='#dc3545'; fb.textContent='❌ Wrong! Answer was ' + correct; }
-    inp.value = '';
-    setTimeout(() => fb.textContent = '', 800);
-}
-
-// ===== WORD GAME =====
-const words = [
-    {w:'ALGORITHM',h:'Computer Science'},{w:'UNIVERSITY',h:'Education'},{w:'GRADUATE',h:'Academic'},
-    {w:'FACULTY',h:'Education'},{w:'RESEARCH',h:'Academic'},{w:'TECHNOLOGY',h:'Field'},
-    {w:'LEADERSHIP',h:'Skill'},{w:'INNOVATION',h:'Concept'},{w:'COMMUNITY',h:'Social'},
-    {w:'KNOWLEDGE',h:'Learning'},{w:'NETWORK',h:'Career'},{w:'DIPLOMA',h:'Achievement'}
-];
-let wordInterval, wordScore = 0, currentWord = '';
-function scramble(w) { return w.split('').sort(() => Math.random() - .5).join(''); }
-function newWord() {
-    const item = words[Math.floor(Math.random() * words.length)];
-    currentWord = item.w;
-    let sc = scramble(currentWord);
-    while (sc === currentWord) sc = scramble(currentWord);
-    document.getElementById('word-scrambled').textContent = sc;
-    document.getElementById('word-hint').textContent = '💡 Category: ' + item.h;
-}
-function startWordGame() {
-    wordScore = 0; document.getElementById('word-score').textContent = 0;
-    let t = 60; document.getElementById('word-timer').textContent = t;
-    document.getElementById('word-input').disabled = false;
-    document.getElementById('word-submit-btn').disabled = false;
-    document.getElementById('word-start-btn').disabled = true;
-    document.getElementById('word-input').focus();
-    newWord();
-    wordInterval = setInterval(() => {
-        t--; document.getElementById('word-timer').textContent = t;
-        if (t <= 0) {
-            clearInterval(wordInterval);
-            document.getElementById('word-scrambled').textContent = '⏱️ Done! Score: ' + wordScore;
-            document.getElementById('word-input').disabled = true;
-            document.getElementById('word-submit-btn').disabled = true;
-            document.getElementById('word-start-btn').disabled = false;
-            if (wordScore > 0) awardGamePoints('WORD_GAME', wordScore * 3);
+        function startMathGame() {
+            mathScore = 0; document.getElementById('math-score').textContent = 0;
+            let t = 30; document.getElementById('math-timer').textContent = t;
+            document.getElementById('math-input').disabled = false;
+            document.getElementById('math-submit-btn').disabled = false;
+            document.getElementById('math-start-btn').disabled = true;
+            document.getElementById('math-input').focus();
+            genMath();
+            mathInterval = setInterval(() => {
+                t--;
+                document.getElementById('math-timer').textContent = t;
+                if (t <= 0) {
+                    clearInterval(mathInterval);
+                    document.getElementById('math-display').textContent = '⏱️ Time's up! Score: ' + mathScore;
+                    document.getElementById('math-input').disabled = true;
+                    document.getElementById('math-submit-btn').disabled = true;
+                    document.getElementById('math-start-btn').disabled = false;
+                    if (mathScore > 0) awardGamePoints('MATH_GAME', mathScore * 2);
+                }
+            }, 1000);
         }
-    }, 1000);
-}
-function checkWord() {
-    const inp = document.getElementById('word-input');
-    const ans = inp.value.trim().toUpperCase();
-    const fb = document.getElementById('word-feedback');
-    if (ans === currentWord) { wordScore++; document.getElementById('word-score').textContent = wordScore; fb.style.color='#28a745'; fb.textContent='✅ Correct! +1'; newWord(); }
-    else { fb.style.color='#dc3545'; fb.textContent='❌ Try again!'; }
-    inp.value = '';
-    setTimeout(() => fb.textContent = '', 800);
-}
+        function checkMath() {
+            const inp = document.getElementById('math-input');
+            const ans = parseInt(inp.value);
+            let correct;
+            if (mathOp === '+') correct = mathA + mathB;
+            else if (mathOp === '-') correct = mathA - mathB;
+            else correct = mathA * mathB;
+            const fb = document.getElementById('math-feedback');
+            if (ans === correct) { mathScore++; document.getElementById('math-score').textContent = mathScore; fb.style.color='#28a745'; fb.textContent='✅ Correct! +1'; genMath(); }
+            else { fb.style.color='#dc3545'; fb.textContent='❌ Wrong! Answer was ' + correct; }
+            inp.value = '';
+            setTimeout(() => fb.textContent = '', 800);
+        }
 
-// ===== MEMORY GAME =====
-const emojis = ['🦁','🐯','🦊','🐼','🐸','🦋','🌺','⭐'];
-let memCards = [], memFlipped = [], memMoves = 0, memPairs = 0, memLock = false;
-function startMemoryGame() {
-    const board = document.getElementById('memory-board');
-    const cards = [...emojis, ...emojis].sort(() => Math.random() - .5);
-    memCards = []; memFlipped = []; memMoves = 0; memPairs = 0; memLock = false;
-    document.getElementById('mem-moves').textContent = 0;
-    document.getElementById('mem-pairs').textContent = 0;
-    document.getElementById('memory-feedback').textContent = '';
-    document.getElementById('mem-start-btn').textContent = '🔄 Restart';
-    board.innerHTML = '';
-    cards.forEach((emoji, idx) => {
-        const card = document.createElement('div');
-        card.style.cssText = 'height:56px;background:#e8eaf6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .2s;user-select:none;';
-        card.dataset.emoji = emoji;
-        card.dataset.idx = idx;
-        card.dataset.flipped = 'false';
-        card.textContent = '?';
-        card.addEventListener('click', () => flipCard(card));
-        board.appendChild(card);
-        memCards.push(card);
-    });
-}
-function flipCard(card) {
-    if (memLock || card.dataset.flipped === 'true' || memFlipped.length === 2) return;
-    card.textContent = card.dataset.emoji;
-    card.style.background = 'linear-gradient(135deg,#1b2a6b,#2d4a9e)';
-    card.style.color = 'white';
-    card.dataset.flipped = 'true';
-    memFlipped.push(card);
-    if (memFlipped.length === 2) {
-        memMoves++; document.getElementById('mem-moves').textContent = memMoves;
-        memLock = true;
-        if (memFlipped[0].dataset.emoji === memFlipped[1].dataset.emoji) {
-            memPairs++; document.getElementById('mem-pairs').textContent = memPairs;
-            memFlipped.forEach(c => { c.style.background = 'linear-gradient(135deg,#059669,#10B981)'; c.style.cursor = 'default'; });
-            memFlipped = []; memLock = false;
-            if (memPairs === 8) {
-                document.getElementById('memory-feedback').style.color = '#28a745';
-                document.getElementById('memory-feedback').textContent = '🎉 You won! Points awarded!';
-                awardGamePoints('MEMORY_GAME', 20);
+        // ===== WORD GAME =====
+        const words = [
+            {w:'ALGORITHM',h:'Computer Science'},{w:'UNIVERSITY',h:'Education'},{w:'GRADUATE',h:'Academic'},
+            {w:'FACULTY',h:'Education'},{w:'RESEARCH',h:'Academic'},{w:'TECHNOLOGY',h:'Field'},
+            {w:'LEADERSHIP',h:'Skill'},{w:'INNOVATION',h:'Concept'},{w:'COMMUNITY',h:'Social'},
+            {w:'KNOWLEDGE',h:'Learning'},{w:'NETWORK',h:'Career'},{w:'DIPLOMA',h:'Achievement'}
+        ];
+        let wordInterval, wordScore = 0, currentWord = '';
+        function scramble(w) { return w.split('').sort(() => Math.random() - .5).join(''); }
+        function newWord() {
+            const item = words[Math.floor(Math.random() * words.length)];
+            currentWord = item.w;
+            let sc = scramble(currentWord);
+            while (sc === currentWord) sc = scramble(currentWord);
+            document.getElementById('word-scrambled').textContent = sc;
+            document.getElementById('word-hint').textContent = '💡 Category: ' + item.h;
+        }
+        function startWordGame() {
+            wordScore = 0; document.getElementById('word-score').textContent = 0;
+            let t = 60; document.getElementById('word-timer').textContent = t;
+            document.getElementById('word-input').disabled = false;
+            document.getElementById('word-submit-btn').disabled = false;
+            document.getElementById('word-start-btn').disabled = true;
+            document.getElementById('word-input').focus();
+            newWord();
+            wordInterval = setInterval(() => {
+                t--; document.getElementById('word-timer').textContent = t;
+                if (t <= 0) {
+                    clearInterval(wordInterval);
+                    document.getElementById('word-scrambled').textContent = '⏱️ Done! Score: ' + wordScore;
+                    document.getElementById('word-input').disabled = true;
+                    document.getElementById('word-submit-btn').disabled = true;
+                    document.getElementById('word-start-btn').disabled = false;
+                    if (wordScore > 0) awardGamePoints('WORD_GAME', wordScore * 3);
+                }
+            }, 1000);
+        }
+        function checkWord() {
+            const inp = document.getElementById('word-input');
+            const ans = inp.value.trim().toUpperCase();
+            const fb = document.getElementById('word-feedback');
+            if (ans === currentWord) { wordScore++; document.getElementById('word-score').textContent = wordScore; fb.style.color='#28a745'; fb.textContent='✅ Correct! +1'; newWord(); }
+            else { fb.style.color='#dc3545'; fb.textContent='❌ Try again!'; }
+            inp.value = '';
+            setTimeout(() => fb.textContent = '', 800);
+        }
+
+        // ===== MEMORY GAME =====
+        const emojis = ['🦁','🐯','🦊','🐼','🐸','🦋','🌺','⭐'];
+        let memCards = [], memFlipped = [], memMoves = 0, memPairs = 0, memLock = false;
+        function startMemoryGame() {
+            const board = document.getElementById('memory-board');
+            const cards = [...emojis, ...emojis].sort(() => Math.random() - .5);
+            memCards = []; memFlipped = []; memMoves = 0; memPairs = 0; memLock = false;
+            document.getElementById('mem-moves').textContent = 0;
+            document.getElementById('mem-pairs').textContent = 0;
+            document.getElementById('memory-feedback').textContent = '';
+            document.getElementById('mem-start-btn').textContent = '🔄 Restart';
+            board.innerHTML = '';
+            cards.forEach((emoji, idx) => {
+                const card = document.createElement('div');
+                card.style.cssText = 'height:56px;background:#e8eaf6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .2s;user-select:none;';
+                card.dataset.emoji = emoji;
+                card.dataset.idx = idx;
+                card.dataset.flipped = 'false';
+                card.textContent = '?';
+                card.addEventListener('click', () => flipCard(card));
+                board.appendChild(card);
+                memCards.push(card);
+            });
+        }
+        function flipCard(card) {
+            if (memLock || card.dataset.flipped === 'true' || memFlipped.length === 2) return;
+            card.textContent = card.dataset.emoji;
+            card.style.background = 'linear-gradient(135deg,#1b2a6b,#2d4a9e)';
+            card.style.color = 'white';
+            card.dataset.flipped = 'true';
+            memFlipped.push(card);
+            if (memFlipped.length === 2) {
+                memMoves++; document.getElementById('mem-moves').textContent = memMoves;
+                memLock = true;
+                if (memFlipped[0].dataset.emoji === memFlipped[1].dataset.emoji) {
+                    memPairs++; document.getElementById('mem-pairs').textContent = memPairs;
+                    memFlipped.forEach(c => { c.style.background = 'linear-gradient(135deg,#059669,#10B981)'; c.style.cursor = 'default'; });
+                    memFlipped = []; memLock = false;
+                    if (memPairs === 8) {
+                        document.getElementById('memory-feedback').style.color = '#28a745';
+                        document.getElementById('memory-feedback').textContent = '🎉 You won! Points awarded!';
+                        awardGamePoints('MEMORY_GAME', 20);
+                    }
+                } else {
+                    setTimeout(() => {
+                        memFlipped.forEach(c => { c.textContent = '?'; c.style.background = '#e8eaf6'; c.style.color = 'inherit'; c.dataset.flipped = 'false'; });
+                        memFlipped = []; memLock = false;
+                    }, 800);
+                }
             }
-        } else {
-            setTimeout(() => {
-                memFlipped.forEach(c => { c.textContent = '?'; c.style.background = '#e8eaf6'; c.style.color = 'inherit'; c.dataset.flipped = 'false'; });
-                memFlipped = []; memLock = false;
-            }, 800);
         }
-    }
-}
 
-// Award points via HTMX/fetch (client-side notification only, actual points in game service)
-function awardGamePoints(game, pts) {
-    fetch('/gamification/award-game-points', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-XSRF-TOKEN': getCsrfToken()},
-        body: JSON.stringify({game, points: pts})
-    }).catch(() => {});
-    // Show local celebration
-    const el = document.createElement('div');
-    el.style.cssText = 'position:fixed;top:80px;right:24px;background:linear-gradient(135deg,#059669,#10B981);color:white;padding:12px 20px;border-radius:12px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.15);animation:fadeOut 3s forwards;';
-    el.textContent = '🏆 +' + pts + ' pts earned from ' + game.replace('_',' ').toLowerCase() + '!';
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
-}
-function getCsrfToken() {
-    const m = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-    return m ? m[1] : '';
-}
-</script>
+        // Award points via HTMX/fetch (client-side notification only, actual points in game service)
+        function awardGamePoints(game, pts) {
+            fetch('/gamification/award-game-points', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-XSRF-TOKEN': getCsrfToken()},
+                body: JSON.stringify({game, points: pts})
+            }).catch(() => {});
+            // Show local celebration
+            const el = document.createElement('div');
+            el.style.cssText = 'position:fixed;top:80px;right:24px;background:linear-gradient(135deg,#059669,#10B981);color:white;padding:12px 20px;border-radius:12px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.15);animation:fadeOut 3s forwards;';
+            el.textContent = '🏆 +' + pts + ' pts earned from ' + game.replace('_',' ').toLowerCase() + '!';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+        function getCsrfToken() {
+            const m = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+            return m ? m[1] : '';
+        }
+    </script>
 
 </main>
 

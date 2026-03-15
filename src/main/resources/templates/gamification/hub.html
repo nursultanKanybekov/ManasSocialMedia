@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('🎮 Game Zone')}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<style>
+  .gz-main{padding:32px 28px 60px;font-family:'Open Sans',sans-serif;background:var(--bg);min-height:calc(100vh - var(--navbar-h))}
+
+  /* Hero */
+  .gz-hero{background:linear-gradient(135deg,var(--navy-dark),var(--navy));border-radius:20px;padding:40px 32px;margin-bottom:28px;position:relative;overflow:hidden}
+  .gz-hero::after{content:'🎮';position:absolute;right:-10px;bottom:-20px;font-size:140px;opacity:.08;line-height:1}
+  .gz-hero-title{font-family:Montserrat,sans-serif;font-weight:900;font-size:34px;color:#fff;margin-bottom:10px}
+  .gz-hero-sub{font-size:15px;color:rgba(255,255,255,.7);margin-bottom:24px;font-family:'Open Sans',sans-serif}
+  .gz-hero-stats{display:flex;gap:20px;flex-wrap:wrap}
+  .gz-stat-pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 20px;text-align:center;backdrop-filter:blur(4px)}
+  .gz-stat-val{font-family:Montserrat,sans-serif;font-weight:800;font-size:26px;color:#fff}
+  .gz-stat-lbl{font-size:11px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+  /* Quick join */
+  .gz-join-bar{background:var(--white);border-radius:16px;box-shadow:var(--shadow-sm);border:1.5px solid var(--border);padding:20px 24px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:28px}
+  .gz-join-label{flex:1;min-width:200px}
+  .gz-join-label-title{font-family:Montserrat,sans-serif;font-weight:700;font-size:15px;color:var(--navy)}
+  .gz-join-label-sub{font-size:12px;color:#8a91a8;margin-top:3px}
+  .gz-code-input{background:var(--bg);border:2px solid var(--border);border-radius:10px;color:var(--navy);padding:12px 16px;font-size:22px;font-weight:800;font-family:Montserrat,sans-serif;letter-spacing:.2em;text-align:center;text-transform:uppercase;width:180px;outline:none;transition:border-color .2s}
+  .gz-code-input:focus{border-color:var(--navy)}
+  .gz-code-input::placeholder{color:#c5cbe0;letter-spacing:.1em;font-size:16px}
+
+  /* Section heading */
+  .gz-section{font-family:Montserrat,sans-serif;font-weight:800;font-size:17px;color:var(--navy);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+  .gz-section::after{content:'';flex:1;height:2px;background:linear-gradient(to right,var(--border),transparent)}
+
+  /* Game grid */
+  .gz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px;margin-bottom:36px}
+
+  /* Game card */
+  .gz-card{background:var(--white);border-radius:18px;box-shadow:var(--shadow-sm);border:1.5px solid var(--border);overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s;cursor:default}
+  .gz-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg);border-color:rgba(27,42,107,.2)}
+  .gz-card-banner{height:120px;display:flex;align-items:center;justify-content:center;font-size:58px;position:relative}
+  .gz-card-body{padding:16px 18px 18px}
+  .gz-card-name{font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;color:var(--navy);margin-bottom:6px}
+  .gz-card-desc{font-size:12px;color:#6b7280;line-height:1.55;margin-bottom:12px}
+  .gz-card-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .gz-pill{display:inline-flex;align-items:center;gap:3px;background:var(--navy-light);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--navy)}
+  .gz-pill.green{background:#e8faf4;color:#065f46}
+  .gz-pill.amber{background:#fef9e7;color:#92400e}
+  .gz-card-actions{display:flex;gap:8px}
+  .gz-btn-create{flex:1;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s;font-family:'Open Sans',sans-serif}
+  .gz-btn-create:hover{background:var(--navy-dark)}
+  .gz-btn-join{background:var(--navy-light);color:var(--navy);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Open Sans',sans-serif}
+  .gz-btn-join:hover{background:#e0e5f6}
+  .gz-badge{position:absolute;top:10px;right:10px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:.04em}
+  .gz-badge-hot{background:var(--red);color:#fff}
+  .gz-badge-new{background:#f59e0b;color:#000}
+
+  /* Banner colors */
+  .gz-banner-typing{background:linear-gradient(135deg,#1a3a6b,#2d5be3)}
+  .gz-banner-chess{background:linear-gradient(135deg,#1a1a2e,#3d3d5c)}
+  .gz-banner-tetris{background:linear-gradient(135deg,#2d0845,#7c3aed)}
+  .gz-banner-wordle{background:linear-gradient(135deg,#064e3b,#059669)}
+  .gz-banner-sudoku{background:linear-gradient(135deg,#1e3a5f,#0284c7)}
+  .gz-banner-draw{background:linear-gradient(135deg,#431407,#ea580c)}
+  .gz-banner-mafia{background:linear-gradient(135deg,#1c0523,#9333ea)}
+  .gz-banner-uno{background:linear-gradient(135deg,#450a0a,#dc2626)}
+
+  /* Open rooms table */
+  .gz-table-wrap{background:var(--white);border-radius:16px;box-shadow:var(--shadow-sm);border:1.5px solid var(--border);overflow:hidden;margin-bottom:40px}
+  .gz-table{width:100%;border-collapse:collapse}
+  .gz-table th{padding:10px 16px;text-align:left;font-size:10px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.06em;border-bottom:1.5px solid var(--border);background:var(--bg)}
+  .gz-table td{padding:12px 16px;border-bottom:1px solid var(--bg2);font-size:13px;color:var(--text)}
+  .gz-table tr:last-child td{border-bottom:none}
+  .gz-table tr:hover td{background:var(--bg)}
+  .gz-table-empty{padding:40px;text-align:center;color:#8a91a8;font-size:14px}
+  .gz-join-link{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s;display:inline-block}
+  .gz-join-link:hover{background:var(--navy-dark)}
+  .gz-dot-green{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin-right:5px}
+
+  /* Modal */
+  .gz-modal-bg{display:none;position:fixed;inset:0;background:rgba(17,28,78,.55);z-index:500;align-items:center;justify-content:center;animation:gzFade .18s}
+  .gz-modal-bg.open{display:flex}
+  @keyframes gzFade{from{opacity:0}to{opacity:1}}
+  .gz-modal{background:var(--white);border-radius:20px;padding:28px;max-width:440px;width:95vw;box-shadow:var(--shadow-lg);border:1.5px solid var(--border)}
+  .gz-modal-title{font-family:Montserrat,sans-serif;font-weight:800;font-size:18px;color:var(--navy);margin-bottom:6px}
+  .gz-modal-sub{font-size:13px;color:#8a91a8;margin-bottom:20px}
+  .gz-modal-input{width:100%;background:var(--bg);border:2px solid var(--border);border-radius:10px;color:var(--navy);padding:14px;font-size:26px;font-weight:800;font-family:Montserrat,sans-serif;text-align:center;letter-spacing:.25em;text-transform:uppercase;outline:none;transition:border-color .2s;margin-bottom:16px}
+  .gz-modal-input:focus{border-color:var(--navy)}
+  .gz-modal-row{display:flex;gap:10px}
+  .gz-modal-btn{flex:1;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;transition:background .15s}
+  .gz-modal-btn:hover{background:var(--navy-dark)}
+  .gz-modal-btn.sec{background:var(--navy-light);color:var(--navy);border:1.5px solid var(--border)}
+  .gz-modal-btn.sec:hover{background:#e0e5f6}
+  .gz-room-row{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:10px;margin-bottom:8px}
+  .gz-room-row-info{flex:1}
+  .gz-room-row-name{font-weight:700;color:var(--navy);font-size:13px}
+  .gz-room-row-sub{font-size:11px;color:#8a91a8;margin-top:1px}
+
+  .gz-main-btn{background:var(--navy);color:#fff;border:none;border-radius:12px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Open Sans',sans-serif;transition:background .15s;display:inline-flex;align-items:center;gap:8px}
+  .gz-main-btn:hover{background:var(--navy-dark)}
+
+  @media(max-width:640px){.gz-grid{grid-template-columns:1fr}.gz-hero-title{font-size:24px}.gz-main{padding:16px 12px 60px}}
+</style>
+
+<main class="main-content">
+  <div class="gz-main">
+
+    <!-- Hero -->
+    <div class="gz-hero">
+      <div class="gz-hero-title">🎮 Game Zone</div>
+      <div class="gz-hero-sub">Play fun multiplayer games with classmates, teachers & staff. Relax, compete, have fun!</div>
+      <div class="gz-hero-stats">
+        <div class="gz-stat-pill">
+          <div class="gz-stat-val">8</div>
+          <div class="gz-stat-lbl">Games</div>
+        </div>
+        <div class="gz-stat-pill">
+          <div class="gz-stat-val" id="live-count" th:text="${#lists.size(openRooms)}">0</div>
+          <div class="gz-stat-lbl">Live Rooms</div>
+        </div>
+        <div class="gz-stat-pill">
+          <div class="gz-stat-val">∞</div>
+          <div class="gz-stat-lbl">Fun Guaranteed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick join -->
+    <div class="gz-join-bar">
+      <div class="gz-join-label">
+        <div class="gz-join-label-title">Have a room code?</div>
+        <div class="gz-join-label-sub">Enter the 6-letter code your friend shared</div>
+      </div>
+      <input id="quick-code" class="gz-code-input" placeholder="ABCDEF" maxlength="6"
+             oninput="this.value=this.value.toUpperCase()"
+             onkeydown="if(event.key==='Enter')quickJoin()"/>
+      <button class="gz-main-btn" onclick="quickJoin()">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Join Room
+      </button>
+    </div>
+
+    <!-- Games Grid -->
+    <div class="gz-section">🕹 Choose a Game</div>
+    <div class="gz-grid">
+
+      <div class="gz-card">
+        <span class="gz-badge gz-badge-hot">🔥 HOT</span>
+        <div class="gz-card-banner gz-banner-typing">🏎️</div>
+        <div class="gz-card-body">
+          <div class="gz-card-name">Typing Racer</div>
+          <div class="gz-card-desc">Race to type passages faster than opponents. Earn WPM speed, use nitro boosts, unlock trophies.</div>
+          <div class="gz-card-meta">
+            <span class="gz-pill">👥 2–8 players</span>
+            <span class="gz-pill amber">⚡ Speed</span>
+          </div>
+          <div class="gz-card-actions">
+            <button class="gz-btn-create" onclick="createRoom('TYPING_RACER')">+ Create</button>
+            <button class="gz-btn-join"   onclick="showRooms('TYPING_RACER','🏎️ Typing Racer')">Browse</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="gz-card">
+        <div class="gz-card-banner gz-banner-chess">♟️</div>
+        <div class="gz-card-body">
+          <div class="gz-card-name">Chess</div>
+          <div class="gz-card-desc">Classic chess with full legal move validation, check/checkmate detection, timers and move history.</div>
+          <div class="gz-card-meta">
+            <span class="gz-pill">👥 2 players</span>
+            <span class="gz-pill amber">🧠 Strategy</span>
+          </div>
+          <div class="gz-card-actions">
+            <button class="gz-btn-create" onclick="createRoom('CHESS')">+ Create</button>
+            <button class="gz-btn-join"   onclick="showRooms('CHESS','♟️ Chess')">Browse</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="gz-card">
+        <div class="gz-card-banner gz-banner-tetris">🟪</div>
+        <div class="gz-card-body">
+          <div class="gz-card-name">Battle Tetris</div>
+          <div class="gz-card-desc">Competitive Tetris — clear 2+ lines to send garbage rows to opponents. Last standing wins!</div>
+          <div class="gz-card-meta">
+            <span class="gz-pill">👥 2–4 players</span>
+            <span class="gz-pill amber">⚡ Intense</span>
+          </div>
+          <div class="gz-card-actions">
+            <button class="gz-btn-create" onclick="createRoom('TETRIS')">+ Create</button>
+            <button class="gz-btn-join"   onclick="showRooms('TETRIS','🟪 Battle Tetris')">Browse</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="gz-card">
+        <div class="gz-card-banner gz-banner-wordle">🟩</div>
+        <div class="gz-card-body">
+          <div class="gz-card-name">Wordle Race</div>
+          <div class="gz-card-desc">Everyone guesses the same 5-letter word. Fewest attempts wins. See opponents' progress live!</div>
+          <div class="gz-card-meta">
+            <span class="gz-pill">👥 2–8 players</span>
+            <span class="gz-pill green">🔤 Word skill</span>
+          </div>
+          <div class="gz-card-actions">
+            <button class="gz-btn-create" onclick="createRoom('WORDLE')">+ Create</button>
+            <button class="gz-btn-join"   onclick="showRooms('WORDLE','🟩 Wordle Race')">Browse</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="gz-card">
+        <div class="gz-card-banner gz-banner-sudoku">🔢</div>
+        <div class="gz-card-body">
+          <div class="gz-card-name">Sudoku Race</div>
+          <div class="gz-card-desc">Same puzzle for everyone. Race to be first to solve the Sudoku. Watch opponent progress in real time.</div>
+          <div class="gz-card-meta">
+            <span class="gz-pill">👥 2–4 players</span>
+            <span class="gz-pill amber">🧩 Puzzle</span>
+          </div>
+          <div class="gz-card-actions">
+            <button class="gz-btn-create" onclick="createRoom('SUDOKU')">+ Create</button>
+            <button class="gz-btn-join"   onclick="showRooms('SUDOKU','🔢 Sudoku Race')">Browse</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="gz-card">
+        <span class="gz-badge gz-badge-new">✨ NEW</span>
+        <div class="gz-card-banner gz-banner-draw">🎨</div>
+        <div class="gz-card-body">
+          <div class="gz-card-name">Draw & Guess</div>
+          <div class="gz-card-desc">Draw a word while others guess it! Classic Skribbl-style party game — hilarious and creative.</div>
+          <div class="gz-card-meta">
+            <span class="gz-pill">👥 3–12 players</span>
+            <span class="gz-pill green">🎭 Creative</span>
+          </div>
+          <div class="gz-card-actions">
+            <button class="gz-btn-create" onclick="createRoom('DRAW_GUESS')">+ Create</button>
+            <button class="gz-btn-join"   onclick="showRooms('DRAW_GUESS','🎨 Draw & Guess')">Browse</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="gz-card">
+        <div class="gz-card-banner gz-banner-mafia">🕵️</div>
+        <div class="gz-card-body">
+          <div class="gz-card-name">Mafia</div>
+          <div class="gz-card-desc">Social deduction! Mafia hides among villagers. Day: vote suspects. Night: mafia strikes. Who wins?</div>
+          <div class="gz-card-meta">
+            <span class="gz-pill">👥 4–16 players</span>
+            <span class="gz-pill amber">🎭 Social</span>
+          </div>
+          <div class="gz-card-actions">
+            <button class="gz-btn-create" onclick="createRoom('MAFIA')">+ Create</button>
+            <button class="gz-btn-join"   onclick="showRooms('MAFIA','🕵️ Mafia')">Browse</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="gz-card">
+        <span class="gz-badge gz-badge-hot">🔥 HOT</span>
+        <div class="gz-card-banner gz-banner-uno">🃏</div>
+        <div class="gz-card-body">
+          <div class="gz-card-name">UNO</div>
+          <div class="gz-card-desc">The classic card game! Match colors & numbers, play action cards, and yell UNO before your last card!</div>
+          <div class="gz-card-meta">
+            <span class="gz-pill">👥 2–8 players</span>
+            <span class="gz-pill green">🃏 Cards</span>
+          </div>
+          <div class="gz-card-actions">
+            <button class="gz-btn-create" onclick="createRoom('UNO')">+ Create</button>
+            <button class="gz-btn-join"   onclick="showRooms('UNO','🃏 UNO')">Browse</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Open Rooms -->
+    <div class="gz-section">🟢 Open Rooms</div>
+    <div class="gz-table-wrap">
+      <div th:if="${#lists.isEmpty(openRooms)}" class="gz-table-empty">
+        No open rooms right now — create one and invite friends! 🎮
+      </div>
+      <table class="gz-table" th:unless="${#lists.isEmpty(openRooms)}">
+        <thead><tr>
+          <th>Game</th><th>Host</th><th>Players</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody>
+        <tr th:each="room : ${openRooms}">
+          <td>
+            <span th:switch="${room.gameType.name()}">
+              <b th:case="'TYPING_RACER'">🏎️ Typing Racer</b>
+              <b th:case="'CHESS'">♟️ Chess</b>
+              <b th:case="'TETRIS'">🟪 Battle Tetris</b>
+              <b th:case="'WORDLE'">🟩 Wordle</b>
+              <b th:case="'SUDOKU'">🔢 Sudoku</b>
+              <b th:case="'DRAW_GUESS'">🎨 Draw &amp; Guess</b>
+              <b th:case="'MAFIA'">🕵️ Mafia</b>
+              <b th:case="*">🃏 UNO</b>
+            </span>
+          </td>
+          <td th:text="${room.playerList()[0].name}">Host</td>
+          <td>
+            <span class="gz-dot-green"></span>
+            <span th:text="${room.playerCount()} + ' / ' + ${room.maxPlayers}">0/8</span>
+          </td>
+          <td style="color:#22c55e;font-weight:600">Waiting</td>
+          <td>
+            <a th:href="@{/games/room/{c}(c=${room.code})}" class="gz-join-link">Join →</a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</main>
+
+<!-- Browse Rooms Modal -->
+<div class="gz-modal-bg" id="rooms-modal">
+  <div class="gz-modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div class="gz-modal-title" id="rooms-modal-title">Open Rooms</div>
+        <div class="gz-modal-sub" id="rooms-modal-sub" style="margin-bottom:0">Loading…</div>
+      </div>
+      <button onclick="closeModal()" style="background:var(--bg);border:1.5px solid var(--border);color:var(--navy);border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div id="rooms-modal-list" style="margin-bottom:16px;max-height:280px;overflow-y:auto">
+      <div style="text-align:center;color:#8a91a8;padding:24px;font-size:13px">Loading…</div>
+    </div>
+    <div class="gz-modal-row">
+      <button class="gz-modal-btn" id="rooms-create-btn">+ Create New Room</button>
+      <button class="gz-modal-btn sec" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  const CSRF = document.querySelector('meta[name="_csrf"]')?.content
+          || document.cookie.split(';').find(c=>c.trim().startsWith('XSRF-TOKEN='))?.split('=')[1] || '';
+  const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+
+  async function createRoom(type) {
+    try {
+      const r = await fetch('/games/create', {
+        method:'POST',
+        headers:{'Content-Type':'application/json',[CSRF_HEADER]:CSRF},
+        body:JSON.stringify({gameType:type})
+      });
+      if (!r.ok) throw new Error('Server error ' + r.status);
+      const d = await r.json();
+      window.location.href = '/games/room/' + d.code;
+    } catch(e) { alert('Could not create room. Please try again.'); }
+  }
+
+  async function showRooms(type, label) {
+    document.getElementById('rooms-modal-title').textContent = label;
+    document.getElementById('rooms-modal-sub').textContent = 'Open rooms you can join right now';
+    document.getElementById('rooms-create-btn').onclick = () => { closeModal(); createRoom(type); };
+    document.getElementById('rooms-modal').classList.add('open');
+    document.getElementById('rooms-modal-list').innerHTML =
+            '<div style="text-align:center;color:#8a91a8;padding:24px;font-size:13px">Loading…</div>';
+
+    try {
+      const r = await fetch('/games/open/' + type);
+      const rooms = await r.json();
+      if (!rooms.length) {
+        document.getElementById('rooms-modal-list').innerHTML =
+                '<div style="text-align:center;color:#8a91a8;padding:24px;font-size:13px">No open rooms. Be the first — create one!</div>';
+        return;
+      }
+      document.getElementById('rooms-modal-list').innerHTML = rooms.map(room => `
+            <div class="gz-room-row">
+                <div class="gz-room-row-info">
+                    <div class="gz-room-row-name">${esc(room.host)}'s Room</div>
+                    <div class="gz-room-row-sub"><span class="gz-dot-green"></span>${room.players}/${room.max} players</div>
+                </div>
+                <a href="/games/room/${room.code}" class="gz-join-link">Join →</a>
+            </div>`).join('');
+    } catch(e) {
+      document.getElementById('rooms-modal-list').innerHTML =
+              '<div style="text-align:center;color:#c0392b;padding:24px;font-size:13px">Could not load rooms.</div>';
+    }
+  }
+
+  function closeModal() { document.getElementById('rooms-modal').classList.remove('open'); }
+
+  function quickJoin() {
+    const v = document.getElementById('quick-code').value.trim().toUpperCase();
+    if (v.length < 3) { document.getElementById('quick-code').focus(); return; }
+    window.location.href = '/games/room/' + v;
+  }
+
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  document.getElementById('rooms-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('rooms-modal')) closeModal();
+  });
+  document.getElementById('quick-code').addEventListener('keydown', e => {
+    if (e.key === 'Enter') quickJoin();
+  });
+  /*]]>*/
+</script>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

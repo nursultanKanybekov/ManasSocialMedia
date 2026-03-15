@@ -40,6 +40,7 @@ public class GamificationService {
     private static final int PTS_QUIZ         = 20;
     private static final int PTS_JOB_HELP     = 5;
     private static final int PTS_LOGIN        = 2;
+    private static final int PTS_GAME_WIN     = 5;
 
     /**
      * Award points asynchronously so HTTP requests are not blocked.
@@ -98,6 +99,7 @@ public class GamificationService {
             case QUIZ          -> PTS_QUIZ;
             case JOB_HELP      -> PTS_JOB_HELP;
             case LOGIN         -> PTS_LOGIN;
+            case GAME_WIN      -> PTS_GAME_WIN;
             default -> throw new IllegalArgumentException("Unknown point reason: " + reason);
         };
     }
@@ -130,15 +132,14 @@ public class GamificationService {
 
     private boolean isEligible(AppUser user, Badge badge, int totalPoints) {
         return switch (badge.getCode()) {
-            case "FIRST_POST"    ->
-                    pointRepo.countByUserAndReason(user, PointReason.POST) >= 1;
-            case "ACTIVE_MEMBER" ->
-                    totalPoints >= 100;
-            case "MENTOR_STAR"   ->
-                    pointRepo.countByUserAndReason(user, PointReason.MENTOR) >= 3;
-            case "NETWORKER"     ->
-                    pointRepo.countByUserAndReason(user, PointReason.COMMENT) >= 50;
-            case "TOP_100"       -> {
+            case "FIRST_POST"       -> pointRepo.countByUserAndReason(user, PointReason.POST) >= 1;
+            case "ACTIVE_MEMBER"    -> totalPoints >= 100;
+            case "MENTOR_STAR"      -> pointRepo.countByUserAndReason(user, PointReason.MENTOR) >= 3;
+            case "NETWORKER"        -> pointRepo.countByUserAndReason(user, PointReason.COMMENT) >= 50;
+            case "FIRST_GAME_WIN"   -> pointRepo.countByUserAndReason(user, PointReason.GAME_WIN) >= 1;
+            case "GAME_CHAMPION"    -> pointRepo.countByUserAndReason(user, PointReason.GAME_WIN) >= 10;
+            case "QUIZ_MASTER"      -> pointRepo.countByUserAndReason(user, PointReason.QUIZ_PASS) >= 5;
+            case "TOP_100"          -> {
                 Profile p = user.getProfile();
                 yield p != null && p.getRankPosition() != null && p.getRankPosition() <= 100;
             }

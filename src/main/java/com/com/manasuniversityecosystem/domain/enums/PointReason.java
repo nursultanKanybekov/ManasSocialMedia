@@ -7,5 +7,5 @@ public enum PointReason {
     MENTOR,
     QUIZ,
     JOB_HELP,
-    LOGIN, QUIZ_PASS
+    LOGIN, QUIZ_PASS, GAME_WIN
 }

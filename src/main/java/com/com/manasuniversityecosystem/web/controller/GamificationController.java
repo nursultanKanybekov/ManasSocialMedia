@@ -40,12 +40,12 @@ public class GamificationController {
 
     // Level thresholds: index = level, value = XP required to reach it
     private static final int[] LEVEL_THRESHOLDS = {
-        0, 100, 250, 500, 1000, 2000, 3500, 5000, 7500, 10000, 15000, 20000, 30000
+            0, 100, 250, 500, 1000, 2000, 3500, 5000, 7500, 10000, 15000, 20000, 30000
     };
     private static final String[] LEVEL_TITLES = {
-        "Newcomer", "Beginner", "Explorer", "Active",
-        "Engaged", "Dedicated", "Experienced", "Expert",
-        "Master", "Champion", "Legend", "Elite", "Pioneer"
+            "Newcomer", "Beginner", "Explorer", "Active",
+            "Engaged", "Dedicated", "Experienced", "Expert",
+            "Master", "Champion", "Legend", "Elite", "Pioneer"
     };
 
     /* ─────────────────── MAIN GAMING PAGE ─────────────────── */
@@ -85,8 +85,10 @@ public class GamificationController {
             }
         }
 
-        // Total wins (quiz completions = wins here)
-        long wins = pointTransactionRepository.countByUserAndReason(user, PointReason.QUIZ);
+        // Total wins: game wins + quiz completions
+        long wins = pointTransactionRepository.countByUserAndReason(user, PointReason.GAME_WIN)
+                + pointTransactionRepository.countByUserAndReason(user, PointReason.QUIZ)
+                + pointTransactionRepository.countByUserAndReason(user, PointReason.QUIZ_PASS);
 
         model.addAttribute("currentUser",  user);
         model.addAttribute("profile",      profile);
@@ -166,22 +168,34 @@ public class GamificationController {
         }
     }
 
-    /** Mini-game points award endpoint */
+    /** Mini-game points award endpoint (for mini-games on gaming page) */
     @PostMapping("/award-game-points")
     @ResponseBody
-    public ResponseEntity<java.util.Map<String,Object>> awardGamePoints(
-            @RequestBody java.util.Map<String,Object> body,
-            @org.springframework.security.core.annotation.AuthenticationPrincipal com.com.manasuniversityecosystem.security.UserDetailsImpl principal) {
+    public ResponseEntity<Map<String,Object>> awardGamePoints(
+            @RequestBody Map<String,Object> body,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
-            String game = (String) body.getOrDefault("game", "MINI_GAME");
-            int pts = Integer.parseInt(body.getOrDefault("points", 5).toString());
-            // Cap at 50 pts per game call to prevent abuse
-            pts = Math.min(pts, 50);
-            com.com.manasuniversityecosystem.domain.entity.AppUser user = userService.getById(principal.getId());
-            gamificationService.awardPoints(user, com.com.manasuniversityecosystem.domain.enums.PointReason.QUIZ_PASS, null);
-            return ResponseEntity.ok(java.util.Map.of("success", true, "points", pts));
+            AppUser user = userService.getById(principal.getId());
+            gamificationService.awardPoints(user, PointReason.QUIZ_PASS, null);
+            int currentPts = user.getProfile() != null ? user.getProfile().getTotalPoints() : 0;
+            return ResponseEntity.ok(Map.of("success", true, "totalPoints", currentPts));
         } catch (Exception e) {
-            return ResponseEntity.ok(java.util.Map.of("success", false));
+            return ResponseEntity.ok(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    /** Multiplayer game win — awards 5 rating points to winner */
+    @PostMapping("/award-game-win")
+    @ResponseBody
+    public ResponseEntity<Map<String,Object>> awardGameWin(
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        try {
+            AppUser user = userService.getById(principal.getId());
+            gamificationService.awardPoints(user, PointReason.GAME_WIN, null);
+            int newTotal = user.getProfile() != null ? user.getProfile().getTotalPoints() + 5 : 5;
+            return ResponseEntity.ok(Map.of("success", true, "pointsAwarded", 5, "totalPoints", newTotal));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("success", false, "error", e.getMessage()));
         }
     }
 
