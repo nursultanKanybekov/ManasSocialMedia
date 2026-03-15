@@ -47,6 +47,8 @@ app:
     cloud-name: dpkxkjwmy
     api-key: 952176747147999
     api-secret: CcGE7JYPNbPxTMkxi5gSK3vri9E
+  gemini:
+    api-key: AIzaSyBLxoCfHZ-OICAlVy3pA30JeViAXG-4-To
   # On Render: set APP_BASE_URL env var to https://your-app-name.onrender.com
   # This enables the keep-alive self-ping that prevents cold starts.
   base-url: ${APP_BASE_URL:http://localhost:8081}

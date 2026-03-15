@@ -147,7 +147,7 @@
             </div>
             <div class="games-grid">
                 <!-- Quiz -->
-                <a th:href="@{/edu}" class="game-card" style="text-decoration:none;">
+                <a th:href="@{/quiz}" class="game-card" style="text-decoration:none;">
                     <div class="game-header" style="background:linear-gradient(135deg,#7C3AED 0%,#A855F7 100%);">
                         <svg width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.5">
                             <polyline points="9,11 12,14 22,4"/>
@@ -349,256 +349,97 @@
     </div>
 
 
-    <!-- ===== INTERACTIVE MINI GAMES ===== -->
+    <!-- MINI GAMES CARDS -->
     <div class="section-title" style="margin-top:32px;">
-        <span class="bar"></span> 🎮 Mini Games — Play &amp; Earn Points
+        <span class="bar"></span> 🎮 Mini Games &mdash; Play &amp; Earn Points
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;margin-bottom:32px;">
-
-        <!-- MATH CHALLENGE -->
-        <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(27,42,107,0.08);overflow:hidden;">
-            <div style="background:linear-gradient(135deg,#7C3AED,#A855F7);padding:18px 20px;color:white;">
-                <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;">🔢 Math Challenge</div>
-                <div style="font-size:12px;opacity:.85;margin-top:4px;">Solve as many as you can in 30 seconds! +15 pts per round</div>
+    <div class="games-grid" style="margin-bottom:32px;">
+        <a href="#" class="game-card" style="text-decoration:none;" onclick="openMiniGame('math'); return false;">
+            <div class="game-header" style="background:linear-gradient(135deg,#7C3AED 0%,#A855F7 100%);">
+                <svg width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </div>
-            <div style="padding:20px;">
-                <div id="math-display" style="text-align:center;font-family:Montserrat,sans-serif;font-weight:800;font-size:32px;color:#1b2a6b;margin-bottom:14px;">Press Start!</div>
-                <div style="display:flex;gap:10px;margin-bottom:12px;">
-                    <input id="math-input" type="number" placeholder="Your answer"
-                           style="flex:1;padding:10px 14px;border:2px solid #e0e3ef;border-radius:10px;font-size:16px;text-align:center;outline:none;"
-                           onkeydown="if(event.key==='Enter')checkMath()"
-                           disabled/>
-                    <button onclick="checkMath()" id="math-submit-btn" disabled
-                            style="padding:10px 18px;background:#7C3AED;color:white;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;">✓</button>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                    <div style="font-size:13px;color:#8a91a8;">Score: <strong id="math-score">0</strong></div>
-                    <div style="font-size:13px;color:#8a91a8;">Time: <strong id="math-timer">30</strong>s</div>
-                </div>
-                <div id="math-feedback" style="font-size:13px;text-align:center;height:18px;font-weight:600;"></div>
-                <div style="display:flex;gap:10px;margin-top:12px;">
-                    <button onclick="startMathGame()" id="math-start-btn"
-                            style="flex:1;padding:10px;background:linear-gradient(135deg,#7C3AED,#A855F7);color:white;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;">🚀 Start Game</button>
-                </div>
+            <div class="game-body"><div class="game-title">Math Challenge</div><div class="game-desc">Solve math problems in 30 seconds. +15 pts per round.</div></div>
+            <div class="game-footer"><span class="badge badge-purple">+15 pts</span><span class="btn btn-primary btn-sm">Play</span></div>
+        </a>
+        <a href="#" class="game-card" style="text-decoration:none;" onclick="openMiniGame('word'); return false;">
+            <div class="game-header" style="background:linear-gradient(135deg,#0891B2 0%,#06B6D4 100%);">
+                <svg width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.5"><path d="M4 7h16M4 12h10M4 17h6"/></svg>
             </div>
-        </div>
-
-        <!-- WORD SCRAMBLE -->
-        <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(27,42,107,0.08);overflow:hidden;">
-            <div style="background:linear-gradient(135deg,#0891B2,#06B6D4);padding:18px 20px;color:white;">
-                <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;">🔤 Word Scramble</div>
-                <div style="font-size:12px;opacity:.85;margin-top:4px;">Unscramble the word before time runs out! +10 pts per word</div>
+            <div class="game-body"><div class="game-title">Word Scramble</div><div class="game-desc">Unscramble words before time runs out. +10 pts per word.</div></div>
+            <div class="game-footer"><span class="badge badge-navy">+10 pts</span><span class="btn btn-primary btn-sm">Play</span></div>
+        </a>
+        <a href="#" class="game-card" style="text-decoration:none;" onclick="openMiniGame('memory'); return false;">
+            <div class="game-header" style="background:linear-gradient(135deg,#059669 0%,#10B981 100%);">
+                <svg width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.5"><rect x="2" y="3" width="9" height="9" rx="1"/><rect x="13" y="3" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
             </div>
-            <div style="padding:20px;">
-                <div id="word-scrambled" style="text-align:center;font-family:Montserrat,sans-serif;font-weight:800;font-size:28px;color:#1b2a6b;letter-spacing:4px;margin-bottom:8px;">Press Start!</div>
-                <div id="word-hint" style="text-align:center;font-size:12px;color:#8a91a8;margin-bottom:14px;"></div>
-                <div style="display:flex;gap:10px;margin-bottom:12px;">
-                    <input id="word-input" type="text" placeholder="Type the word..."
-                           style="flex:1;padding:10px 14px;border:2px solid #e0e3ef;border-radius:10px;font-size:14px;outline:none;text-transform:uppercase;"
-                           onkeydown="if(event.key==='Enter')checkWord()"
-                           disabled/>
-                    <button onclick="checkWord()" id="word-submit-btn" disabled
-                            style="padding:10px 18px;background:#0891B2;color:white;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;">✓</button>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                    <div style="font-size:13px;color:#8a91a8;">Score: <strong id="word-score">0</strong></div>
-                    <div style="font-size:13px;color:#8a91a8;">Time: <strong id="word-timer">60</strong>s</div>
-                </div>
-                <div id="word-feedback" style="font-size:13px;text-align:center;height:18px;font-weight:600;"></div>
-                <button onclick="startWordGame()" id="word-start-btn"
-                        style="width:100%;margin-top:12px;padding:10px;background:linear-gradient(135deg,#0891B2,#06B6D4);color:white;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;">🚀 Start Game</button>
-            </div>
-        </div>
-
-        <!-- MEMORY CARD GAME -->
-        <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(27,42,107,0.08);overflow:hidden;">
-            <div style="background:linear-gradient(135deg,#059669,#10B981);padding:18px 20px;color:white;">
-                <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;">🃏 Memory Match</div>
-                <div style="font-size:12px;opacity:.85;margin-top:4px;">Match all pairs with fewest moves! +20 pts per game won</div>
-            </div>
-            <div style="padding:20px;">
-                <div id="memory-board" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;min-height:160px;align-content:center;">
-                    <div style="text-align:center;color:#8a91a8;font-size:13px;grid-column:1/-1;padding:30px 0;">Press Start to play!</div>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                    <div style="font-size:13px;color:#8a91a8;">Moves: <strong id="mem-moves">0</strong></div>
-                    <div style="font-size:13px;color:#8a91a8;">Pairs: <strong id="mem-pairs">0</strong>/8</div>
-                </div>
-                <div id="memory-feedback" style="font-size:13px;text-align:center;height:18px;font-weight:600;"></div>
-                <button onclick="startMemoryGame()" id="mem-start-btn"
-                        style="width:100%;margin-top:10px;padding:10px;background:linear-gradient(135deg,#059669,#10B981);color:white;border:none;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;">🚀 Start Game</button>
-            </div>
-        </div>
+            <div class="game-body"><div class="game-title">Memory Match</div><div class="game-desc">Match all pairs with fewest moves. +20 pts per game won.</div></div>
+            <div class="game-footer"><span class="badge badge-green">+20 pts</span><span class="btn btn-primary btn-sm">Play</span></div>
+        </a>
     </div>
 
-    <script>
-        // ===== MATH GAME =====
-        let mathInterval, mathScore = 0, mathA, mathB, mathOp;
-        function genMath() {
-            const ops = ['+', '-', '*'];
-            mathOp = ops[Math.floor(Math.random() * 3)];
-            mathA = Math.floor(Math.random() * (mathOp === '*' ? 12 : 50)) + 1;
-            mathB = Math.floor(Math.random() * (mathOp === '*' ? 12 : (mathOp === '-' ? mathA : 50))) + 1;
-            if (mathOp === '-' && mathB > mathA) [mathA, mathB] = [mathB, mathA];
-            document.getElementById('math-display').textContent = mathA + ' ' + mathOp + ' ' + mathB + ' = ?';
-        }
-        function startMathGame() {
-            mathScore = 0; document.getElementById('math-score').textContent = 0;
-            let t = 30; document.getElementById('math-timer').textContent = t;
-            document.getElementById('math-input').disabled = false;
-            document.getElementById('math-submit-btn').disabled = false;
-            document.getElementById('math-start-btn').disabled = true;
-            document.getElementById('math-input').focus();
-            genMath();
-            mathInterval = setInterval(() => {
-                t--;
-                document.getElementById('math-timer').textContent = t;
-                if (t <= 0) {
-                    clearInterval(mathInterval);
-                    document.getElementById('math-display').textContent = '⏱️ Time's up! Score: ' + mathScore;
-                    document.getElementById('math-input').disabled = true;
-                    document.getElementById('math-submit-btn').disabled = true;
-                    document.getElementById('math-start-btn').disabled = false;
-                    if (mathScore > 0) awardGamePoints('MATH_GAME', mathScore * 2);
-                }
-            }, 1000);
-        }
-        function checkMath() {
-            const inp = document.getElementById('math-input');
-            const ans = parseInt(inp.value);
-            let correct;
-            if (mathOp === '+') correct = mathA + mathB;
-            else if (mathOp === '-') correct = mathA - mathB;
-            else correct = mathA * mathB;
-            const fb = document.getElementById('math-feedback');
-            if (ans === correct) { mathScore++; document.getElementById('math-score').textContent = mathScore; fb.style.color='#28a745'; fb.textContent='✅ Correct! +1'; genMath(); }
-            else { fb.style.color='#dc3545'; fb.textContent='❌ Wrong! Answer was ' + correct; }
-            inp.value = '';
-            setTimeout(() => fb.textContent = '', 800);
-        }
-
-        // ===== WORD GAME =====
-        const words = [
-            {w:'ALGORITHM',h:'Computer Science'},{w:'UNIVERSITY',h:'Education'},{w:'GRADUATE',h:'Academic'},
-            {w:'FACULTY',h:'Education'},{w:'RESEARCH',h:'Academic'},{w:'TECHNOLOGY',h:'Field'},
-            {w:'LEADERSHIP',h:'Skill'},{w:'INNOVATION',h:'Concept'},{w:'COMMUNITY',h:'Social'},
-            {w:'KNOWLEDGE',h:'Learning'},{w:'NETWORK',h:'Career'},{w:'DIPLOMA',h:'Achievement'}
-        ];
-        let wordInterval, wordScore = 0, currentWord = '';
-        function scramble(w) { return w.split('').sort(() => Math.random() - .5).join(''); }
-        function newWord() {
-            const item = words[Math.floor(Math.random() * words.length)];
-            currentWord = item.w;
-            let sc = scramble(currentWord);
-            while (sc === currentWord) sc = scramble(currentWord);
-            document.getElementById('word-scrambled').textContent = sc;
-            document.getElementById('word-hint').textContent = '💡 Category: ' + item.h;
-        }
-        function startWordGame() {
-            wordScore = 0; document.getElementById('word-score').textContent = 0;
-            let t = 60; document.getElementById('word-timer').textContent = t;
-            document.getElementById('word-input').disabled = false;
-            document.getElementById('word-submit-btn').disabled = false;
-            document.getElementById('word-start-btn').disabled = true;
-            document.getElementById('word-input').focus();
-            newWord();
-            wordInterval = setInterval(() => {
-                t--; document.getElementById('word-timer').textContent = t;
-                if (t <= 0) {
-                    clearInterval(wordInterval);
-                    document.getElementById('word-scrambled').textContent = '⏱️ Done! Score: ' + wordScore;
-                    document.getElementById('word-input').disabled = true;
-                    document.getElementById('word-submit-btn').disabled = true;
-                    document.getElementById('word-start-btn').disabled = false;
-                    if (wordScore > 0) awardGamePoints('WORD_GAME', wordScore * 3);
-                }
-            }, 1000);
-        }
-        function checkWord() {
-            const inp = document.getElementById('word-input');
-            const ans = inp.value.trim().toUpperCase();
-            const fb = document.getElementById('word-feedback');
-            if (ans === currentWord) { wordScore++; document.getElementById('word-score').textContent = wordScore; fb.style.color='#28a745'; fb.textContent='✅ Correct! +1'; newWord(); }
-            else { fb.style.color='#dc3545'; fb.textContent='❌ Try again!'; }
-            inp.value = '';
-            setTimeout(() => fb.textContent = '', 800);
-        }
-
-        // ===== MEMORY GAME =====
-        const emojis = ['🦁','🐯','🦊','🐼','🐸','🦋','🌺','⭐'];
-        let memCards = [], memFlipped = [], memMoves = 0, memPairs = 0, memLock = false;
-        function startMemoryGame() {
-            const board = document.getElementById('memory-board');
-            const cards = [...emojis, ...emojis].sort(() => Math.random() - .5);
-            memCards = []; memFlipped = []; memMoves = 0; memPairs = 0; memLock = false;
-            document.getElementById('mem-moves').textContent = 0;
-            document.getElementById('mem-pairs').textContent = 0;
-            document.getElementById('memory-feedback').textContent = '';
-            document.getElementById('mem-start-btn').textContent = '🔄 Restart';
-            board.innerHTML = '';
-            cards.forEach((emoji, idx) => {
-                const card = document.createElement('div');
-                card.style.cssText = 'height:56px;background:#e8eaf6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .2s;user-select:none;';
-                card.dataset.emoji = emoji;
-                card.dataset.idx = idx;
-                card.dataset.flipped = 'false';
-                card.textContent = '?';
-                card.addEventListener('click', () => flipCard(card));
-                board.appendChild(card);
-                memCards.push(card);
-            });
-        }
-        function flipCard(card) {
-            if (memLock || card.dataset.flipped === 'true' || memFlipped.length === 2) return;
-            card.textContent = card.dataset.emoji;
-            card.style.background = 'linear-gradient(135deg,#1b2a6b,#2d4a9e)';
-            card.style.color = 'white';
-            card.dataset.flipped = 'true';
-            memFlipped.push(card);
-            if (memFlipped.length === 2) {
-                memMoves++; document.getElementById('mem-moves').textContent = memMoves;
-                memLock = true;
-                if (memFlipped[0].dataset.emoji === memFlipped[1].dataset.emoji) {
-                    memPairs++; document.getElementById('mem-pairs').textContent = memPairs;
-                    memFlipped.forEach(c => { c.style.background = 'linear-gradient(135deg,#059669,#10B981)'; c.style.cursor = 'default'; });
-                    memFlipped = []; memLock = false;
-                    if (memPairs === 8) {
-                        document.getElementById('memory-feedback').style.color = '#28a745';
-                        document.getElementById('memory-feedback').textContent = '🎉 You won! Points awarded!';
-                        awardGamePoints('MEMORY_GAME', 20);
-                    }
-                } else {
-                    setTimeout(() => {
-                        memFlipped.forEach(c => { c.textContent = '?'; c.style.background = '#e8eaf6'; c.style.color = 'inherit'; c.dataset.flipped = 'false'; });
-                        memFlipped = []; memLock = false;
-                    }, 800);
-                }
+    <!-- Mini Game Modal -->
+    <div id="mg-overlay" onclick="if(event.target===this)closeMiniGame()"
+         style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.65);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:24px;width:100%;max-width:460px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.25);animation:mgIn .25s ease;">
+            <div id="mg-header" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;">
+                <div><div id="mg-title" style="font-family:Montserrat,sans-serif;font-weight:800;font-size:18px;color:#fff;"></div>
+                    <div id="mg-sub" style="font-size:12px;color:rgba(255,255,255,.8);margin-top:3px;"></div></div>
+                <button onclick="closeMiniGame()" style="background:rgba(255,255,255,.25);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;">&times;</button>
+            </div>
+            <div id="mg-body" style="padding:24px;"></div>
+        </div>
+    </div>
+    <style>@keyframes mgIn{from{opacity:0;transform:scale(.94) translateY(16px)}to{opacity:1;transform:none}}</style>
+    <script th:inline="none">
+        /*<![CDATA[*/
+        var mgTimer=null;
+        function openMiniGame(type){
+            clearInterval(mgTimer);mgTimer=null;
+            var ov=document.getElementById("mg-overlay"),hd=document.getElementById("mg-header"),
+                tt=document.getElementById("mg-title"),sb=document.getElementById("mg-sub"),bd=document.getElementById("mg-body");
+            ov.style.display="flex";
+            if(type==="math"){
+                hd.style.background="linear-gradient(135deg,#7C3AED,#A855F7)";
+                tt.textContent="Math Challenge";sb.textContent="Solve as many as you can in 30 seconds!";
+                bd.innerHTML='<div id="math-display" style="text-align:center;font-family:Montserrat,sans-serif;font-weight:800;font-size:36px;color:#1b2a6b;margin-bottom:20px;">Press Start!</div>'
+                    +'<div style="display:flex;gap:10px;margin-bottom:14px;"><input id="math-input" type="number" placeholder="Your answer" style="flex:1;padding:12px 16px;border:2px solid #e0e3ef;border-radius:12px;font-size:18px;text-align:center;outline:none;" onkeydown="if(event.key===&quot;Enter&quot;)checkMath()" disabled/><button onclick="checkMath()" id="math-submit-btn" disabled style="padding:12px 20px;background:#7C3AED;color:white;border:none;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;">OK</button></div>'
+                    +'<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:14px;color:#64748b;">Score: <strong id="math-score">0</strong></span><span style="font-size:14px;color:#64748b;">Time: <strong id="math-timer">30</strong>s</span></div>'
+                    +'<div id="math-feedback" style="font-size:13px;text-align:center;height:20px;font-weight:600;margin-bottom:14px;"></div>'
+                    +'<button onclick="startMathGame()" id="math-start-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,#7C3AED,#A855F7);color:white;border:none;border-radius:12px;font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;cursor:pointer;">Start Game</button>';
+            } else if(type==="word"){
+                hd.style.background="linear-gradient(135deg,#0891B2,#06B6D4)";
+                tt.textContent="Word Scramble";sb.textContent="Unscramble the word before time runs out!";
+                bd.innerHTML='<div id="word-scrambled" style="text-align:center;font-family:Montserrat,sans-serif;font-weight:800;font-size:32px;color:#1b2a6b;letter-spacing:6px;margin-bottom:6px;">Press Start!</div>'
+                    +'<div id="word-hint" style="text-align:center;font-size:12px;color:#94a3b8;margin-bottom:16px;min-height:18px;"></div>'
+                    +'<div style="display:flex;gap:10px;margin-bottom:14px;"><input id="word-input" type="text" placeholder="TYPE THE WORD..." style="flex:1;padding:12px 16px;border:2px solid #e0e3ef;border-radius:12px;font-size:16px;outline:none;text-transform:uppercase;" onkeydown="if(event.key===&quot;Enter&quot;)checkWord()" disabled/><button onclick="checkWord()" id="word-submit-btn" disabled style="padding:12px 20px;background:#0891B2;color:white;border:none;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;">OK</button></div>'
+                    +'<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:14px;color:#64748b;">Score: <strong id="word-score">0</strong></span><span style="font-size:14px;color:#64748b;">Time: <strong id="word-timer">60</strong>s</span></div>'
+                    +'<div id="word-feedback" style="font-size:13px;text-align:center;height:20px;font-weight:600;margin-bottom:14px;"></div>'
+                    +'<button onclick="startWordGame()" id="word-start-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,#0891B2,#06B6D4);color:white;border:none;border-radius:12px;font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;cursor:pointer;">Start Game</button>';
+            } else if(type==="memory"){
+                hd.style.background="linear-gradient(135deg,#059669,#10B981)";
+                tt.textContent="Memory Match";sb.textContent="Match all pairs with fewest moves!";
+                bd.innerHTML='<div id="memory-board" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;min-height:150px;"><div style="grid-column:1/-1;text-align:center;color:#94a3b8;font-size:13px;padding:30px 0;">Press Start to play!</div></div>'
+                    +'<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:14px;color:#64748b;">Moves: <strong id="mem-moves">0</strong></span><span style="font-size:14px;color:#64748b;">Pairs: <strong id="mem-pairs">0</strong>/8</span></div>'
+                    +'<div id="memory-feedback" style="font-size:13px;text-align:center;height:20px;font-weight:600;margin-bottom:14px;"></div>'
+                    +'<button onclick="startMemoryGame()" id="mem-start-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,#059669,#10B981);color:white;border:none;border-radius:12px;font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;cursor:pointer;">Start Game</button>';
             }
         }
-
-        // Award points via HTMX/fetch (client-side notification only, actual points in game service)
-        function awardGamePoints(game, pts) {
-            fetch('/gamification/award-game-points', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'X-XSRF-TOKEN': getCsrfToken()},
-                body: JSON.stringify({game, points: pts})
-            }).catch(() => {});
-            // Show local celebration
-            const el = document.createElement('div');
-            el.style.cssText = 'position:fixed;top:80px;right:24px;background:linear-gradient(135deg,#059669,#10B981);color:white;padding:12px 20px;border-radius:12px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.15);animation:fadeOut 3s forwards;';
-            el.textContent = '🏆 +' + pts + ' pts earned from ' + game.replace('_',' ').toLowerCase() + '!';
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
-        function getCsrfToken() {
-            const m = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-            return m ? m[1] : '';
-        }
+        function closeMiniGame(){clearInterval(mgTimer);mgTimer=null;document.getElementById("mg-overlay").style.display="none";}
+        var mathScore=0,mathA,mathB,mathOp;
+        function genMath(){var ops=["+","-","*"];mathOp=ops[Math.floor(Math.random()*3)];mathA=Math.floor(Math.random()*(mathOp==="*"?12:50))+1;mathB=Math.floor(Math.random()*(mathOp==="*"?12:mathOp==="-"?mathA:50))+1;if(mathOp==="-"&&mathB>mathA){var t=mathA;mathA=mathB;mathB=t;}document.getElementById("math-display").textContent=mathA+" "+mathOp+" "+mathB+" = ?";}
+        function startMathGame(){mathScore=0;document.getElementById("math-score").textContent=0;var t=30;document.getElementById("math-timer").textContent=t;document.getElementById("math-input").disabled=false;document.getElementById("math-submit-btn").disabled=false;document.getElementById("math-start-btn").disabled=true;document.getElementById("math-input").focus();genMath();mgTimer=setInterval(function(){t--;document.getElementById("math-timer").textContent=t;if(t<=0){clearInterval(mgTimer);document.getElementById("math-display").textContent="Score: "+mathScore;document.getElementById("math-input").disabled=true;document.getElementById("math-submit-btn").disabled=true;document.getElementById("math-start-btn").disabled=false;if(mathScore>0)awardMiniPts(mathScore*2);}},1000);}
+        function checkMath(){var inp=document.getElementById("math-input");var ans=parseInt(inp.value);var correct=mathOp==="+"?mathA+mathB:mathOp==="-"?mathA-mathB:mathA*mathB;var fb=document.getElementById("math-feedback");if(ans===correct){mathScore++;document.getElementById("math-score").textContent=mathScore;fb.style.color="#10b981";fb.textContent="Correct! +1";genMath();}else{fb.style.color="#ef4444";fb.textContent="Wrong! Answer: "+correct;}inp.value="";setTimeout(function(){if(fb)fb.textContent="";},800);}
+        var WDS=[{w:"ALGORITHM",h:"Computer Science"},{w:"UNIVERSITY",h:"Education"},{w:"GRADUATE",h:"Academic"},{w:"FACULTY",h:"Education"},{w:"RESEARCH",h:"Academic"},{w:"TECHNOLOGY",h:"Field"},{w:"LEADERSHIP",h:"Skill"},{w:"INNOVATION",h:"Concept"},{w:"KNOWLEDGE",h:"Learning"},{w:"NETWORK",h:"Career"},{w:"DIPLOMA",h:"Achievement"},{w:"COMMUNITY",h:"Social"}];
+        var wordScore=0,curWord="";
+        function scramble(w){var s;do{s=w.split("").sort(function(){return Math.random()-.5;}).join("");}while(s===w);return s;}
+        function newWord(){var i=WDS[Math.floor(Math.random()*WDS.length)];curWord=i.w;document.getElementById("word-scrambled").textContent=scramble(curWord);document.getElementById("word-hint").textContent="Category: "+i.h;}
+        function startWordGame(){wordScore=0;document.getElementById("word-score").textContent=0;var t=60;document.getElementById("word-timer").textContent=t;document.getElementById("word-input").disabled=false;document.getElementById("word-submit-btn").disabled=false;document.getElementById("word-start-btn").disabled=true;document.getElementById("word-input").focus();newWord();mgTimer=setInterval(function(){t--;document.getElementById("word-timer").textContent=t;if(t<=0){clearInterval(mgTimer);document.getElementById("word-scrambled").textContent="Score: "+wordScore;document.getElementById("word-input").disabled=true;document.getElementById("word-submit-btn").disabled=true;document.getElementById("word-start-btn").disabled=false;if(wordScore>0)awardMiniPts(wordScore*3);}},1000);}
+        function checkWord(){var inp=document.getElementById("word-input");var ans=inp.value.trim().toUpperCase();var fb=document.getElementById("word-feedback");if(ans===curWord){wordScore++;document.getElementById("word-score").textContent=wordScore;fb.style.color="#10b981";fb.textContent="Correct! +1";newWord();}else{fb.style.color="#ef4444";fb.textContent="Try again!";}inp.value="";setTimeout(function(){if(fb)fb.textContent="";},800);}
+        var EMJ=["Lion","Tiger","Fox","Panda","Frog","Butterfly","Flower","Star"];
+        var EMJ_E=["🦁","🐯","🦊","🐼","🐸","🦋","🌺","⭐"];
+        var mCards=[],mFlipped=[],mMoves=0,mPairs=0,mLock=false;
+        function startMemoryGame(){var board=document.getElementById("memory-board");var pool=EMJ_E.concat(EMJ_E).sort(function(){return Math.random()-.5;});mCards=[];mFlipped=[];mMoves=0;mPairs=0;mLock=false;document.getElementById("mem-moves").textContent=0;document.getElementById("mem-pairs").textContent=0;document.getElementById("memory-feedback").textContent="";document.getElementById("mem-start-btn").textContent="Restart";board.innerHTML="";pool.forEach(function(e){var c=document.createElement("div");c.style.cssText="height:54px;background:#e8eaf6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .2s;user-select:none;";c.dataset.e=e;c.dataset.f="0";c.textContent="?";c.addEventListener("click",function(){flipMem(c);});board.appendChild(c);mCards.push(c);});}
+        function flipMem(c){if(mLock||c.dataset.f==="1"||mFlipped.length===2)return;c.textContent=c.dataset.e;c.style.background="linear-gradient(135deg,#1b2a6b,#2d4a9e)";c.style.color="white";c.dataset.f="1";mFlipped.push(c);if(mFlipped.length===2){mMoves++;document.getElementById("mem-moves").textContent=mMoves;mLock=true;if(mFlipped[0].dataset.e===mFlipped[1].dataset.e){mPairs++;document.getElementById("mem-pairs").textContent=mPairs;mFlipped.forEach(function(x){x.style.background="linear-gradient(135deg,#059669,#10B981)";x.style.cursor="default";});mFlipped=[];mLock=false;if(mPairs===8){var fb=document.getElementById("memory-feedback");fb.style.color="#10b981";fb.textContent="You won! Points awarded!";awardMiniPts(20);}}else{setTimeout(function(){mFlipped.forEach(function(x){x.textContent="?";x.style.background="#e8eaf6";x.style.color="inherit";x.dataset.f="0";});mFlipped=[];mLock=false;},800);}}}
+        function awardMiniPts(pts){fetch("/award-game-points",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).catch(function(){});var el=document.createElement("div");el.style.cssText="position:fixed;top:80px;right:24px;background:linear-gradient(135deg,#059669,#10B981);color:white;padding:12px 20px;border-radius:12px;font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.15);";el.textContent="+"+pts+" pts earned!";document.body.appendChild(el);setTimeout(function(){el.remove();},3000);}
+        /*]]>*/
     </script>
-
-</main>
-
-<div th:replace="~{fragments/footer :: footer}"></div>
-
-</body>
-</html>
