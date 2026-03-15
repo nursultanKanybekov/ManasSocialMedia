@@ -95,15 +95,39 @@ public class GameSignalController {
         if (opt.isEmpty()) return;
         GameRoom room = opt.get();
         Player leaving = room.getPlayers().get(userId);
-        String name = leaving != null ? leaving.getName() : "Someone";
-        roomManager.leaveRoom(code, userId);
-        // Broadcast leave with updated player list so all clients re-sync
-        broadcast(code, Map.of(
-                "type",    "PLAYER_LEFT",
-                "userId",  userId,
-                "name",    name,
-                "players", buildPlayerList(room)
-        ));
+        if (leaving != null) {
+            String name = leaving.getName();
+            roomManager.leaveRoom(code, userId);
+            broadcast(code, Map.of(
+                    "type",    "PLAYER_LEFT",
+                    "userId",  userId,
+                    "name",    name,
+                    "players", buildPlayerList(room)
+            ));
+        } else if (room.isSpectator(userId)) {
+            roomManager.leaveSpectator(code, userId);
+            broadcast(code, Map.of(
+                    "type",             "SPECTATOR_LEFT",
+                    "userId",           userId,
+                    "spectatorCount",   room.spectatorCount()
+            ));
+        }
+    }
+
+    @MessageMapping("/game.spectate/{code}")
+    public void spectatorJoin(@DestinationVariable String code, Principal principal) {
+        String userId = id(principal);
+        var opt = roomManager.getRoom(code);
+        if (opt.isEmpty()) return;
+        GameRoom room = opt.get();
+        if (room.isSpectator(userId)) {
+            // Notify all players that a new spectator is watching
+            broadcast(code, Map.of(
+                    "type",           "SPECTATOR_JOINED",
+                    "userId",         userId,
+                    "spectatorCount", room.spectatorCount()
+            ));
+        }
     }
 
     @MessageMapping("/game.chat/{code}")

@@ -30,6 +30,7 @@ public class GameController {
         AppUser user = userService.getById(principal.getId());
         model.addAttribute("currentUser",  user);
         model.addAttribute("openRooms",    roomManager.getAllOpenRooms());
+        model.addAttribute("liveRooms",    roomManager.getAllLiveRooms());
         return "gamification/hub";
     }
 
@@ -83,15 +84,50 @@ public class GameController {
         return "gamification/room";
     }
 
+    /** Spectate a live room */
+    @GetMapping("/spectate/{code}")
+    public String spectate(@PathVariable String code,
+                           @AuthenticationPrincipal UserDetailsImpl principal,
+                           Model model) {
+        AppUser user   = userService.getById(principal.getId());
+        String  avatar = user.getProfile() != null ? user.getProfile().getAvatarUrl() : "";
+
+        var optRoom = roomManager.getRoom(code);
+        if (optRoom.isEmpty()) return "redirect:/games?error=notfound";
+
+        GameRoom room = optRoom.get();
+        if (room.getStatus() == RoomStatus.WAITING) {
+            // Room not started yet — just join as player instead
+            return "redirect:/games/room/" + code;
+        }
+
+        // Register as spectator
+        String userId = principal.getId().toString();
+        if (!room.getPlayers().containsKey(userId) && !room.isSpectator(userId)) {
+            roomManager.joinAsSpectator(code, userId, user.getFullName());
+        }
+
+        model.addAttribute("currentUser",   user);
+        model.addAttribute("currentAvatar", avatar != null ? avatar : "");
+        model.addAttribute("room",          room);
+        model.addAttribute("roomCode",      code.toUpperCase());
+        model.addAttribute("gameType",      room.getGameType().name());
+        model.addAttribute("isHost",        false);
+        model.addAttribute("isSpectator",   true);
+        model.addAttribute("spectatorCount", room.spectatorCount());
+        return "gamification/room";
+    }
+
     /** Lobby status JSON (for polling) */
     @GetMapping("/room/{code}/status")
     @ResponseBody
     public ResponseEntity<?> roomStatus(@PathVariable String code) {
         return roomManager.getRoom(code)
                 .map(r -> ResponseEntity.ok(Map.of(
-                        "status",      r.getStatus().name(),
-                        "playerCount", r.playerCount(),
-                        "players",     r.playerList().stream().map(p -> Map.of(
+                        "status",         r.getStatus().name(),
+                        "playerCount",    r.playerCount(),
+                        "spectatorCount", r.spectatorCount(),
+                        "players",        r.playerList().stream().map(p -> Map.of(
                                 "userId", p.getUserId(), "name", p.getName(),
                                 "avatar", p.getAvatar(), "ready", p.isReady(),
                                 "host",  p.isHost(), "score", p.getScore()

@@ -48,9 +48,17 @@ public class GameRoomManager {
         private Instant          startedAt;
         private Map<String,Object> settings   = new HashMap<>();
 
+        // Spectators: userId → name (read-only viewers)
+        private final Map<String, String> spectators = new LinkedHashMap<>();
+
         public boolean isFull()    { return players.size() >= maxPlayers; }
         public int     playerCount() { return players.size(); }
+        public int     spectatorCount() { return spectators.size(); }
         public List<Player> playerList() { return new ArrayList<>(players.values()); }
+
+        public void addSpectator(String userId, String name) { spectators.put(userId, name); }
+        public void removeSpectator(String userId) { spectators.remove(userId); }
+        public boolean isSpectator(String userId) { return spectators.containsKey(userId); }
     }
 
     private final ConcurrentHashMap<String, GameRoom> rooms = new ConcurrentHashMap<>();
@@ -98,6 +106,18 @@ public class GameRoomManager {
         Player p = new Player(userId, name, avatar, role);
         room.getPlayers().put(userId, p);
         return room;
+    }
+
+    public void joinAsSpectator(String code, String userId, String name) {
+        GameRoom room = rooms.get(code.toUpperCase());
+        if (room == null) throw new IllegalArgumentException("Room not found: " + code);
+        room.addSpectator(userId, name);
+        log.info("[Game] Spectator joined room {}: {}", code, name);
+    }
+
+    public void leaveSpectator(String code, String userId) {
+        GameRoom room = rooms.get(code);
+        if (room != null) room.removeSpectator(userId);
     }
 
     public void leaveRoom(String code, String userId) {
@@ -152,6 +172,14 @@ public class GameRoomManager {
         return rooms.values().stream()
                 .filter(r -> r.getStatus() == RoomStatus.WAITING && !r.isFull())
                 .sorted(Comparator.comparing(GameRoom::getCreatedAt).reversed())
+                .toList();
+    }
+
+    /** Rooms currently IN_PROGRESS that can be spectated */
+    public List<GameRoom> getAllLiveRooms() {
+        return rooms.values().stream()
+                .filter(r -> r.getStatus() == RoomStatus.IN_PROGRESS)
+                .sorted(Comparator.comparing(GameRoom::getStartedAt).reversed())
                 .toList();
     }
 

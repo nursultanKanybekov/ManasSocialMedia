@@ -314,6 +314,22 @@
         ::-webkit-scrollbar{width:4px;height:4px}
         ::-webkit-scrollbar-track{background:transparent}
         ::-webkit-scrollbar-thumb{background:var(--s2);border-radius:2px}
+
+        /* ── SPECTATOR MODE ── */
+        .spectator-banner{position:fixed;bottom:0;left:0;right:0;z-index:100;
+            background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;
+            padding:10px 20px;display:none;align-items:center;justify-content:center;gap:12px;
+            font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;
+            box-shadow:0 -4px 20px rgba(220,38,38,.3);}
+        .spectator-banner.visible{display:flex;}
+        .spectator-pulse{width:10px;height:10px;border-radius:50%;background:#fff;
+            animation:specPulse 1.2s ease infinite;}
+        @keyframes specPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+        .spectator-count-badge{background:rgba(255,255,255,.25);border-radius:20px;
+            padding:3px 12px;font-size:12px;}
+        .spectator-overlay{pointer-events:none;position:fixed;inset:0;z-index:50;
+            border:3px solid rgba(220,38,38,.4);border-radius:0;}
+        body.is-spectator .lobby-btn,.body.is-spectator #next-btn{pointer-events:none;opacity:.5;}
         @media(max-width:768px){.right-panel{display:none}.chess-board{width:min(340px,95vw)}.tetris-board .tetris-cell{width:18px;height:18px}}
     </style>
 </head>
@@ -326,7 +342,8 @@
       data-me-name="[[${currentUser.fullName}]]"
       data-me-avatar="[[${currentAvatar}]]"
       data-is-host="[[${isHost}]]"
-      th:attr="data-room-code=${roomCode},data-game-type=${gameType},data-me-id=${currentUser.id},data-me-name=${currentUser.fullName},data-me-avatar=${currentAvatar},data-is-host=${isHost}"></span>
+      data-is-spectator="[[${isSpectator != null and isSpectator}]]"
+      th:attr="data-room-code=${roomCode},data-game-type=${gameType},data-me-id=${currentUser.id},data-me-name=${currentUser.fullName},data-me-avatar=${currentAvatar},data-is-host=${isHost},data-is-spectator=${isSpectator != null and isSpectator}"></span>
 
 <!-- HEADER -->
 <div class="rh">
@@ -551,6 +568,14 @@
 
 </div><!-- /room-body -->
 
+<!-- SPECTATOR BANNER -->
+<div class="spectator-banner" id="spectator-banner">
+    <div class="spectator-pulse"></div>
+    <span>👁 You are watching this game live</span>
+    <span class="spectator-count-badge" id="spectator-count-badge">1 watching</span>
+    <a href="/games" style="color:rgba(255,255,255,.8);font-size:12px;font-weight:600;text-decoration:none;margin-left:8px;">← Back to Games</a>
+</div>
+
 <script th:inline="none">
     /*<![CDATA[*/
     /* ════════════════════════════════════════════════════════════════
@@ -563,7 +588,8 @@
     const ME_ID      = _rv ? _rv.dataset.meId      : '';
     const ME_NAME    = _rv ? _rv.dataset.meName    : '';
     const ME_AVATAR  = _rv ? _rv.dataset.meAvatar  : '';
-    const IS_HOST    = _rv ? (_rv.dataset.isHost === 'true') : false;
+    const IS_HOST      = _rv ? (_rv.dataset.isHost === 'true') : false;
+    const IS_SPECTATOR = _rv ? (_rv.dataset.isSpectator === 'true') : false;
 
     const GAME_META = {
         TYPING_RACER:{icon:'🏎️', name:'Typing Racer'},
@@ -638,6 +664,7 @@
         document.getElementById('lobby-code').textContent        = ROOM_CODE;
         buildLobbyActions();
         connectStomp();
+        if (IS_SPECTATOR) initSpectatorMode();
         // Game-specific init
         if (GAME_TYPE === 'CHESS')      initChess();
         if (GAME_TYPE === 'TETRIS')     initTetris();
@@ -757,6 +784,18 @@
                 }
                 updateLobbyPlayers(); updateRpPlayers(); updateStatusChips();
                 break;
+            case 'SPECTATOR_JOINED':
+            case 'SPECTATOR_LEFT': {
+                const cnt = msg.spectatorCount || 0;
+                const badge = document.getElementById('spectator-count-badge');
+                if (badge) badge.textContent = cnt + (cnt===1?' watching':' watching');
+                // Update player chip
+                const pc = document.getElementById('player-chip');
+                if (pc && cnt > 0) pc.textContent = Object.keys(players).length + ' players · ' + cnt + ' watching';
+                if (msg.type === 'SPECTATOR_JOINED' && !IS_SPECTATOR)
+                    notif('👁', cnt + ' ' + (cnt===1?'person is':'people are') + ' watching');
+                break;
+            }
             case 'CHAT':
                 appendChat(msg.userId, msg.name, msg.avatar, msg.text); break;
             case 'EMOJI':
@@ -2379,6 +2418,32 @@
     }
 
 
+
+    // ── SPECTATOR MODE ──────────────────────────────────────────
+    function initSpectatorMode() {
+        document.body.classList.add('is-spectator');
+        // Show spectator banner
+        document.getElementById('spectator-banner').classList.add('visible');
+        // Disable all inputs
+        document.querySelectorAll('input,button:not([onclick*="Back"])').forEach(el => {
+            if (!el.closest('.spectator-banner') && !el.closest('#gameover-screen')) {
+                el.disabled = true;
+                el.style.pointerEvents = 'none';
+            }
+        });
+        // Announce spectator joined via WebSocket
+        setTimeout(() => send('spectate', {}), 1000);
+        // Show game screen if already in progress
+        if (!gameStarted) {
+            gameStarted = true;
+            showGameScreen();
+        }
+        // Update player chip label
+        document.getElementById('status-chip').textContent = '👁 Spectating';
+        document.getElementById('status-chip').style.background = 'rgba(239,68,68,.2)';
+        document.getElementById('status-chip').style.borderColor = 'rgba(239,68,68,.4)';
+        document.getElementById('status-chip').style.color = '#ef4444';
+    }
 
     window.addEventListener('beforeunload', () => {
         if (stomp && stomp.connected) stomp.publish({destination: '/app/game.leave/'+ROOM_CODE, body: '{}'});
