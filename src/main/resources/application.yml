@@ -35,7 +35,24 @@ spring:
       max-file-size: 10MB
       max-request-size: 20MB
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+
 app:
+  mail:
+    from: ${MAIL_USERNAME:noreply@manas.edu}
+    from-name: ManasMezun System
   jwt:
     secret: ${JWT_SECRET:change-me-in-prod-must-be-32-chars-min}
     expiration-ms: 86400000
@@ -49,8 +66,6 @@ app:
     api-secret: CcGE7JYPNbPxTMkxi5gSK3vri9E
   gemini:
     api-key: AIzaSyBLxoCfHZ-OICAlVy3pA30JeViAXG-4-To
-  # On Render: set APP_BASE_URL env var to https://your-app-name.onrender.com
-  # This enables the keep-alive self-ping that prevents cold starts.
   base-url: ${APP_BASE_URL:http://localhost:8081}
 
 server:
@@ -58,7 +73,6 @@ server:
   servlet:
     context-path: /
 
-# Expose /actuator/health for the keep-alive ping (no auth needed for health)
 management:
   endpoints:
     web:

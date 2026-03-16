@@ -41,7 +41,7 @@ public class MentorshipService {
 
         // Fetch active MEZUN from same faculty first
         List<AppUser> mentors = userRepo.findMentorsByFacultyAndSkills(
-                facultyId, null, UserRole.MEZUN);
+                facultyId, UserRole.MEZUN);
 
         // Filter by skill overlap in Java
         if (!studentSkills.isEmpty()) {
@@ -58,7 +58,7 @@ public class MentorshipService {
         if (!mentors.isEmpty()) return mentors;
 
         // Fallback: cross-faculty
-        return userRepo.findMentorsByFacultyAndSkills(null, null, UserRole.MEZUN);
+        return userRepo.findMentorsByFacultyAndSkills(null, UserRole.MEZUN);
     }
 
     @Transactional

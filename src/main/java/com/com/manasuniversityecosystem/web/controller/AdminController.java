@@ -10,6 +10,7 @@ import com.com.manasuniversityecosystem.service.social.PostService;
 import com.com.manasuniversityecosystem.web.dto.social.CreatePostRequest;
 import com.com.manasuniversityecosystem.domain.enums.PostType;
 import com.com.manasuniversityecosystem.service.UserService;
+import com.com.manasuniversityecosystem.service.EmailService;
 import com.com.manasuniversityecosystem.service.OnlineUserTracker;
 import com.com.manasuniversityecosystem.service.gamification.GamificationService;
 import com.com.manasuniversityecosystem.service.admin.ExcelImportService;
@@ -27,12 +28,13 @@ import java.util.UUID;
 
 @Controller
 @RequestMapping("/admin")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminController {
 
-    private final UserService userService;
+    private final UserService         userService;
+    private final EmailService        emailService;
     private final GamificationService gamificationService;
     private final UserRepository userRepo;
     private final PostRepository postRepo;
@@ -71,15 +73,31 @@ public class AdminController {
 
     // GET /admin/users/{id}  — user detail
     @GetMapping("/users/{id}")
-    public String userDetail(@PathVariable UUID id, Model model) {
+    public String userDetail(@PathVariable UUID id,
+                             @AuthenticationPrincipal com.com.manasuniversityecosystem.security.UserDetailsImpl principal,
+                             Model model) {
         AppUser user = userService.getById(id);
         model.addAttribute("user", user);
+        // Hide action buttons if target is SUPER_ADMIN (and current user is not SUPER_ADMIN)
+        boolean isSuperAdmin = user.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.SUPER_ADMIN;
+        boolean viewerIsSuperAdmin = principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        model.addAttribute("canManage", !isSuperAdmin || viewerIsSuperAdmin);
+        model.addAttribute("targetIsSuperAdmin", isSuperAdmin);
         return "admin/user-detail";
     }
 
     // POST /admin/users/{id}/activate
     @PostMapping("/users/{id}/activate")
-    public String activateUser(@PathVariable UUID id, RedirectAttributes ra) {
+    public String activateUser(@PathVariable UUID id,
+                               @AuthenticationPrincipal com.com.manasuniversityecosystem.security.UserDetailsImpl principal,
+                               RedirectAttributes ra) {
+        AppUser target = userService.getById(id);
+        if (target.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.SUPER_ADMIN
+                && !principal.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"))) {
+            ra.addFlashAttribute("errorMsg", "You cannot manage a Super Admin account.");
+            return "redirect:/admin/users/" + id;
+        }
         userService.activate(id);
         ra.addFlashAttribute("successMsg", "admin.user.activated");
         return "redirect:/admin/users";
@@ -87,7 +105,15 @@ public class AdminController {
 
     // POST /admin/users/{id}/suspend
     @PostMapping("/users/{id}/suspend")
-    public String suspendUser(@PathVariable UUID id, RedirectAttributes ra) {
+    public String suspendUser(@PathVariable UUID id,
+                              @AuthenticationPrincipal com.com.manasuniversityecosystem.security.UserDetailsImpl principal,
+                              RedirectAttributes ra) {
+        AppUser target = userService.getById(id);
+        if (target.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.SUPER_ADMIN
+                && !principal.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"))) {
+            ra.addFlashAttribute("errorMsg", "You cannot manage a Super Admin account.");
+            return "redirect:/admin/users/" + id;
+        }
         userService.suspend(id);
         ra.addFlashAttribute("successMsg", "admin.user.suspended");
         return "redirect:/admin/users";
@@ -97,9 +123,58 @@ public class AdminController {
     @PostMapping("/users/{id}/role")
     public String changeRole(@PathVariable UUID id,
                              @RequestParam String role,
+                             @AuthenticationPrincipal com.com.manasuniversityecosystem.security.UserDetailsImpl principal,
                              RedirectAttributes ra) {
+        AppUser target = userService.getById(id);
+        boolean viewerIsSuperAdmin = principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        // Block: non-SUPER_ADMIN cannot change a SUPER_ADMIN's role
+        if (target.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.SUPER_ADMIN
+                && !viewerIsSuperAdmin) {
+            ra.addFlashAttribute("errorMsg", "You cannot change a Super Admin's role.");
+            return "redirect:/admin/users/" + id;
+        }
+        // Block: nobody can assign SUPER_ADMIN role from this page
+        if ("SUPER_ADMIN".equalsIgnoreCase(role) && !viewerIsSuperAdmin) {
+            ra.addFlashAttribute("errorMsg", "You cannot assign the Super Admin role.");
+            return "redirect:/admin/users/" + id;
+        }
         userService.changeRole(id, UserRole.valueOf(role.toUpperCase()));
         ra.addFlashAttribute("successMsg", "admin.user.role_changed");
+        return "redirect:/admin/users/" + id;
+    }
+
+    // POST /admin/users/{id}/reset-password  — SUPER_ADMIN only
+    @PostMapping("/users/{id}/reset-password")
+    public String resetPassword(@PathVariable UUID id,
+                                @RequestParam String newPassword,
+                                @RequestParam String confirmPassword,
+                                @AuthenticationPrincipal com.com.manasuniversityecosystem.security.UserDetailsImpl principal,
+                                RedirectAttributes ra) {
+        // ADMIN and SUPER_ADMIN can reset passwords
+        boolean canReset = principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN")
+                        || a.getAuthority().equals("ROLE_ADMIN"));
+        if (!canReset) {
+            ra.addFlashAttribute("errorMsg", "You do not have permission to reset passwords.");
+            return "redirect:/admin/users/" + id;
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            ra.addFlashAttribute("errorMsg", "Passwords do not match.");
+            return "redirect:/admin/users/" + id;
+        }
+        try {
+            AppUser target = userService.getById(id);
+            userService.resetPassword(id, newPassword);
+            // Email the user to notify them
+            String adminName = principal.getUsername();
+            emailService.sendPasswordResetNotification(
+                    target.getEmail(), target.getFullName(), adminName);
+            ra.addFlashAttribute("successMsg",
+                    "Password reset successfully. User has been notified by email.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/admin/users/" + id;
     }
 

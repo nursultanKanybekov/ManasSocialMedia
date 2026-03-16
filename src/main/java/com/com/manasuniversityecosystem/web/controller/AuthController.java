@@ -3,6 +3,9 @@ package com.com.manasuniversityecosystem.web.controller;
 
 import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.service.AuthService;
+import com.com.manasuniversityecosystem.service.notification.NotificationService;
+import com.com.manasuniversityecosystem.service.EmailService;
+import com.com.manasuniversityecosystem.repository.UserRepository;
 import com.com.manasuniversityecosystem.service.CloudinaryService;
 import com.com.manasuniversityecosystem.service.UserService;
 import com.com.manasuniversityecosystem.web.dto.auth.JwtResponse;
@@ -32,6 +35,9 @@ public class AuthController {
     private final UserService userService;
     private final FacultyRepository facultyRepo;
     private final CloudinaryService cloudinaryService;
+    private final NotificationService  notificationService;
+    private final EmailService         emailService;
+    private final UserRepository       userRepo;
 
     // ── GET /auth/login ──────────────────────────────────────
     @GetMapping("/login")
@@ -78,6 +84,33 @@ public class AuthController {
     @GetMapping("/pending")
     public String pendingPage() {
         return "auth/pending";
+    }
+
+    // GET /auth/forgot-password
+    @GetMapping("/forgot-password")
+    public String forgotPasswordPage(@RequestParam(required=false) String sent, Model model) {
+        if (sent != null) model.addAttribute("sent", true);
+        return "auth/forgot-password";
+    }
+
+    // POST /auth/forgot-password
+    @PostMapping("/forgot-password")
+    public String forgotPassword(@RequestParam String email, RedirectAttributes ra) {
+        try {
+            var optUser = userRepo.findByEmail(email.trim().toLowerCase());
+            if (optUser.isPresent()) {
+                var user = optUser.get();
+                notificationService.notifyPasswordResetRequest(
+                        user.getId(), user.getFullName(), user.getEmail());
+                // Send confirmation email to the user
+                emailService.sendPasswordResetRequestConfirmation(
+                        user.getEmail(), user.getFullName());
+            }
+            // Always show same message (security: don't reveal if email exists)
+        } catch (Exception e) {
+            log.error("Forgot password error", e);
+        }
+        return "redirect:/auth/forgot-password?sent=true";
     }
 
     // ── REST: POST /auth/api/login  (for API / mobile clients) ──

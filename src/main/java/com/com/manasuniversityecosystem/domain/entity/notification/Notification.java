@@ -45,7 +45,8 @@ public class Notification {
 
         // System
         BADGE_EARNED,
-        SYSTEM
+        SYSTEM,
+        PASSWORD_RESET_REQUEST
     }
 
     @Id

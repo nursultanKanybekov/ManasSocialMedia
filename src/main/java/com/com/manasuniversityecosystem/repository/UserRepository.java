@@ -47,7 +47,6 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
             "ORDER BY p.totalPoints DESC")
     List<AppUser> findMentorsByFacultyAndSkills(
             @Param("facultyId") UUID facultyId,
-            @Param("skillsJson") String skillsJson,
             @Param("role") UserRole role);
 
     @Query("SELECT COUNT(u) FROM AppUser u WHERE u.faculty.id = :facultyId AND u.role = :role")

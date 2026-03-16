@@ -199,6 +199,18 @@ public class UserService {
         log.info("User fully deleted by admin: {}", email);
     }
 
+    /** Admin/SuperAdmin force-reset — no old password required */
+    @Transactional
+    public void resetPassword(UUID userId, String newPassword) {
+        if (newPassword == null || newPassword.trim().length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters.");
+        }
+        AppUser user = getById(userId);
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepo.save(user);
+        log.info("[Admin] Password reset for user={}", user.getEmail());
+    }
+
     public void changePassword(AppUser user, String oldPassword, String newPassword) {
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
             throw new IllegalArgumentException("Current password is incorrect.");
