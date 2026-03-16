@@ -46,38 +46,155 @@
 
         <!-- Notification bell (authenticated) -->
         <div sec:authorize="isAuthenticated()" class="notif-bell-wrap dropdown-wrap">
-            <button class="icon-btn notif-bell-btn" onclick="toggleDropdown('notif-dd')" title="Notifications">
+            <button class="icon-btn notif-bell-btn"
+                    onclick="toggleDropdown('notif-dd'); loadNotifDropdown();"
+                    title="Notifications">
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                     <path d="M13.73 21a2 2 0 01-3.46 0"/>
                 </svg>
-                <span id="notif-badge"
-                      class="notif-badge"
-                      hx-get="/notifications/count"
-                      hx-target="#notif-badge"
-                      hx-swap="outerHTML"
-                      hx-trigger="load">
-                </span>
+                <span id="notif-badge" class="notif-badge" style="display:none;"></span>
             </button>
             <div class="dropdown" id="notif-dd" style="min-width:320px;">
                 <div class="dropdown-header">
                     <span th:text="#{notif.title}">Notifications</span>
-                    <span class="mark-all"
-                          hx-post="/notifications/mark-all-read"
-                          hx-target="#notif-badge"
-                          hx-swap="outerHTML"
-                          hx-include="[name=_csrf]"
+                    <span class="mark-all" onclick="markAllNotifRead()" style="cursor:pointer;"
                           th:text="#{notif.mark_all}">Mark all read</span>
                 </div>
-                <div id="notif-dropdown-body"
-                     hx-get="/notifications/dropdown"
-                     hx-trigger="load, click from:.mark-all"
-                     hx-swap="innerHTML">
+                <div id="notif-dropdown-body">
                     <div style="padding:16px;text-align:center;color:var(--muted)">...</div>
                 </div>
                 <a th:href="@{/notifications}" class="notif-see-all" th:text="#{notif.see_all}">See all notifications</a>
             </div>
         </div>
+
+        <script th:inline="none">
+            /*<![CDATA[*/
+            // All functions on window so they are global regardless of script load order
+            window._notifItems = window._notifItems || [];
+
+            window.escH = function(s) {
+                return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            };
+
+            window.loadNotifications = function() {
+                fetch('/notifications/api/list', {credentials: 'same-origin'})
+                    .then(function(r){
+                        if (!r.ok || r.redirected) return null;
+                        return r.json();
+                    })
+                    .then(function(data) {
+                        if (!data) return;
+                        window._notifItems = data.notifications || [];
+                        var badge = document.getElementById('notif-badge');
+                        if (!badge) return;
+                        var count = data.unreadCount || 0;
+                        if (count > 0) {
+                            badge.textContent = count > 99 ? '99+' : count;
+                            badge.style.display = 'flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }).catch(function(){});
+            };
+
+            window.loadNotifDropdown = function() {
+                fetch('/notifications/api/list', {credentials: 'same-origin'})
+                    .then(function(r){
+                        if (!r.ok || r.redirected) return null;
+                        return r.json();
+                    })
+                    .then(function(data) {
+                        if (!data) return;
+                        window._notifItems = data.notifications || [];
+                        window.renderNotifDropdown();
+                    }).catch(function(){});
+            };
+
+            window.renderNotifDropdown = function() {
+                var body = document.getElementById('notif-dropdown-body');
+                if (!body) return;
+                var items = window._notifItems;
+                if (!items || items.length === 0) {
+                    body.innerHTML = '<div style="padding:20px;text-align:center;color:#8a91a8;font-size:13px;">No new notifications</div>';
+                    return;
+                }
+                var html = '';
+                items.slice(0, 8).forEach(function(n) {
+                    var link = window.escH(n.link || '#');
+                    var bg   = n.isRead ? '' : 'background:#f0f4ff;border-left:3px solid #1B2A6B;';
+                    var dot  = n.isRead ? '#ccc' : '#1B2A6B';
+                    var fw   = n.isRead ? '400' : '600';
+                    var id   = n.id ? window.escH(n.id) : '';
+                    html += '<a href="' + link + '"'
+                        + (id ? ' onclick="window.markNotifRead(event,'' + id + '')"' : '')
+                    + ' style="' + bg + 'display:flex;align-items:flex-start;gap:10px;padding:12px 16px;text-decoration:none;border-bottom:1px solid #f0f2f8;color:inherit;">'
+                    + '<span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';margin-top:6px;flex-shrink:0;display:inline-block;"></span>'
+                    + '<div style="flex:1;min-width:0;">'
+                    + '<div style="font-size:11px;color:#8a91a8;margin-bottom:3px;">'
+                    + window.escH(n.icon||'🔔') + ' ' + window.escH(n.createdAt||'') + '</div>'
+                    + '<div style="font-size:13px;color:#1B2A6B;font-weight:' + fw + ';line-height:1.45;word-break:break-word;">'
+                    + window.escH(n.message||'') + '</div>'
+                    + '</div></a>';
+                });
+                body.innerHTML = html;
+            };
+
+            window.markNotifRead = function(e, id) {
+                if (e) e.stopPropagation();
+                if (!id) return;
+                fetch('/notifications/' + id + '/read', {method:'POST', credentials:'same-origin'}).then(function() {
+                    window._notifItems.forEach(function(n){ if(n.id===id) n.isRead=true; });
+                    var unread = window._notifItems.filter(function(n){return !n.isRead;}).length;
+                    var badge = document.getElementById('notif-badge');
+                    if (badge) {
+                        if (unread > 0) { badge.textContent = unread; badge.style.display = 'flex'; }
+                        else badge.style.display = 'none';
+                    }
+                }).catch(function(){});
+            };
+
+            window.markAllNotifRead = function() {
+                fetch('/notifications/mark-all-read', {method:'POST', credentials:'same-origin'}).then(function() {
+                    window._notifItems.forEach(function(n){ n.isRead=true; });
+                    var badge = document.getElementById('notif-badge');
+                    if (badge) badge.style.display = 'none';
+                    window.renderNotifDropdown();
+                }).catch(function(){});
+            };
+
+            // WebSocket real-time push listener
+            document.addEventListener('manasNotification', function(e) {
+                var d = e.detail || {};
+                window._notifItems.unshift({
+                    id: null, icon: d.icon||'🔔', message: d.message||'',
+                    link: d.link||'#', isRead: false,
+                    createdAt: new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
+                });
+                window.renderNotifDropdown();
+                var badge = document.getElementById('notif-badge');
+                if (badge) {
+                    var cur = parseInt(badge.textContent)||0;
+                    badge.textContent = cur+1;
+                    badge.style.display='flex';
+                }
+            });
+
+            // Init on load — defer to ensure DOM is ready
+            (function init() {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        window.loadNotifications();
+                        setInterval(window.loadNotifications, 30000);
+                    });
+                } else {
+                    // Already loaded
+                    window.loadNotifications();
+                    setInterval(window.loadNotifications, 30000);
+                }
+            })();
+            /*]]>*/
+        </script>
 
         <!-- Chat shortcut -->
         <a th:href="@{/chat}" class="icon-btn" sec:authorize="isAuthenticated()" title="Chat">

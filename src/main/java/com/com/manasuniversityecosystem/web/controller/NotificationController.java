@@ -91,4 +91,31 @@ public class NotificationController {
             @AuthenticationPrincipal UserDetailsImpl principal) {
         return ResponseEntity.ok(Map.of("count", notifService.countUnread(principal.getId())));
     }
+
+    /** REST: notification list as JSON for navbar dropdown */
+    @GetMapping("/api/list")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> listApi(
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        var notifications = notifService.getUnread(principal.getId());
+        long unreadCount  = notifService.countUnread(principal.getId());
+
+        var items = notifications.stream().map(n -> {
+            java.util.Map<String, Object> item = new java.util.LinkedHashMap<>();
+            item.put("id",        n.getId().toString());
+            item.put("icon",      n.getIcon() != null ? n.getIcon() : "🔔");
+            item.put("message",   n.getMessage());
+            item.put("link",      n.getLink() != null ? n.getLink() : "#");
+            item.put("isRead",    n.getIsRead());
+            item.put("createdAt", n.getCreatedAt() != null
+                    ? n.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd MMM, HH:mm"))
+                    : "");
+            return item;
+        }).toList();
+
+        return ResponseEntity.ok(Map.of(
+                "notifications", items,
+                "unreadCount",   unreadCount
+        ));
+    }
 }

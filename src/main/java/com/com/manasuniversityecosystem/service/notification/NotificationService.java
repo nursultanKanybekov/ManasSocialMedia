@@ -5,6 +5,8 @@ import com.com.manasuniversityecosystem.domain.entity.notification.Notification;
 import com.com.manasuniversityecosystem.domain.entity.notification.Notification.NotifType;
 import com.com.manasuniversityecosystem.domain.enums.UserRole;
 import com.com.manasuniversityecosystem.repository.UserRepository;
+import com.com.manasuniversityecosystem.service.chat.ChatService;
+import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.repository.notification.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ public class NotificationService {
     private final NotificationRepository notifRepo;
     private final UserRepository         userRepo;
     private final SimpMessagingTemplate  messagingTemplate;
+    private final ChatService             chatService;
 
     // ── Read ──────────────────────────────────────────────────
 
@@ -184,16 +187,38 @@ public class NotificationService {
 
     @Async @Transactional
     public void notifyPasswordResetRequest(UUID requestingUserId, String userName, String userEmail) {
-        String msg  = "Password reset requested by: " + userName + " (" + userEmail + "). Go to Admin Users to reset.";
+        String notifMsg = "Password reset requested by: " + userName + " (" + userEmail + "). Go to Admin Users to reset.";
+        String chatMsg  = "🔑 Password Reset Request\n\n" +
+                "User: " + userName + "\n" +
+                "Email: " + userEmail + "\n\n" +
+                "Please go to Admin → Users, find this user and reset their password.";
         String link = "/admin/users";
         String icon = "🔑";
-        userRepo.findByRole(UserRole.ADMIN).forEach(a ->
-                saveNotification(a.getId(), requestingUserId, NotifType.PASSWORD_RESET_REQUEST, msg, link, icon));
-        userRepo.findByRole(UserRole.SECRETARY).forEach(s ->
-                saveNotification(s.getId(), requestingUserId, NotifType.PASSWORD_RESET_REQUEST, msg, link, icon));
-        userRepo.findByRole(UserRole.SUPER_ADMIN).forEach(sa ->
-                saveNotification(sa.getId(), requestingUserId, NotifType.PASSWORD_RESET_REQUEST, msg, link, icon));
-        log.info("[Auth] Password reset notification sent for user={}", userEmail);
+
+        AppUser requester = userRepo.findById(requestingUserId).orElse(null);
+
+        // Collect all staff who should be notified
+        java.util.List<AppUser> staff = new java.util.ArrayList<>();
+        staff.addAll(userRepo.findByRole(UserRole.ADMIN));
+        staff.addAll(userRepo.findByRole(UserRole.SECRETARY));
+        staff.addAll(userRepo.findByRole(UserRole.SUPER_ADMIN));
+
+        for (AppUser staffMember : staff) {
+            // Bell notification
+            saveNotification(staffMember.getId(), requestingUserId,
+                    NotifType.PASSWORD_RESET_REQUEST, notifMsg, link, icon);
+
+            // Direct chat message — from the requesting user to each staff member
+            if (requester != null) {
+                try {
+                    var room = chatService.getOrCreateDirectRoom(requester, staffMember);
+                    chatService.sendMessage(requester, room.getId(), chatMsg, "TEXT");
+                } catch (Exception e) {
+                    log.warn("[Auth] Could not send chat message to {}: {}", staffMember.getEmail(), e.getMessage());
+                }
+            }
+        }
+        log.info("[Auth] Password reset notification + chat sent for user={}", userEmail);
     }
 
     // ── System / Badge ────────────────────────────────────────

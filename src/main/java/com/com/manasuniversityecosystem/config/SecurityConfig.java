@@ -32,7 +32,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/ws/**", "/quiz/**", "/games/create", "/games/spectate/**", "/award-game-win", "/award-game-points", "/admin/users/*/reset-password", "/auth/forgot-password"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/ws/**", "/quiz/**", "/games/create", "/games/spectate/**", "/award-game-win", "/award-game-points", "/admin/users/*/reset-password", "/auth/forgot-password", "/notifications/**"))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .securityContext(ctx -> ctx
                         .securityContextRepository(new HttpSessionSecurityContextRepository()))
