@@ -491,10 +491,10 @@
             <div id="postError" style="display:none;" class="fd-error"></div>
 
             <div class="fd-tabs">
-                <button class="fd-tab active" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0" hx-target="#feed-list" hx-swap="innerHTML">All</button>
-                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=NEWS" hx-target="#feed-list" hx-swap="innerHTML">📰 News</button>
-                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=SUCCESS_STORY" hx-target="#feed-list" hx-swap="innerHTML">✨ Success</button>
-                <button class="fd-tab" onclick="setActiveTab(this)" hx-get="/feed/posts?page=0&amp;type=ANNOUNCEMENT" hx-target="#feed-list" hx-swap="innerHTML">📢 Announcements</button>
+                <button class="fd-tab active" onclick="loadFeedTab(this, '')">All</button>
+                <button class="fd-tab" onclick="loadFeedTab(this, 'NEWS')">📰 News</button>
+                <button class="fd-tab" onclick="loadFeedTab(this, 'SUCCESS_STORY')">✨ Success</button>
+                <button class="fd-tab" onclick="loadFeedTab(this, 'ANNOUNCEMENT')">📢 Announcements</button>
             </div>
 
             <div id="feed-list">
@@ -598,8 +598,7 @@
                 <div th:if="${initialNextPage > -1}"
                      th:attr="hx-get=${'/feed/posts?page=' + initialNextPage}"
                      hx-trigger="intersect once"
-                     hx-target="#feed-list"
-                     hx-swap="beforeend"
+                     hx-swap="outerHTML"
                      class="load-more-trigger">
                     <div class="fd-spinner"></div>
                 </div>
@@ -617,10 +616,10 @@
     const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
-    document.addEventListener('htmx:afterSettle', function() {
-        document.querySelectorAll('.load-more-trigger[hx-get]').forEach(t => htmx.process(t));
+    document.addEventListener('htmx:afterSwap', function(evt) {
+        const feedList = document.getElementById('feed-list');
+        if (feedList && window.htmx) feedList.querySelectorAll('.load-more-trigger[hx-get]').forEach(t => htmx.process(t));
     });
-
     function expandPostBox() {
         document.getElementById('postExpanded').style.display = 'block';
         document.getElementById('postContent').style.minHeight = '80px';
@@ -648,6 +647,20 @@
     }
     function setActiveTab(btn) {
         document.querySelectorAll('.fd-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+    }
+    async function loadFeedTab(btn, type) {
+        setActiveTab(btn);
+        const list = document.getElementById('feed-list');
+        list.innerHTML = '<div class="load-more-trigger"><div class="fd-spinner"></div></div>';
+        const url = '/feed/posts?page=0' + (type ? '&type=' + type : '');
+        try {
+            const res = await fetch(url);
+            const html = await res.text();
+            list.innerHTML = html;
+            if (window.htmx) htmx.process(list);
+        } catch(e) {
+            list.innerHTML = '<div class="fd-empty"><div class="fd-empty-icon">⚠️</div><div class="fd-empty-title">Failed to load posts</div></div>';
+        }
     }
     async function submitPost() {
         const content = document.getElementById('postContent').value.trim();
