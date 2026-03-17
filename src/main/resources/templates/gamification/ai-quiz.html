@@ -85,6 +85,19 @@
     }
     .form-select:focus, .form-control:focus { border-color: var(--q-purple); }
 
+    .chip-btn {
+      padding: 6px 14px;
+      border: 1.5px solid #CBD5E1; border-radius: 20px;
+      background: #F8FAFF; color: var(--q-navy);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all .15s; white-space: nowrap;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .chip-btn:hover { border-color: var(--q-purple); background: #F5F3FF; color: var(--q-purple); }
+    .chip-btn.chip-active {
+      border-color: var(--q-purple); background: var(--q-purple); color: #fff;
+    }
+
     .count-row {
       display: flex; gap: 10px; flex-wrap: wrap;
     }
@@ -408,10 +421,14 @@
           </div>
 
           <div class="form-section">
-            <label class="form-label">Subject</label>
-            <select class="form-select" id="subject-select">
-              <option th:each="s : ${subjects}" th:value="${s}" th:text="${s}">Subject</option>
-            </select>
+            <label class="form-label">Subject / Topic</label>
+            <input type="text"
+                   class="form-control"
+                   id="subject-input"
+                   placeholder="e.g. Neural Networks, Ottoman History, Tax Law..."
+                   autocomplete="off"
+                   oninput="filterSubjectChips(this.value)" />
+            <div id="subject-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
           </div>
 
           <div class="form-section">
@@ -564,6 +581,11 @@
     let timeLeft       = 30;
     let answered       = false;
     let currentSubject = '';
+
+    // Initialize chips on load
+    document.addEventListener('DOMContentLoaded', function() {
+      onFacultyChange();
+    });
     let currentFaculty = '';
 
     // ── Setup Helpers ──────────────────────────────────────────
@@ -581,18 +603,52 @@
       });
     }
 
+    let currentChipSubjects = [];
+
     function onFacultyChange() {
       const code = document.getElementById('faculty-select').value;
-      const sel  = document.getElementById('subject-select');
-      let subjects;
       try {
         const map = JSON.parse(FACULTY_SUBJECTS);
         const def = JSON.parse(DEFAULT_SUBJECTS);
-        subjects = map[code] || def;
+        currentChipSubjects = map[code] || def;
       } catch(e) {
-        subjects = ['General Knowledge','Mathematics','Science'];
+        currentChipSubjects = ['General Knowledge','Mathematics','Science'];
       }
-      sel.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+      renderSubjectChips(currentChipSubjects);
+      // Clear input when faculty changes
+      document.getElementById('subject-input').value = '';
+    }
+
+    function renderSubjectChips(subjects) {
+      const container = document.getElementById('subject-chips');
+      container.innerHTML = subjects.map(s => `
+        <button type="button" class="chip-btn" onclick="selectChip('${escHtmlInline(s)}')">${escHtmlInline(s)}</button>
+      `).join('');
+    }
+
+    function selectChip(subject) {
+      document.getElementById('subject-input').value = subject;
+      // Highlight selected chip
+      document.querySelectorAll('.chip-btn').forEach(b => {
+        b.classList.toggle('chip-active', b.textContent === subject);
+      });
+    }
+
+    function filterSubjectChips(val) {
+      // Deselect chips when user types freely
+      document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('chip-active'));
+      if (!val.trim()) {
+        renderSubjectChips(currentChipSubjects);
+        return;
+      }
+      const filtered = currentChipSubjects.filter(s =>
+              s.toLowerCase().includes(val.toLowerCase())
+      );
+      renderSubjectChips(filtered);
+    }
+
+    function escHtmlInline(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
     // ── Show / Hide Screens ────────────────────────────────────
@@ -631,8 +687,22 @@
     async function startQuiz() {
       const facultyCode = document.getElementById('faculty-select').value;
       const facultyText = document.getElementById('faculty-select').selectedOptions[0].text;
-      currentSubject    = document.getElementById('subject-select').value;
+      currentSubject    = document.getElementById('subject-input').value.trim() || 'General Knowledge';
       currentFaculty    = facultyText.replace(/^[^\s]+ /, ''); // strip emoji
+
+      // Validate subject input
+      const subjectVal = document.getElementById('subject-input').value.trim();
+      if (!subjectVal) {
+        const input = document.getElementById('subject-input');
+        input.style.borderColor = 'var(--q-red)';
+        input.placeholder = 'Please enter a subject or pick one below';
+        input.focus();
+        setTimeout(() => {
+          input.style.borderColor = '';
+          input.placeholder = 'e.g. Neural Networks, Ottoman History, Tax Law...';
+        }, 2500);
+        return;
+      }
 
       const btn = document.getElementById('start-btn');
       btn.disabled = true;
@@ -645,10 +715,11 @@
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
-            faculty: currentFaculty,
-            subject: currentSubject,
-            lang:    selectedLang,
-            count:   selectedCount
+            faculty:     currentFaculty,
+            facultyCode: facultyCode,
+            subject:     currentSubject,
+            lang:        selectedLang,
+            count:       selectedCount
           })
         });
         const data = await resp.json();

@@ -65,7 +65,7 @@ app:
     api-key: 952176747147999
     api-secret: CcGE7JYPNbPxTMkxi5gSK3vri9E
   gemini:
-    api-key: AIzaSyBLxoCfHZ-OICAlVy3pA30JeViAXG-4-To
+    api-key: AIzaSyDIa8ULZ0jWsLilRXNkEJo_P_kGgJtTLmk
   base-url: ${APP_BASE_URL:http://localhost:8081}
 
 server:
