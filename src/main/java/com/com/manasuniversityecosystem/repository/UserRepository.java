@@ -54,12 +54,19 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
 
     List<AppUser> findByFacultyIdAndStatus(UUID facultyId, UserStatus status);
 
+    // Used by chat/share — active users only, excludes self
     @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile p " +
             "WHERE u.id <> :excludeId " +
             "AND u.status = com.com.manasuniversityecosystem.domain.enums.UserStatus.ACTIVE " +
             "AND (LOWER(CAST(u.fullName AS string)) LIKE :query OR LOWER(u.email) LIKE :query) " +
             "ORDER BY u.fullName")
     List<AppUser> searchByNameOrEmail(@Param("query") String query, @Param("excludeId") UUID excludeId);
+
+    // Used by admin panel — all users, all statuses, no exclusions
+    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile p " +
+            "WHERE (LOWER(CAST(u.fullName AS string)) LIKE :query OR LOWER(u.email) LIKE :query) " +
+            "ORDER BY u.fullName")
+    List<AppUser> adminSearchByNameOrEmail(@Param("query") String query);
 
     @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile p " +
             "WHERE u.role = 'MEZUN' " +

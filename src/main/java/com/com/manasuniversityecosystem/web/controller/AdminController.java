@@ -54,20 +54,30 @@ public class AdminController {
         return "admin/dashboard";
     }
 
-    // GET /admin/users  — all users list
+    // GET /admin/users  — all users list (with optional search by name/email)
     @GetMapping("/users")
     public String usersList(@RequestParam(required = false) String role,
                             @RequestParam(required = false) String status,
+                            @RequestParam(required = false) String q,
+                            @AuthenticationPrincipal com.com.manasuniversityecosystem.security.UserDetailsImpl principal,
                             Model model) {
-        if (role != null && !role.isBlank()) {
-            model.addAttribute("users", userRepo.findByRole(UserRole.valueOf(role.toUpperCase())));
+        java.util.List<AppUser> users;
+
+        if (q != null && !q.isBlank()) {
+            // Full-text search by name or email — ignores role/status filters while searching
+            users = userRepo.adminSearchByNameOrEmail("%" + q.trim().toLowerCase() + "%");
+        } else if (role != null && !role.isBlank()) {
+            users = userRepo.findByRole(UserRole.valueOf(role.toUpperCase()));
         } else if (status != null && !status.isBlank()) {
-            model.addAttribute("users", userRepo.findByStatus(UserStatus.valueOf(status.toUpperCase())));
+            users = userRepo.findByStatus(UserStatus.valueOf(status.toUpperCase()));
         } else {
-            model.addAttribute("users", userRepo.findAll());
+            users = userRepo.findAll();
         }
+
+        model.addAttribute("users",    users);
         model.addAttribute("roles",    UserRole.values());
         model.addAttribute("statuses", UserStatus.values());
+        model.addAttribute("q",        q != null ? q : "");
         return "admin/users";
     }
 

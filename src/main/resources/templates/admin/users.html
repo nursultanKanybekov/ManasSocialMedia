@@ -10,7 +10,12 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div>
             <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:20px;color:#1b2a6b;margin:0 0 4px;">User Management</h2>
-            <span style="font-size:13px;color:#8a91a8;">Total: <strong th:text="${#lists.size(users)}">0</strong> users</span>
+            <span style="font-size:13px;color:#8a91a8;">
+                <th:block th:if="${param.q != null and !#strings.isEmpty(param.q)}">
+                    Results for "<strong th:text="${param.q}"></strong>":
+                </th:block>
+                <strong th:text="${#lists.size(users)}">0</strong> users
+            </span>
         </div>
         <a th:href="@{/admin}" class="btn btn-outline">← Dashboard</a>
     </div>
@@ -18,6 +23,38 @@
     <!-- Flash messages -->
     <div th:if="${successMsg}" style="background:#dcfce7;border:1px solid #86efac;color:#166534;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;" th:text="${successMsg}"></div>
     <div th:if="${errorMsg}"   style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;" th:text="${errorMsg}"></div>
+
+    <!-- Search bar -->
+    <form th:action="@{/admin/users}" method="get"
+          style="display:flex;gap:8px;margin-bottom:16px;">
+        <div style="position:relative;flex:1;max-width:420px;">
+            <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;"
+                 width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#8a91a8" stroke-width="2.2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" name="q"
+                   th:value="${param.q}"
+                   placeholder="Search by name or email…"
+                   style="width:100%;padding:9px 12px 9px 34px;border:1.5px solid #e2e5f0;border-radius:10px;
+                          font-family:Montserrat,sans-serif;font-size:13px;color:#1b2a6b;outline:none;
+                          box-sizing:border-box;background:#fff;"
+                   onfocus="this.style.borderColor='#1b2a6b'"
+                   onblur="this.style.borderColor='#e2e5f0'"/>
+        </div>
+        <button type="submit"
+                style="padding:9px 20px;background:#1b2a6b;color:#fff;border:none;border-radius:10px;
+                       font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;
+                       white-space:nowrap;">
+            🔍 Search
+        </button>
+        <a th:if="${param.q != null and !#strings.isEmpty(param.q)}"
+           th:href="@{/admin/users}"
+           style="padding:9px 16px;background:#f0f2f8;color:#1b2a6b;border-radius:10px;
+                  font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;
+                  text-decoration:none;white-space:nowrap;display:flex;align-items:center;">
+            ✕ Clear
+        </a>
+    </form>
 
     <!-- Role filter pills -->
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
