@@ -100,7 +100,7 @@
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                 <!-- Search -->
                 <form th:action="@{/career/mentorship}" method="get" style="display:flex;gap:8px;align-items:center;">
-                    <input type="text" name="search" th:value="${searchQ}" placeholder="Search name, skill, role..."
+                    <input type="text" name="search" th:value="${searchQ}" th:placeholder="#{career.search_ph}"
                            style="padding:7px 12px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;outline:none;width:200px;"/>
                     <!-- Sort -->
                     <select name="sortBy" onchange="this.form.submit()"
@@ -109,7 +109,7 @@
                         <option value="points" th:selected="${sortBy == 'points'}">Sort: Points</option>
                         <option value="name" th:selected="${sortBy == 'name'}">Sort: Name A-Z</option>
                     </select>
-                    <button type="submit" style="padding:7px 14px;background:#1b2a6b;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">Search</button>
+                    <button type="submit" style="padding:7px 14px;background:#1b2a6b;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;cursor:pointer;" th:text="#{career.search}">Search</button>
                     <a th:href="@{/career/mentorship}" style="padding:7px 12px;background:#f0f2f8;color:#1b2a6b;border-radius:8px;font-size:12px;font-family:Montserrat,sans-serif;font-weight:600;text-decoration:none;">Clear</a>
                 </form>
             </div>
@@ -188,7 +188,7 @@
         <div th:if="${mentorProfiles == null or mentorProfiles.isEmpty()}"
              style="padding:60px;text-align:center;color:#8a91a8;">
             <div style="font-size:48px;margin-bottom:12px;">🤝</div>
-            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;">No Mentors Available Yet</h3>
+            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;" th:text="#{career.no_mentors}">No Mentors Available Yet</h3>
             <p>Alumni can enable mentoring in their profile settings to appear here.</p>
         </div>
     </div>

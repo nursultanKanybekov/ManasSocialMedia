@@ -2,107 +2,108 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
-<aside th:fragment="sidebar" class="sidebar" id="app-sidebar">
+<th:block th:fragment="sidebar">
+    <aside class="sidebar" id="app-sidebar">
 
-    <!-- Collapse toggle -->
-    <div class="sidebar-collapse-btn">
-        <button class="collapse-btn" onclick="toggleSidebarCollapse()" title="Toggle sidebar">
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <polyline points="15,18 9,12 15,6"/>
-            </svg>
-        </button>
-    </div>
+        <!-- Collapse toggle -->
+        <div class="sidebar-collapse-btn">
+            <button class="collapse-btn" onclick="toggleSidebarCollapse()" title="Toggle sidebar">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="15,18 9,12 15,6"/>
+                </svg>
+            </button>
+        </div>
 
-    <!-- Navigation -->
-    <nav class="sidebar-nav">
+        <!-- Navigation -->
+        <nav class="sidebar-nav">
 
-        <!-- MAIN -->
-        <div class="nav-section-label">MAIN</div>
-        <a th:href="@{/main}" class="sidebar-link" data-label="Home"
-           th:classappend="${currentURI == '/main'} ? ' active'">
+            <!-- MAIN -->
+            <div class="nav-section-label" th:text="#{nav.section.main}">MAIN</div>
+            <a th:href="@{/main}" class="sidebar-link" data-label="Home"
+               th:classappend="${currentURI == '/main'} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                 <polyline points="9,22 9,12 15,12 15,22"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.home}">Home</span>
-        </a>
-        <a th:href="@{/feed}" class="sidebar-link" data-label="Feed"
-           th:classappend="${currentURI != null and currentURI.startsWith('/feed')} ? ' active'">
+                <span class="nav-label" th:text="#{nav.home}">Home</span>
+            </a>
+            <a th:href="@{/feed}" class="sidebar-link" data-label="Feed"
+               th:classappend="${currentURI != null and currentURI.startsWith('/feed')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/>
                 <line x1="12" y1="8" x2="16" y2="8"/><line x1="12" y1="12" x2="16" y2="12"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.feed}">Feed</span>
-        </a>
-        <a th:href="@{/university-news}" class="sidebar-link" data-label="University News"
-           th:classappend="${currentURI != null and currentURI.startsWith('/university-news')} ? ' active'">
+                <span class="nav-label" th:text="#{nav.feed}">Feed</span>
+            </a>
+            <a th:href="@{/university-news}" class="sidebar-link" data-label="University News"
+               th:classappend="${currentURI != null and currentURI.startsWith('/university-news')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.university_news}">University News</span>
-        </a>
+                <span class="nav-label" th:text="#{nav.university_news}">University News</span>
+            </a>
 
-        <!-- COMMUNITY -->
-        <div class="nav-section-label">COMMUNITY</div>
-        <a th:href="@{/mezun}" class="sidebar-link" data-label="Alumni"
-           th:classappend="${currentURI != null and currentURI.startsWith('/mezun')} ? ' active'">
+            <!-- COMMUNITY -->
+            <div class="nav-section-label" th:text="#{nav.section.community}">COMMUNITY</div>
+            <a th:href="@{/mezun}" class="sidebar-link" data-label="Alumni"
+               th:classappend="${currentURI != null and currentURI.startsWith('/mezun')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                 <path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.mezun}">Alumni</span>
-        </a>
-        <a sec:authorize="isAuthenticated()"
-           th:href="@{/profile/{id}(id=${#authentication.principal.id})}"
-           class="sidebar-link" data-label="My Profile">
+                <span class="nav-label" th:text="#{nav.mezun}">Alumni</span>
+            </a>
+            <a sec:authorize="isAuthenticated()"
+               th:href="@{/profile/{id}(id=${#authentication.principal.id})}"
+               class="sidebar-link" data-label="My Profile">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.my_profile}">My Profile</span>
-        </a>
-        <a th:href="@{/chat}" class="sidebar-link" data-label="Chat"
-           th:classappend="${currentURI != null and currentURI.startsWith('/chat')} ? ' active'">
+                <span class="nav-label" th:text="#{nav.my_profile}">My Profile</span>
+            </a>
+            <a th:href="@{/chat}" class="sidebar-link" data-label="Chat"
+               th:classappend="${currentURI != null and currentURI.startsWith('/chat')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.chat}">Chat</span>
-        </a>
-        <a th:href="@{/channels}" class="sidebar-link" data-label="Channels"
-           th:classappend="${currentURI != null and currentURI.startsWith('/channels')} ? ' active'">
+                <span class="nav-label" th:text="#{nav.chat}">Chat</span>
+            </a>
+            <a th:href="@{/channels}" class="sidebar-link" data-label="Channels"
+               th:classappend="${currentURI != null and currentURI.startsWith('/channels')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07A19.5 19.5 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6z"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.channels}">Channels</span>
-        </a>
+                <span class="nav-label" th:text="#{nav.channels}">Channels</span>
+            </a>
 
-        <!-- CAREER -->
-        <div class="nav-section-label">CAREER</div>
-        <a th:href="@{/career/jobs}" class="sidebar-link" data-label="Jobs"
-           th:classappend="${currentURI != null and currentURI.startsWith('/career/jobs')} ? ' active'">
+            <!-- CAREER -->
+            <div class="nav-section-label" th:text="#{nav.section.career}">CAREER</div>
+            <a th:href="@{/career/jobs}" class="sidebar-link" data-label="Jobs"
+               th:classappend="${currentURI != null and currentURI.startsWith('/career/jobs')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="7" width="20" height="14" rx="2"/>
                 <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.career}">Jobs</span>
-        </a>
-        <a th:href="@{/career/mentorship}" class="sidebar-link" data-label="Mentorship"
-           th:classappend="${currentURI != null and currentURI.startsWith('/career/mentorship')} ? ' active'">
+                <span class="nav-label" th:text="#{nav.career}">Jobs</span>
+            </a>
+            <a th:href="@{/career/mentorship}" class="sidebar-link" data-label="Mentorship"
+               th:classappend="${currentURI != null and currentURI.startsWith('/career/mentorship')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
@@ -111,10 +112,10 @@
                 <path d="M16 3.13a4 4 0 010 7.75"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.mentorship}">Mentorship</span>
-        </a>
-        <a th:href="@{/articles}" class="sidebar-link" data-label="Articles"
-           th:classappend="${currentURI != null and currentURI.startsWith('/articles')} ? ' active'">
+                <span class="nav-label" th:text="#{nav.mentorship}">Mentorship</span>
+            </a>
+            <a th:href="@{/articles}" class="sidebar-link" data-label="Articles"
+               th:classappend="${currentURI != null and currentURI.startsWith('/articles')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
@@ -122,22 +123,22 @@
                 <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.articles}">Articles</span>
-        </a>
+                <span class="nav-label" th:text="#{nav.articles}">Articles</span>
+            </a>
 
-        <!-- EDUCATION -->
-        <div class="nav-section-label">EDUCATION</div>
-        <a th:href="@{/edu}" class="sidebar-link" data-label="Tutorials"
-           th:classappend="${currentURI != null and currentURI.startsWith('/edu')} ? ' active'">
+            <!-- EDUCATION -->
+            <div class="nav-section-label" th:text="#{nav.section.edu}">EDUCATION</div>
+            <a th:href="@{/edu}" class="sidebar-link" data-label="Tutorials"
+               th:classappend="${currentURI != null and currentURI.startsWith('/edu')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <polygon points="5,3 19,12 5,21"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.education}">Tutorials</span>
-        </a>
-        <a th:href="@{/gaming}" class="sidebar-link" data-label="Gamification"
-           th:classappend="${currentURI != null and currentURI.startsWith('/gaming')} ? ' active'">
+                <span class="nav-label" th:text="#{nav.education}">Tutorials</span>
+            </a>
+            <a th:href="@{/gaming}" class="sidebar-link" data-label="Gamification"
+               th:classappend="${currentURI != null and currentURI.startsWith('/gaming')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="6" width="20" height="12" rx="2"/>
@@ -145,40 +146,52 @@
                 <path d="M17 10v4M15 12h4"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.gamification}">Gamification</span>
-        </a>
-        <a th:href="@{/leaderboard}" class="sidebar-link" data-label="Rankings"
-           th:classappend="${currentURI != null and currentURI.startsWith('/leaderboard')} ? ' active'">
+                <span class="nav-label" th:text="#{nav.gamification}">Gamification</span>
+            </a>
+            <a th:href="@{/leaderboard}" class="sidebar-link" data-label="Rankings"
+               th:classappend="${currentURI != null and currentURI.startsWith('/leaderboard')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/>
                 <polyline points="17,6 23,6 23,12"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.leaderboard}">Rankings</span>
-        </a>
+                <span class="nav-label" th:text="#{nav.leaderboard}">Rankings</span>
+            </a>
 
-        <!-- GAME ZONE -->
-        <a th:href="@{/games}" class="sidebar-link" data-label="Game Zone"
-           th:classappend="${currentURI != null and currentURI.startsWith('/games')} ? ' active'"
-           style="position:relative">
-            <span class="nav-icon">🎮</span>
-            <span class="nav-label">Game Zone</span>
-        </a>
+            <!-- GAME ZONE -->
+            <a th:href="@{/games}" class="sidebar-link" data-label="Game Zone"
+               th:classappend="${currentURI != null and currentURI.startsWith('/games')} ? ' active'"
+               style="position:relative">
+                <span class="nav-icon">🎮</span>
+                <span class="nav-label" th:text="#{nav.gamezone}">Game Zone</span>
+            </a>
 
-        <!-- EVENTS -->
-        <div class="nav-section-label">EVENTS</div>
-        <a th:href="@{/competitions}" class="sidebar-link" data-label="Competitions"
-           th:classappend="${currentURI != null and currentURI.startsWith('/competitions')} ? ' active'">
+            <!-- AI ASSISTANT -->
+            <a href="javascript:void(0)" class="sidebar-link ai-sidebar-btn" data-label="AI Assistant"
+               onclick="window.openAiModal()">
+            <span class="nav-icon">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 12h.01M12 12h.01M16 12h.01"/>
+                </svg>
+            </span>
+                <span class="nav-label" th:text="#{nav.ai_assistant}">AI Assistant</span>
+            </a>
+
+            <!-- EVENTS -->
+            <div class="nav-section-label" th:text="#{nav.section.events}">EVENTS</div>
+            <a th:href="@{/competitions}" class="sidebar-link" data-label="Competitions"
+               th:classappend="${currentURI != null and currentURI.startsWith('/competitions')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M8 21h8m-4-4v4M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.5l-4.9 2.7.9-5.5L4 8.8z"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.competitions}">Competitions</span>
-        </a>
-        <a th:href="@{/events}" class="sidebar-link" data-label="Events"
-           th:classappend="${currentURI != null and currentURI.startsWith('/events')} ? ' active'">
+                <span class="nav-label" th:text="#{nav.competitions}">Competitions</span>
+            </a>
+            <a th:href="@{/events}" class="sidebar-link" data-label="Events"
+               th:classappend="${currentURI != null and currentURI.startsWith('/events')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -186,59 +199,330 @@
                 <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.events}">Events</span>
-        </a>
+                <span class="nav-label" th:text="#{nav.events}">Events</span>
+            </a>
 
-        <!-- ADMIN (role-based) -->
-        <div sec:authorize="hasAnyRole('SECRETARY','ADMIN')" class="nav-section-label">ADMIN</div>
-        <a sec:authorize="hasAnyRole('SECRETARY','ADMIN')"
-           th:href="@{/secretary}" class="sidebar-link" data-label="Secretary"
-           th:classappend="${currentURI != null and currentURI.startsWith('/secretary')} ? ' active'">
+            <!-- ADMIN (role-based) -->
+            <div sec:authorize="hasAnyRole('SECRETARY','ADMIN')" class="nav-section-label" th:text="#{nav.section.admin}">ADMIN</div>
+            <a sec:authorize="hasAnyRole('SECRETARY','ADMIN')"
+               th:href="@{/secretary}" class="sidebar-link" data-label="Secretary"
+               th:classappend="${currentURI != null and currentURI.startsWith('/secretary')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.secretary}">Secretary</span>
-        </a>
-        <a sec:authorize="hasRole('ADMIN')"
-           th:href="@{/admin}" class="sidebar-link" data-label="Admin"
-           th:classappend="${currentURI != null and currentURI.startsWith('/admin')} ? ' active'">
+                <span class="nav-label" th:text="#{nav.secretary}">Secretary</span>
+            </a>
+            <a sec:authorize="hasRole('ADMIN')"
+               th:href="@{/admin}" class="sidebar-link" data-label="Admin"
+               th:classappend="${currentURI != null and currentURI.startsWith('/admin')} ? ' active'">
         <span class="nav-icon">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
         </span>
-            <span class="nav-label" th:text="#{nav.admin}">Admin</span>
-        </a>
-        <a th:href="@{/admin/news}" class="nav-item"
-           sec:authorize="hasRole('ADMIN')"
-           th:classappend="${currentURI != null and #strings.contains(currentURI, '/admin/news')} ? ' active'">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/>
-            </svg>
-            <span>University News</span>
-        </a>
-    </nav>
+                <span class="nav-label" th:text="#{nav.admin}">Admin</span>
+            </a>
+            <a th:href="@{/admin/news}" class="nav-item"
+               sec:authorize="hasRole('ADMIN')"
+               th:classappend="${currentURI != null and #strings.contains(currentURI, '/admin/news')} ? ' active'">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/>
+                </svg>
+                <span>University News</span>
+            </a>
+        </nav>
 
-    <!-- Bottom user card -->
-    <div class="sidebar-user" sec:authorize="isAuthenticated()">
-        <div class="sidebar-avatar">
-            <img th:if="${#authentication.principal.avatarUrl != null}"
-                 th:src="${#authentication.principal.avatarUrl}" alt="avatar"/>
-            <span th:unless="${#authentication.principal.avatarUrl != null}"
-                  th:text="${#strings.substring(#authentication.principal.fullName, 0, 2).toUpperCase()}">UN</span>
+        <!-- Bottom user card -->
+        <div class="sidebar-user" sec:authorize="isAuthenticated()">
+            <div class="sidebar-avatar">
+                <img th:if="${#authentication.principal.avatarUrl != null}"
+                     th:src="${#authentication.principal.avatarUrl}" alt="avatar"/>
+                <span th:unless="${#authentication.principal.avatarUrl != null}"
+                      th:text="${#strings.substring(#authentication.principal.fullName, 0, 2).toUpperCase()}">UN</span>
+            </div>
+            <div class="sidebar-user-info">
+                <strong th:text="${#authentication.principal.fullName}">Full Name</strong>
+                <span th:text="${#authentication.principal.role}">STUDENT</span>
+            </div>
         </div>
-        <div class="sidebar-user-info">
-            <strong th:text="${#authentication.principal.fullName}">Full Name</strong>
-            <span th:text="${#authentication.principal.role}">STUDENT</span>
+
+    </aside>
+
+    <!-- Mobile overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         AI ASSISTANT MODAL  –  native Gemini-powered chat
+         ══════════════════════════════════════════════════════════ -->
+    <div id="ai-modal"
+         style="display:none;position:fixed;inset:0;z-index:9999;
+            background:rgba(10,15,40,0.72);backdrop-filter:blur(6px);
+            align-items:center;justify-content:center;">
+
+        <div style="background:#fff;border-radius:20px;width:min(760px,96vw);height:min(640px,90vh);
+                box-shadow:0 32px 80px rgba(0,0,0,0.35);display:flex;flex-direction:column;
+                overflow:hidden;animation:aiSlideIn .25s ease;">
+
+            <!-- ── Header ── -->
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;
+                    background:linear-gradient(135deg,#1B2A6B,#7C3AED);flex-shrink:0;">
+                <div style="width:32px;height:32px;border-radius:10px;
+                        background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M8 12h.01M12 12h.01M16 12h.01"/>
+                    </svg>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:#fff;">
+                        AI Assistant
+                    </div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.65);">Powered by Gemini · Ask anything</div>
+                </div>
+                <button id="ai-clear-btn" onclick="aiClearChat()"
+                        title="Clear conversation"
+                        style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);
+                           border-radius:8px;color:rgba(255,255,255,0.85);font-size:11px;font-family:Montserrat,sans-serif;
+                           font-weight:600;padding:4px 10px;cursor:pointer;margin-right:4px;">
+                    ↺ Clear
+                </button>
+                <button onclick="window.closeAiModal()"
+                        style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;
+                           color:#fff;font-size:18px;width:32px;height:32px;cursor:pointer;
+                           display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+            </div>
+
+            <!-- ── Messages ── -->
+            <div id="ai-messages"
+                 style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;
+                    gap:12px;background:#f8f9ff;">
+
+                <!-- Welcome bubble -->
+                <div class="ai-bubble ai-bubble--bot">
+                    <div class="ai-avatar">🤖</div>
+                    <div class="ai-text">
+                        Hello! I'm your Manas University AI Assistant. Ask me anything — coursework, career tips, university life, or just general knowledge. I understand English, Русский, Кыргызча, and Türkçe!
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Thinking indicator (hidden by default) ── -->
+            <div id="ai-thinking" style="display:none;padding:0 16px 8px;flex-shrink:0;">
+                <div class="ai-bubble ai-bubble--bot" style="opacity:0.7;">
+                    <div class="ai-avatar">🤖</div>
+                    <div class="ai-text" style="display:flex;align-items:center;gap:6px;">
+                        <span class="ai-dot-pulse"></span>
+                        <span class="ai-dot-pulse" style="animation-delay:.2s"></span>
+                        <span class="ai-dot-pulse" style="animation-delay:.4s"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Input bar ── -->
+            <div style="display:flex;gap:8px;padding:12px 16px;border-top:1px solid #e8eaf0;
+                    background:#fff;flex-shrink:0;align-items:flex-end;">
+            <textarea id="ai-input"
+                      rows="1"
+                      placeholder="Type your message… (Enter to send, Shift+Enter for new line)"
+                      style="flex:1;border:1.5px solid #d1d5db;border-radius:12px;padding:10px 14px;
+                             font-family:Montserrat,sans-serif;font-size:13px;resize:none;outline:none;
+                             line-height:1.5;max-height:120px;overflow-y:auto;transition:border .2s;"
+                      oninput="aiAutoResize(this)"
+                      onkeydown="aiHandleKey(event)"></textarea>
+                <button id="ai-send-btn" onclick="aiSendMessage()"
+                        style="background:linear-gradient(135deg,#1B2A6B,#7C3AED);border:none;border-radius:12px;
+                           color:#fff;width:42px;height:42px;cursor:pointer;display:flex;
+                           align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s;">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.5">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
 
-</aside>
+    <!-- ── Styles ── -->
+    <style>
+        @keyframes aiSlideIn {
+            from { opacity:0; transform:translateY(24px) scale(0.97); }
+            to   { opacity:1; transform:translateY(0)    scale(1);    }
+        }
+        @keyframes aiDotBounce {
+            0%,80%,100% { transform:translateY(0);   opacity:.4; }
+            40%         { transform:translateY(-6px); opacity:1;  }
+        }
+        .ai-dot-pulse {
+            display:inline-block;width:7px;height:7px;border-radius:50%;
+            background:#7C3AED;animation:aiDotBounce 1.2s ease infinite;
+        }
+        .ai-bubble {
+            display:flex;gap:10px;align-items:flex-start;max-width:88%;
+        }
+        .ai-bubble--bot  { align-self:flex-start; }
+        .ai-bubble--user { align-self:flex-end; flex-direction:row-reverse; }
+        .ai-avatar {
+            width:30px;height:30px;border-radius:50%;background:#ede9fe;
+            display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+        }
+        .ai-bubble--user .ai-avatar { background:#dbeafe; }
+        .ai-text {
+            background:#fff;border:1px solid #e8eaf0;border-radius:14px;
+            padding:10px 14px;font-family:Montserrat,sans-serif;font-size:13px;
+            line-height:1.6;color:#1e293b;white-space:pre-wrap;word-break:break-word;
+            box-shadow:0 1px 4px rgba(0,0,0,0.06);
+        }
+        .ai-bubble--user .ai-text {
+            background:linear-gradient(135deg,#1B2A6B,#7C3AED);
+            color:#fff;border-color:transparent;
+        }
+        /* Sidebar button accent */
+        .ai-sidebar-btn .nav-label { color:#a78bfa !important; font-weight:700; }
+        .ai-sidebar-btn .nav-icon  { color:#a78bfa; }
+        .ai-sidebar-btn:hover      { background:rgba(124,58,237,0.12) !important; }
+        .ai-sidebar-btn:hover .nav-icon,
+        .ai-sidebar-btn:hover .nav-label { color:#7C3AED !important; }
+        /* Markdown-like formatting inside bot replies */
+        .ai-text strong { font-weight:700; }
+        .ai-text code {
+            background:#f1f5f9;border-radius:4px;padding:1px 5px;
+            font-family:monospace;font-size:12px;
+        }
+    </style>
 
-<!-- Mobile overlay -->
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+    <!-- ── Script ── -->
+    <script>
+        (function() {
+            /* ── State ── */
+            var aiHistory = [];   // [{role:'user'|'assistant', content:'...'}]
+            var aiTyping  = false;
+
+            /* ── Open / Close ── */
+            window.openAiModal = function() {
+                var modal = document.getElementById('ai-modal');
+                if (!modal) return;
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                setTimeout(function(){ document.getElementById('ai-input').focus(); }, 120);
+            };
+            window.closeAiModal = function() {
+                var modal = document.getElementById('ai-modal');
+                if (!modal) return;
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            };
+            window.aiClearChat = function() {
+                aiHistory = [];
+                var box = document.getElementById('ai-messages');
+                box.innerHTML = '';
+                appendBotBubble('Chat cleared! How can I help you today?');
+            };
+
+            /* ── Key handler ── */
+            window.aiHandleKey = function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aiSendMessage(); }
+            };
+
+            /* ── Auto-resize textarea ── */
+            window.aiAutoResize = function(el) {
+                el.style.height = 'auto';
+                el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+            };
+
+            /* ── Send ── */
+            window.aiSendMessage = function() {
+                if (aiTyping) return;
+                var input = document.getElementById('ai-input');
+                var text  = input.value.trim();
+                if (!text) return;
+
+                input.value = '';
+                input.style.height = 'auto';
+
+                appendUserBubble(text);
+                aiHistory.push({ role: 'user', content: text });
+                setTyping(true);
+
+                fetch('/api/ai/chat', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ messages: aiHistory })
+                })
+                    .then(function(r){ return r.json(); })
+                    .then(function(data) {
+                        setTyping(false);
+                        if (data.reply) {
+                            appendBotBubble(data.reply);
+                            aiHistory.push({ role: 'assistant', content: data.reply });
+                        } else {
+                            appendBotBubble('⚠️ ' + (data.error || 'Something went wrong. Please try again.'));
+                        }
+                    })
+                    .catch(function(err) {
+                        setTyping(false);
+                        appendBotBubble('⚠️ Could not reach the AI service. Please check your connection.');
+                        console.error('AI chat error:', err);
+                    });
+            };
+
+            /* ── Helpers ── */
+            function appendUserBubble(text) {
+                var box = document.getElementById('ai-messages');
+                var div = document.createElement('div');
+                div.className = 'ai-bubble ai-bubble--user';
+                div.innerHTML = '<div class="ai-avatar">👤</div>'
+                    + '<div class="ai-text">' + escHtml(text) + '</div>';
+                box.appendChild(div);
+                scrollToBottom(box);
+            }
+
+            function appendBotBubble(text) {
+                var box = document.getElementById('ai-messages');
+                var div = document.createElement('div');
+                div.className = 'ai-bubble ai-bubble--bot';
+                // Light markdown: **bold**, `code`, newlines
+                var html = escHtml(text)
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/`([^`]+)`/g, '<code>$1</code>');
+                div.innerHTML = '<div class="ai-avatar">🤖</div>'
+                    + '<div class="ai-text">' + html + '</div>';
+                box.appendChild(div);
+                scrollToBottom(box);
+            }
+
+            function setTyping(on) {
+                aiTyping = on;
+                document.getElementById('ai-thinking').style.display = on ? 'block' : 'none';
+                document.getElementById('ai-send-btn').style.opacity = on ? '0.5' : '1';
+                var box = document.getElementById('ai-messages');
+                if (on) scrollToBottom(box);
+            }
+
+            function scrollToBottom(el) {
+                setTimeout(function(){ el.scrollTop = el.scrollHeight; }, 30);
+            }
+
+            function escHtml(s) {
+                return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+
+            /* ── Backdrop + Escape ── */
+            document.addEventListener('DOMContentLoaded', function() {
+                var modal = document.getElementById('ai-modal');
+                if (!modal) return;
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) window.closeAiModal();
+                });
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') window.closeAiModal();
+                });
+            });
+        })();
+    </script>
+</th:block>
 </body>
 </html>

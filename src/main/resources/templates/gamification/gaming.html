@@ -223,17 +223,17 @@
             <div class="card" style="margin-bottom:24px;">
                 <table class="data-table">
                     <thead>
-                    <tr><th>Action</th><th>Points</th><th>Frequency</th></tr>
+                    <tr><th th:text="#{gaming.col.action}">Action</th><th th:text="#{gaming.col.points}">Points</th><th th:text="#{gaming.col.frequency}">Frequency</th></tr>
                     </thead>
                     <tbody>
-                    <tr><td>Daily Login</td><td><strong>+2</strong></td><td>Once per day</td></tr>
-                    <tr><td>Create Post</td><td><strong>+10</strong></td><td>Per post</td></tr>
-                    <tr><td>Leave Comment</td><td><strong>+3</strong></td><td>Per comment</td></tr>
-                    <tr><td>Receive Like</td><td><strong>+1</strong></td><td>Per like received</td></tr>
-                    <tr><td>Pass Quiz</td><td><strong>+20</strong></td><td>Per quiz</td></tr>
-                    <tr><td>Win a Game</td><td><strong>+5</strong></td><td>Per win</td></tr>
-                    <tr><td>Mentorship Session</td><td><strong>+50</strong></td><td>Per session</td></tr>
-                    <tr><td>Help with Job</td><td><strong>+5</strong></td><td>Per referral</td></tr>
+                    <tr><td th:text="#{gaming.action.login}">Daily Login</td><td><strong>+2</strong></td><td th:text="#{gaming.freq.daily}">Once per day</td></tr>
+                    <tr><td th:text="#{gaming.action.post}">Create Post</td><td><strong>+10</strong></td><td th:text="#{gaming.freq.per_post}">Per post</td></tr>
+                    <tr><td th:text="#{gaming.action.comment}">Leave Comment</td><td><strong>+3</strong></td><td th:text="#{gaming.freq.per_comment}">Per comment</td></tr>
+                    <tr><td th:text="#{gaming.action.like}">Receive Like</td><td><strong>+1</strong></td><td th:text="#{gaming.freq.per_like}">Per like received</td></tr>
+                    <tr><td th:text="#{gaming.action.quiz}">Pass Quiz</td><td><strong>+20</strong></td><td th:text="#{gaming.freq.per_quiz}">Per quiz</td></tr>
+                    <tr><td th:text="#{gaming.action.win}">Win a Game</td><td><strong>+5</strong></td><td th:text="#{gaming.freq.per_win}">Per win</td></tr>
+                    <tr><td th:text="#{gaming.action.mentor}">Mentorship Session</td><td><strong>+50</strong></td><td th:text="#{gaming.freq.per_session}">Per session</td></tr>
+                    <tr><td th:text="#{gaming.action.job}">Help with Job</td><td><strong>+5</strong></td><td th:text="#{gaming.freq.per_referral}">Per referral</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -279,7 +279,7 @@
             <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden;">
                 <table class="data-table">
                     <thead>
-                    <tr><th>#</th><th>User</th><th>Points</th></tr>
+                    <tr><th>#</th><th th:text="#{leaderboard.col.user}">User</th><th th:text="#{leaderboard.col.points}">Points</th></tr>
                     </thead>
                     <tbody>
                     <tr th:each="p, i : ${globalTop}"

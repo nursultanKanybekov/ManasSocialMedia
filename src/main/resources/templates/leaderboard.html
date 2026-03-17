@@ -137,52 +137,52 @@
             <div class="card" style="padding:0;overflow:hidden;">
                 <table class="data-table">
                     <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>User</th>
-                            <th>Role</th>
-                            <th>Faculty</th>
-                            <th>Points</th>
-                        </tr>
+                    <tr>
+                        <th>#</th>
+                        <th th:text="#{leaderboard.col.user}">User</th>
+                        <th th:text="#{leaderboard.col.role}">Role</th>
+                        <th th:text="#{leaderboard.col.faculty}">Faculty</th>
+                        <th th:text="#{leaderboard.col.points}">Points</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="p, i : ${globalTop}"
-                            th:classappend="${p.user.id == currentUser.id} ? ' row-highlight'">
-                            <td>
-                                <span th:if="${i.index == 0}" style="font-size:18px;">&#127947;</span>
-                                <span th:if="${i.index == 1}" style="font-size:18px;">&#129352;</span>
-                                <span th:if="${i.index == 2}" style="font-size:18px;">&#129353;</span>
-                                <span th:if="${i.index >= 3}"
-                                      th:text="${i.index + 1}"
-                                      style="font-family:Montserrat,sans-serif;font-weight:700;color:var(--muted);">4</span>
-                            </td>
-                            <td>
-                                <a th:href="@{/profile/{id}(id=${p.user.id})}"
-                                   style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
-                                    <div class="leaderboard-avatar" style="background:var(--navy);color:white;display:flex;align-items:center;justify-content:center;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;flex-shrink:0;overflow:hidden;">
-                                        <img th:if="${p.avatarUrl != null}" th:src="${p.avatarUrl}"
-                                             style="width:100%;height:100%;object-fit:cover;" alt=""/>
-                                        <span th:unless="${p.avatarUrl != null}"
-                                              th:text="${#strings.substring(p.user.fullName, 0, 1).toUpperCase()}">U</span>
-                                    </div>
-                                    <span style="font-weight:600;" th:text="${p.user.fullName}">Name</span>
-                                    <span th:if="${p.user.id == currentUser.id}"
-                                          style="font-size:10px;background:var(--red);color:white;padding:2px 6px;border-radius:4px;font-weight:700;font-family:Montserrat,sans-serif;">
+                    <tr th:each="p, i : ${globalTop}"
+                        th:classappend="${p.user.id == currentUser.id} ? ' row-highlight'">
+                        <td>
+                            <span th:if="${i.index == 0}" style="font-size:18px;">&#127947;</span>
+                            <span th:if="${i.index == 1}" style="font-size:18px;">&#129352;</span>
+                            <span th:if="${i.index == 2}" style="font-size:18px;">&#129353;</span>
+                            <span th:if="${i.index >= 3}"
+                                  th:text="${i.index + 1}"
+                                  style="font-family:Montserrat,sans-serif;font-weight:700;color:var(--muted);">4</span>
+                        </td>
+                        <td>
+                            <a th:href="@{/profile/{id}(id=${p.user.id})}"
+                               style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+                                <div class="leaderboard-avatar" style="background:var(--navy);color:white;display:flex;align-items:center;justify-content:center;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;flex-shrink:0;overflow:hidden;">
+                                    <img th:if="${p.avatarUrl != null}" th:src="${p.avatarUrl}"
+                                         style="width:100%;height:100%;object-fit:cover;" alt=""/>
+                                    <span th:unless="${p.avatarUrl != null}"
+                                          th:text="${#strings.substring(p.user.fullName, 0, 1).toUpperCase()}">U</span>
+                                </div>
+                                <span style="font-weight:600;" th:text="${p.user.fullName}">Name</span>
+                                <span th:if="${p.user.id == currentUser.id}"
+                                      style="font-size:10px;background:var(--red);color:white;padding:2px 6px;border-radius:4px;font-weight:700;font-family:Montserrat,sans-serif;">
                                         YOU
                                     </span>
-                                </a>
-                            </td>
-                            <td>
-                                <span class="role-badge" th:text="${p.user.role}">STUDENT</span>
-                            </td>
-                            <td style="font-size:12px;color:var(--muted);"
-                                th:text="${p.user.faculty != null ? p.user.faculty.name : '—'}">Faculty</td>
-                            <td>
-                                <strong style="font-family:Montserrat,sans-serif;color:var(--navy);"
-                                        th:text="${#numbers.formatInteger(p.totalPoints, 0, 'COMMA')}">0</strong>
-                                <span style="font-size:11px;color:var(--muted);"> pts</span>
-                            </td>
-                        </tr>
+                            </a>
+                        </td>
+                        <td>
+                            <span class="role-badge" th:text="${p.user.role}">STUDENT</span>
+                        </td>
+                        <td style="font-size:12px;color:var(--muted);"
+                            th:text="${p.user.faculty != null ? p.user.faculty.name : '—'}">Faculty</td>
+                        <td>
+                            <strong style="font-family:Montserrat,sans-serif;color:var(--navy);"
+                                    th:text="${#numbers.formatInteger(p.totalPoints, 0, 'COMMA')}">0</strong>
+                            <span style="font-size:11px;color:var(--muted);"> pts</span>
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
                 <div th:if="${#lists.isEmpty(globalTop)}" class="empty-state">
@@ -200,30 +200,30 @@
             <div class="card" th:if="${facultyTop != null and not #lists.isEmpty(facultyTop)}" style="padding:0;overflow:hidden;">
                 <table class="data-table">
                     <thead>
-                        <tr><th>#</th><th>User</th><th>Points</th></tr>
+                    <tr><th>#</th><th th:text="#{leaderboard.col.user}">User</th><th th:text="#{leaderboard.col.points}">Points</th></tr>
                     </thead>
                     <tbody>
-                        <tr th:each="p, i : ${facultyTop}"
-                            th:classappend="${p.user.id == currentUser.id} ? ' row-highlight'">
-                            <td th:text="${i.index + 1}"
-                                style="font-family:Montserrat,sans-serif;font-weight:700;color:var(--muted);">1</td>
-                            <td>
-                                <a th:href="@{/profile/{id}(id=${p.user.id})}"
-                                   style="display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;">
-                                    <div class="leaderboard-avatar" style="background:var(--navy);color:white;display:flex;align-items:center;justify-content:center;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;flex-shrink:0;overflow:hidden;">
-                                        <img th:if="${p.avatarUrl != null}" th:src="${p.avatarUrl}"
-                                             style="width:100%;height:100%;object-fit:cover;" alt=""/>
-                                        <span th:unless="${p.avatarUrl != null}"
-                                              th:text="${#strings.substring(p.user.fullName, 0, 1).toUpperCase()}">U</span>
-                                    </div>
-                                    <span style="font-size:12px;font-weight:600;" th:text="${#strings.abbreviate(p.user.fullName, 16)}">Name</span>
-                                </a>
-                            </td>
-                            <td>
-                                <strong style="font-family:Montserrat,sans-serif;color:var(--navy);"
-                                        th:text="${#numbers.formatInteger(p.totalPoints, 0, 'COMMA')}">0</strong>
-                            </td>
-                        </tr>
+                    <tr th:each="p, i : ${facultyTop}"
+                        th:classappend="${p.user.id == currentUser.id} ? ' row-highlight'">
+                        <td th:text="${i.index + 1}"
+                            style="font-family:Montserrat,sans-serif;font-weight:700;color:var(--muted);">1</td>
+                        <td>
+                            <a th:href="@{/profile/{id}(id=${p.user.id})}"
+                               style="display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;">
+                                <div class="leaderboard-avatar" style="background:var(--navy);color:white;display:flex;align-items:center;justify-content:center;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;flex-shrink:0;overflow:hidden;">
+                                    <img th:if="${p.avatarUrl != null}" th:src="${p.avatarUrl}"
+                                         style="width:100%;height:100%;object-fit:cover;" alt=""/>
+                                    <span th:unless="${p.avatarUrl != null}"
+                                          th:text="${#strings.substring(p.user.fullName, 0, 1).toUpperCase()}">U</span>
+                                </div>
+                                <span style="font-size:12px;font-weight:600;" th:text="${#strings.abbreviate(p.user.fullName, 16)}">Name</span>
+                            </a>
+                        </td>
+                        <td>
+                            <strong style="font-family:Montserrat,sans-serif;color:var(--navy);"
+                                    th:text="${#numbers.formatInteger(p.totalPoints, 0, 'COMMA')}">0</strong>
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
             </div>

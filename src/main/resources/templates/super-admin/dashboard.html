@@ -184,11 +184,11 @@
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <div class="sa-form-row" style="margin-bottom: 24px;">
                     <div class="sa-form-group">
-                        <label>Faculty Name</label>
+                        <label th:text="#{superadmin.faculty.name}">Faculty Name</label>
                         <input type="text" name="name" class="sa-input" placeholder="e.g. Faculty of Engineering" required/>
                     </div>
                     <div class="sa-form-group" style="max-width: 130px;">
-                        <label>Short Code</label>
+                        <label th:text="#{superadmin.faculty.code}">Short Code</label>
                         <input type="text" name="code" class="sa-input" placeholder="e.g. ENG" maxlength="20" required/>
                     </div>
                     <button type="submit" class="sa-btn sa-btn-purple">+ Add Faculty</button>
@@ -202,9 +202,9 @@
             <table class="sa-table" th:unless="${#lists.isEmpty(faculties)}">
                 <thead>
                 <tr>
-                    <th>Faculty Name</th>
-                    <th>Code</th>
-                    <th>Action</th>
+                    <th th:text="#{superadmin.col.faculty}">Faculty Name</th>
+                    <th th:text="#{superadmin.col.code}">Code</th>
+                    <th th:text="#{superadmin.col.action}">Action</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -239,7 +239,7 @@
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <div class="sa-confirm-group">
                         <input type="text" name="confirmText" class="sa-input sa-confirm-input"
-                               placeholder='Type: DROP ALL TABLES'/>
+                               th:placeholder="#{superadmin.danger_ph}"/>
                         <button type="submit" class="sa-btn sa-btn-red"
                                 onclick="return confirm('⚠️ ARE YOU SURE? This will erase ALL data permanently!')">
                             🗑 Drop All Tables

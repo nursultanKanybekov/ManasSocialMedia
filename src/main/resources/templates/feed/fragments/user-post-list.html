@@ -103,7 +103,7 @@
     <div th:id="'comment-row-' + ${post.id}" class="comment-input-row" style="display:none;">
       <input type="text" th:id="'comment-input-' + ${post.id}"
              th:attr="data-post-id=${post.id}" name="content"
-             placeholder="Write a comment..." class="comment-input"
+             th:placeholder="#{feed.comment.placeholder}" class="comment-input"
              onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
       <button class="comment-send-btn" th:attr="data-post-id=${post.id}"
               onclick="submitComment(this.dataset.postId)">➤</button>

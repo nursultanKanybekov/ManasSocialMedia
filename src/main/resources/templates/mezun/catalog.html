@@ -2,152 +2,152 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/header :: head(#{nav.mezun})}"></head>
 <style>
-.sort-link { color:#1b2a6b; text-decoration:none; font-family:Montserrat,sans-serif; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:4px; }
-.sort-link:hover { color:#c0392b; }
-.sort-arrow { font-size:10px; }
-.mezun-table { width:100%; border-collapse:collapse; background:white; border-radius:14px; overflow:hidden; box-shadow:0 2px 12px rgba(27,42,107,0.08); }
-.mezun-table thead tr { background:#1b2a6b; }
-.mezun-table thead th { padding:13px 16px; color:white; font-family:Montserrat,sans-serif; font-size:11px; font-weight:700; text-align:left; white-space:nowrap; }
-.mezun-table tbody tr { border-bottom:1px solid #f0f2f8; transition:.15s; }
-.mezun-table tbody tr:hover { background:#f7f8fc; }
-.mezun-table td { padding:12px 16px; font-family:Montserrat,sans-serif; font-size:13px; color:#2c3e50; }
-.avatar-sm { width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #e0e3ef; }
-.name-cell { display:flex; align-items:center; gap:10px; }
-.faculty-badge { font-size:10px; padding:3px 9px; background:#e8ecf8; color:#1b2a6b; border-radius:20px; font-weight:700; }
-.pts-badge { font-size:11px; font-weight:800; color:#c0392b; }
-.btn-chat { background:#1b2a6b; color:white; border:none; padding:5px 12px; border-radius:7px; font-family:Montserrat,sans-serif; font-size:11px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
-.btn-view { background:#f0f2f8; color:#1b2a6b; border:none; padding:5px 12px; border-radius:7px; font-family:Montserrat,sans-serif; font-size:11px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
+    .sort-link { color:#1b2a6b; text-decoration:none; font-family:Montserrat,sans-serif; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:4px; }
+    .sort-link:hover { color:#c0392b; }
+    .sort-arrow { font-size:10px; }
+    .mezun-table { width:100%; border-collapse:collapse; background:white; border-radius:14px; overflow:hidden; box-shadow:0 2px 12px rgba(27,42,107,0.08); }
+    .mezun-table thead tr { background:#1b2a6b; }
+    .mezun-table thead th { padding:13px 16px; color:white; font-family:Montserrat,sans-serif; font-size:11px; font-weight:700; text-align:left; white-space:nowrap; }
+    .mezun-table tbody tr { border-bottom:1px solid #f0f2f8; transition:.15s; }
+    .mezun-table tbody tr:hover { background:#f7f8fc; }
+    .mezun-table td { padding:12px 16px; font-family:Montserrat,sans-serif; font-size:13px; color:#2c3e50; }
+    .avatar-sm { width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #e0e3ef; }
+    .name-cell { display:flex; align-items:center; gap:10px; }
+    .faculty-badge { font-size:10px; padding:3px 9px; background:#e8ecf8; color:#1b2a6b; border-radius:20px; font-weight:700; }
+    .pts-badge { font-size:11px; font-weight:800; color:#c0392b; }
+    .btn-chat { background:#1b2a6b; color:white; border:none; padding:5px 12px; border-radius:7px; font-family:Montserrat,sans-serif; font-size:11px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
+    .btn-view { background:#f0f2f8; color:#1b2a6b; border:none; padding:5px 12px; border-radius:7px; font-family:Montserrat,sans-serif; font-size:11px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
 </style>
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-            <div>
-                <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin:0 0 4px;" th:text="#{mezun.catalog.title}">Alumni Catalog</h1>
-                <p style="color:#8a91a8;font-size:13px;margin:0;" th:text="#{mezun.catalog.subtitle}">Connect with Manas graduates worldwide</p>
-            </div>
-            <div th:if="${mezunPage != null}" style="font-family:Montserrat,sans-serif;font-size:13px;color:#8a91a8;">
-                Total: <strong th:text="${mezunPage.totalElements}">0</strong> alumni
-            </div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+            <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin:0 0 4px;" th:text="#{mezun.catalog.title}">Alumni Catalog</h1>
+            <p style="color:#8a91a8;font-size:13px;margin:0;" th:text="#{mezun.catalog.subtitle}">Connect with Manas graduates worldwide</p>
         </div>
+        <div th:if="${mezunPage != null}" style="font-family:Montserrat,sans-serif;font-size:13px;color:#8a91a8;">
+            Total: <strong th:text="${mezunPage.totalElements}">0</strong> alumni
+        </div>
+    </div>
 
-        <!-- Filters -->
-        <form th:action="@{/mezun}" method="get" style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-            <input type="hidden" name="sortBy" th:value="${sortBy}"/>
-            <input type="hidden" name="sortDir" th:value="${sortDir}"/>
-            <div style="flex:1;min-width:180px;">
-                <label style="font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;color:#8a91a8;display:block;margin-bottom:5px;">NAME / SURNAME</label>
-                <input type="text" name="name" th:value="${searchName}" style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;box-sizing:border-box;" placeholder="Search by name..."/>
-            </div>
-            <div style="min-width:200px;">
-                <label style="font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;color:#8a91a8;display:block;margin-bottom:5px;">FACULTY</label>
-                <select name="facultyId" style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;">
-                    <option value="">All Faculties</option>
-                    <option th:each="f : ${faculties}" th:value="${f.id}" th:text="${f.name}" th:selected="${selectedFaculty != null and selectedFaculty == f.id}">Faculty</option>
-                </select>
-            </div>
-            <div style="min-width:120px;">
-                <label style="font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;color:#8a91a8;display:block;margin-bottom:5px;">YEAR</label>
-                <input type="number" name="graduationYear" th:value="${selectedYear}" min="1990" max="2030" style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;" placeholder="e.g. 2018"/>
-            </div>
-            <button type="submit" style="padding:10px 22px;background:#1b2a6b;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;">Search</button>
-            <a th:href="@{/mezun}" style="padding:10px 16px;background:#f0f2f8;color:#1b2a6b;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">Reset</a>
-        </form>
+    <!-- Filters -->
+    <form th:action="@{/mezun}" method="get" style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <input type="hidden" name="sortBy" th:value="${sortBy}"/>
+        <input type="hidden" name="sortDir" th:value="${sortDir}"/>
+        <div style="flex:1;min-width:180px;">
+            <label style="font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;color:#8a91a8;display:block;margin-bottom:5px;" th:text="#{mezun.filter.name}">NAME / SURNAME</label>
+            <input type="text" name="name" th:value="${searchName}" style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;box-sizing:border-box;" th:placeholder="#{mezun.filter.name_ph}"/>
+        </div>
+        <div style="min-width:200px;">
+            <label style="font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;color:#8a91a8;display:block;margin-bottom:5px;" th:text="#{mezun.filter.faculty}">FACULTY</label>
+            <select name="facultyId" style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;">
+                <option value="" th:text="#{mezun.filter.all_faculties}">All Faculties</option>
+                <option th:each="f : ${faculties}" th:value="${f.id}" th:text="${f.name}" th:selected="${selectedFaculty != null and selectedFaculty == f.id}">Faculty</option>
+            </select>
+        </div>
+        <div style="min-width:120px;">
+            <label style="font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;color:#8a91a8;display:block;margin-bottom:5px;" th:text="#{mezun.filter.year}">YEAR</label>
+            <input type="number" name="graduationYear" th:value="${selectedYear}" min="1990" max="2030" style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;" placeholder="e.g. 2018"/>
+        </div>
+        <button type="submit" style="padding:10px 22px;background:#1b2a6b;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;" th:text="#{mezun.filter.search}">Search</button>
+        <a th:href="@{/mezun}" style="padding:10px 16px;background:#f0f2f8;color:#1b2a6b;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;" th:text="#{mezun.filter.reset}">Reset</a>
+    </form>
 
-        <!-- Table -->
-        <div th:if="${mezunPage != null and not mezunPage.empty}">
-            <table class="mezun-table">
-                <thead>
-                <tr>
-                    <th style="width:36px;"></th>
-                    <th>
-                        <a th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy='name',sortDir=${sortBy=='name'?reverseSortDir:'asc'})}" class="sort-link" style="color:white;">
-                            Full Name
-                            <span class="sort-arrow" th:if="${sortBy=='name'}" th:text="${sortDir=='asc'?'▲':'▼'}"></span>
-                        </a>
-                    </th>
-                    <th>
-                        <a th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy='faculty',sortDir=${sortBy=='faculty'?reverseSortDir:'asc'})}" class="sort-link" style="color:white;">
-                            Faculty
-                            <span class="sort-arrow" th:if="${sortBy=='faculty'}" th:text="${sortDir=='asc'?'▲':'▼'}"></span>
-                        </a>
-                    </th>
-                    <th>
-                        <a th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy='year',sortDir=${sortBy=='year'?reverseSortDir:'asc'})}" class="sort-link" style="color:white;">
-                            Year
-                            <span class="sort-arrow" th:if="${sortBy=='year'}" th:text="${sortDir=='asc'?'▲':'▼'}"></span>
-                        </a>
-                    </th>
-                    <th>Profession</th>
-                    <th>
-                        <a th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy='points',sortDir=${sortBy=='points'?reverseSortDir:'desc'})}" class="sort-link" style="color:white;">
-                            Points
-                            <span class="sort-arrow" th:if="${sortBy=='points'}" th:text="${sortDir=='asc'?'▲':'▼'}"></span>
-                        </a>
-                    </th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="u : ${mezunPage.content}">
-                    <td>
-                        <img th:src="${u.profile != null and u.profile.avatarUrl != null ? u.profile.avatarUrl : '/images/default-avatar.svg'}"
-                             class="avatar-sm" alt="avatar"/>
-                    </td>
-                    <td>
-                        <a th:href="@{/mezun/{id}(id=${u.id})}" style="font-weight:700;color:#1b2a6b;text-decoration:none;" th:text="${u.fullName}">Name</a>
-                    </td>
-                    <td>
-                        <span th:if="${u.faculty != null}" class="faculty-badge" th:text="${u.faculty.code}">ENG</span>
-                        <span th:if="${u.faculty == null}" style="color:#ccc;">—</span>
-                    </td>
-                    <td>
-                        <span th:if="${u.graduationYear != null}" th:text="${u.graduationYear}">2020</span>
-                        <span th:if="${u.graduationYear == null}" style="color:#ccc;">—</span>
-                    </td>
-                    <td>
-                        <span th:if="${u.profile != null and u.profile.headline != null}" style="font-size:12px;color:#5a6380;" th:text="${u.profile.headline}">Profession</span>
-                        <span th:if="${u.profile == null or u.profile.headline == null}" style="color:#ccc;">—</span>
-                    </td>
-                    <td>
-                        <span class="pts-badge" th:text="${(u.profile != null ? u.profile.totalPoints : 0) + ' pts'}">0 pts</span>
-                    </td>
-                    <td style="display:flex;gap:6px;">
-                        <a th:href="@{/mezun/{id}(id=${u.id})}" class="btn-view">View</a>
-                        <form th:action="@{/chat/direct/{uid}(uid=${u.id})}" method="post" style="margin:0;">
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                            <button type="submit" class="btn-chat">💬 Chat</button>
-                        </form>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+    <!-- Table -->
+    <div th:if="${mezunPage != null and not mezunPage.empty}">
+        <table class="mezun-table">
+            <thead>
+            <tr>
+                <th style="width:36px;"></th>
+                <th>
+                    <a th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy='name',sortDir=${sortBy=='name'?reverseSortDir:'asc'})}" class="sort-link" style="color:white;">
+                        Full Name
+                        <span class="sort-arrow" th:if="${sortBy=='name'}" th:text="${sortDir=='asc'?'▲':'▼'}"></span>
+                    </a>
+                </th>
+                <th>
+                    <a th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy='faculty',sortDir=${sortBy=='faculty'?reverseSortDir:'asc'})}" class="sort-link" style="color:white;">
+                        Faculty
+                        <span class="sort-arrow" th:if="${sortBy=='faculty'}" th:text="${sortDir=='asc'?'▲':'▼'}"></span>
+                    </a>
+                </th>
+                <th>
+                    <a th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy='year',sortDir=${sortBy=='year'?reverseSortDir:'asc'})}" class="sort-link" style="color:white;">
+                        Year
+                        <span class="sort-arrow" th:if="${sortBy=='year'}" th:text="${sortDir=='asc'?'▲':'▼'}"></span>
+                    </a>
+                </th>
+                <th th:text="#{mezun.col.profession}">Profession</th>
+                <th>
+                    <a th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy='points',sortDir=${sortBy=='points'?reverseSortDir:'desc'})}" class="sort-link" style="color:white;">
+                        Points
+                        <span class="sort-arrow" th:if="${sortBy=='points'}" th:text="${sortDir=='asc'?'▲':'▼'}"></span>
+                    </a>
+                </th>
+                <th th:text="#{mezun.col.actions}">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="u : ${mezunPage.content}">
+                <td>
+                    <img th:src="${u.profile != null and u.profile.avatarUrl != null ? u.profile.avatarUrl : '/images/default-avatar.svg'}"
+                         class="avatar-sm" alt="avatar"/>
+                </td>
+                <td>
+                    <a th:href="@{/mezun/{id}(id=${u.id})}" style="font-weight:700;color:#1b2a6b;text-decoration:none;" th:text="${u.fullName}">Name</a>
+                </td>
+                <td>
+                    <span th:if="${u.faculty != null}" class="faculty-badge" th:text="${u.faculty.code}">ENG</span>
+                    <span th:if="${u.faculty == null}" style="color:#ccc;">—</span>
+                </td>
+                <td>
+                    <span th:if="${u.graduationYear != null}" th:text="${u.graduationYear}">2020</span>
+                    <span th:if="${u.graduationYear == null}" style="color:#ccc;">—</span>
+                </td>
+                <td>
+                    <span th:if="${u.profile != null and u.profile.headline != null}" style="font-size:12px;color:#5a6380;" th:text="${u.profile.headline}">Profession</span>
+                    <span th:if="${u.profile == null or u.profile.headline == null}" style="color:#ccc;">—</span>
+                </td>
+                <td>
+                    <span class="pts-badge" th:text="${(u.profile != null ? u.profile.totalPoints : 0) + ' pts'}">0 pts</span>
+                </td>
+                <td style="display:flex;gap:6px;">
+                    <a th:href="@{/mezun/{id}(id=${u.id})}" class="btn-view">View</a>
+                    <form th:action="@{/chat/direct/{uid}(uid=${u.id})}" method="post" style="margin:0;">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="btn-chat">💬 Chat</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
 
-            <!-- Pagination -->
-            <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;" th:if="${mezunPage.totalPages > 1}">
-                <a th:if="${not mezunPage.first}"
-                   th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy=${sortBy},sortDir=${sortDir},page=${mezunPage.number-1})}"
-                   style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;text-decoration:none;">← Prev</a>
-                <span th:each="i : ${#numbers.sequence(0, mezunPage.totalPages-1)}">
+        <!-- Pagination -->
+        <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;" th:if="${mezunPage.totalPages > 1}">
+            <a th:if="${not mezunPage.first}"
+               th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy=${sortBy},sortDir=${sortDir},page=${mezunPage.number-1})}"
+               style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;text-decoration:none;">← Prev</a>
+            <span th:each="i : ${#numbers.sequence(0, mezunPage.totalPages-1)}">
                     <a th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy=${sortBy},sortDir=${sortDir},page=${i})}"
                        th:text="${i+1}"
                        th:style="${i == mezunPage.number ? 'background:#1b2a6b;color:white;' : 'background:white;color:#1b2a6b;'}"
                        style="padding:7px 13px;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;display:inline-block;">1</a>
                 </span>
-                <a th:if="${not mezunPage.last}"
-                   th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy=${sortBy},sortDir=${sortDir},page=${mezunPage.number+1})}"
-                   style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;text-decoration:none;">Next →</a>
-            </div>
+            <a th:if="${not mezunPage.last}"
+               th:href="@{/mezun(name=${searchName},facultyId=${selectedFaculty},graduationYear=${selectedYear},sortBy=${sortBy},sortDir=${sortDir},page=${mezunPage.number+1})}"
+               style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;text-decoration:none;" th:text="#{page.next}">Next →</a>
         </div>
+    </div>
 
-        <div th:if="${mezunPage == null or mezunPage.empty}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
-            <div style="font-size:48px;margin-bottom:16px;">🎓</div>
-            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;">No alumni found</h3>
-            <p style="color:#8a91a8;">Try adjusting your filters.</p>
-        </div>
-    </main>
+    <div th:if="${mezunPage == null or mezunPage.empty}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+        <div style="font-size:48px;margin-bottom:16px;">🎓</div>
+        <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;" th:text="#{mezun.no_alumni}">No alumni found</h3>
+        <p style="color:#8a91a8;">Try adjusting your filters.</p>
+    </div>
+</main>
 </div>
 </body>
 </html>

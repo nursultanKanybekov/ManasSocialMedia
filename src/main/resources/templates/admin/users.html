@@ -9,7 +9,7 @@
 
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div>
-            <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:20px;color:#1b2a6b;margin:0 0 4px;">User Management</h2>
+            <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:20px;color:#1b2a6b;margin:0 0 4px;" th:text="#{admin.manage_users}">User Management</h2>
             <span style="font-size:13px;color:#8a91a8;">
                 <th:block th:if="${param.q != null and !#strings.isEmpty(param.q)}">
                     Results for "<strong th:text="${param.q}"></strong>":
@@ -34,7 +34,7 @@
             </svg>
             <input type="text" name="q"
                    th:value="${param.q}"
-                   placeholder="Search by name or email…"
+                   th:placeholder="#{navbar.search.placeholder}"
                    style="width:100%;padding:9px 12px 9px 34px;border:1.5px solid #e2e5f0;border-radius:10px;
                           font-family:Montserrat,sans-serif;font-size:13px;color:#1b2a6b;outline:none;
                           box-sizing:border-box;background:#fff;"
@@ -59,7 +59,7 @@
     <!-- Role filter pills -->
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
         <a th:href="@{/admin/users}" style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;
-       font-family:Montserrat,sans-serif;text-decoration:none;background:#1b2a6b;color:#fff;">All</a>
+       font-family:Montserrat,sans-serif;text-decoration:none;background:#1b2a6b;color:#fff;" th:text="#{feed.tab.all}">All</a>
         <a th:each="r : ${roles}" th:href="@{/admin/users(role=${r.name()})}"
            th:text="${r.name()}"
            style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;
@@ -71,12 +71,12 @@
         <table style="width:100%;border-collapse:collapse;">
             <thead>
             <tr style="background:#f7f8fc;border-bottom:1.5px solid #e2e5f0;">
-                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">User</th>
-                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Role</th>
-                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Status</th>
-                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Faculty</th>
-                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Joined</th>
-                <th style="padding:12px 16px;text-align:right;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Actions</th>
+                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;" th:text="#{table.user}">User</th>
+                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;" th:text="#{table.role}">Role</th>
+                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;" th:text="#{admin.status}">Status</th>
+                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;" th:text="#{admin.faculty}">Faculty</th>
+                <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;" th:text="#{admin.joined}">Joined</th>
+                <th style="padding:12px 16px;text-align:right;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;" th:text="#{table.actions}">Actions</th>
             </tr>
             </thead>
             <tbody>

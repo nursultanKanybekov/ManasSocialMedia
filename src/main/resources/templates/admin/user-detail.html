@@ -23,7 +23,7 @@
         </div>
 
         <hr/>
-        <h4>Actions</h4>
+        <h4 th:text="#{table.actions}">Actions</h4>
 
         <!-- SUPER_ADMIN: show read-only notice, hide all action buttons -->
         <div th:if="${targetIsSuperAdmin}"
@@ -38,7 +38,7 @@
             <form th:action="@{/admin/users/{id}/activate(id=${user.id})}" method="post" style="display:inline">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <button type="submit" class="btn btn-primary"
-                        th:disabled="${user.status.name() == 'ACTIVE'}">Activate</button>
+                        th:disabled="${user.status.name() == 'ACTIVE'}" th:text="#{admin.activate}">Activate</button>
             </form>
 
             <!-- Suspend -->
@@ -46,7 +46,7 @@
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <button type="submit" class="btn btn-outline"
                         th:disabled="${user.status.name() == 'SUSPENDED'}"
-                        onclick="return confirm('Suspend this user?')">Suspend</button>
+                        onclick="return confirm('Suspend this user?')" th:text="#{admin.suspend}">Suspend</button>
             </form>
 
             <!-- Change Role (SUPER_ADMIN option excluded) -->
@@ -93,13 +93,13 @@
                 <div>
                     <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">New Password</label>
                     <input type="password" name="newPassword" required minlength="6"
-                           placeholder="Min 6 characters"
+                           th:placeholder="#{admin.new_password_ph}"
                            style="padding:10px 14px;border:2px solid #e0e3ef;border-radius:10px;font-size:14px;outline:none;width:220px;"/>
                 </div>
                 <div>
                     <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Confirm Password</label>
                     <input type="password" name="confirmPassword" required minlength="6"
-                           placeholder="Repeat password"
+                           th:placeholder="#{admin.confirm_password_ph}"
                            style="padding:10px 14px;border:2px solid #e0e3ef;border-radius:10px;font-size:14px;outline:none;width:220px;"/>
                 </div>
                 <button type="submit" class="btn btn-primary"

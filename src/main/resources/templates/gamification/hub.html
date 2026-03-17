@@ -286,7 +286,7 @@
     <div class="gz-table-wrap" th:if="${not #lists.isEmpty(liveRooms)}" style="margin-bottom:20px;">
       <table class="gz-table">
         <thead><tr>
-          <th>Game</th><th>Players</th><th>Spectators</th><th>Started</th><th></th>
+          <th th:text="#{gaming.hub.col.game}">Game</th><th th:text="#{gaming.hub.col.players}">Players</th><th th:text="#{gaming.hub.col.spectators}">Spectators</th><th th:text="#{gaming.hub.col.started}">Started</th><th></th>
         </tr></thead>
         <tbody>
         <tr th:each="room : ${liveRooms}">
@@ -326,7 +326,7 @@
       </div>
       <table class="gz-table" th:unless="${#lists.isEmpty(openRooms)}">
         <thead><tr>
-          <th>Game</th><th>Host</th><th>Players</th><th>Status</th><th></th>
+          <th th:text="#{gaming.hub.col.game}">Game</th><th th:text="#{gaming.hub.col.host}">Host</th><th th:text="#{gaming.hub.col.players}">Players</th><th th:text="#{gaming.hub.col.status}">Status</th><th></th>
         </tr></thead>
         <tbody>
         <tr th:each="room : ${openRooms}">

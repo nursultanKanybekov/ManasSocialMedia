@@ -5,83 +5,83 @@
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
-        <!-- Header -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-            <div>
-                <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;" th:text="#{competition.list.title}">Competitions</h1>
-                <p style="color:#8a91a8;font-size:13px;" th:text="#{competition.list.subtitle}">Compete and win with fellow students</p>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div>
+            <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;" th:text="#{competition.list.title}">Competitions</h1>
+            <p style="color:#8a91a8;font-size:13px;" th:text="#{competition.list.subtitle}">Compete and win with fellow students</p>
+        </div>
+        <a sec:authorize="hasAnyRole('SECRETARY','ADMIN','MEZUN')" th:href="@{/competitions/new}"
+           style="padding:10px 20px;background:#c0392b;color:white;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;" th:text="#{competition.create}">+ New Competition</a>
+    </div>
+
+    <!-- Status Filter -->
+    <div style="background:white;border-radius:12px;padding:16px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <a th:href="@{/competitions}" style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;"
+           th:classappend="${selectedStatus == null ? 'style=&quot;background:#1b2a6b;color:white;&quot;' : 'style=&quot;background:#f0f2f8;color:#1b2a6b;&quot;'}"
+           th:style="${selectedStatus == null ? 'background:#1b2a6b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}" th:text="#{competition.status.all}">All</a>
+        <a th:href="@{/competitions(status='UPCOMING')}" style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;"
+           th:style="${selectedStatus == 'UPCOMING' ? 'background:#1b2a6b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}" th:text="#{competition.status.upcoming}">Upcoming</a>
+        <a th:href="@{/competitions(status='ACTIVE')}" style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;"
+           th:style="${selectedStatus == 'ACTIVE' ? 'background:#c0392b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}" th:text="#{competition.status.active}">Active</a>
+        <a th:href="@{/competitions(status='CLOSED')}" style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;"
+           th:style="${selectedStatus == 'CLOSED' ? 'background:#1b2a6b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}" th:text="#{competition.status.closed}">Closed</a>
+
+        <select onchange="window.location='/competitions?facultyId='+this.value" style="margin-left:auto;padding:7px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;">
+            <option value="" th:text="#{mezun.filter.all_faculties}">All Faculties</option>
+            <option th:each="f : ${faculties}" th:value="${f.id}" th:text="${f.name}"
+                    th:selected="${selectedFaculty != null and selectedFaculty == f.id}">Faculty</option>
+        </select>
+    </div>
+
+    <!-- Competitions Grid -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;" th:if="${competitionPage != null and not competitionPage.empty}">
+        <div th:each="comp : ${competitionPage.content}"
+             style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+            <!-- Card Header -->
+            <div style="background:linear-gradient(135deg,#1b2a6b,#111c4e);padding:20px;position:relative;">
+                <div style="position:absolute;top:14px;right:14px;padding:4px 10px;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;font-size:10px;"
+                     th:style="${comp.status == 'ACTIVE' ? 'background:rgba(255,165,0,0.2);color:#ffc107;border:1px solid rgba(255,165,0,0.3);' : comp.status == 'UPCOMING' ? 'background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.2);' : 'background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);'}"
+                     th:text="${comp.status}">UPCOMING</div>
+                <h3 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:white;margin-bottom:6px;padding-right:80px;" th:text="${comp.title}">Title</h3>
+                <p th:if="${comp.prize != null}" style="font-size:12px;color:rgba(255,255,255,0.7);">🏆 <span th:text="${comp.prize}">Prize</span></p>
             </div>
-            <a sec:authorize="hasAnyRole('SECRETARY','ADMIN','MEZUN')" th:href="@{/competitions/new}"
-               style="padding:10px 20px;background:#c0392b;color:white;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;" th:text="#{competition.create}">+ New Competition</a>
-        </div>
-
-        <!-- Status Filter -->
-        <div style="background:white;border-radius:12px;padding:16px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            <a th:href="@{/competitions}" style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;"
-               th:classappend="${selectedStatus == null ? 'style=&quot;background:#1b2a6b;color:white;&quot;' : 'style=&quot;background:#f0f2f8;color:#1b2a6b;&quot;'}"
-               th:style="${selectedStatus == null ? 'background:#1b2a6b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}" th:text="#{competition.status.all}">All</a>
-            <a th:href="@{/competitions(status='UPCOMING')}" style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;"
-               th:style="${selectedStatus == 'UPCOMING' ? 'background:#1b2a6b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}" th:text="#{competition.status.upcoming}">Upcoming</a>
-            <a th:href="@{/competitions(status='ACTIVE')}" style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;"
-               th:style="${selectedStatus == 'ACTIVE' ? 'background:#c0392b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}" th:text="#{competition.status.active}">Active</a>
-            <a th:href="@{/competitions(status='CLOSED')}" style="padding:7px 16px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;"
-               th:style="${selectedStatus == 'CLOSED' ? 'background:#1b2a6b;color:white;' : 'background:#f0f2f8;color:#1b2a6b;'}" th:text="#{competition.status.closed}">Closed</a>
-
-            <select onchange="window.location='/competitions?facultyId='+this.value" style="margin-left:auto;padding:7px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;">
-                <option value="" th:text="#{mezun.filter.all_faculties}">All Faculties</option>
-                <option th:each="f : ${faculties}" th:value="${f.id}" th:text="${f.name}"
-                        th:selected="${selectedFaculty != null and selectedFaculty == f.id}">Faculty</option>
-            </select>
-        </div>
-
-        <!-- Competitions Grid -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;" th:if="${competitionPage != null and not competitionPage.empty}">
-            <div th:each="comp : ${competitionPage.content}"
-                 style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
-                <!-- Card Header -->
-                <div style="background:linear-gradient(135deg,#1b2a6b,#111c4e);padding:20px;position:relative;">
-                    <div style="position:absolute;top:14px;right:14px;padding:4px 10px;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;font-size:10px;"
-                         th:style="${comp.status == 'ACTIVE' ? 'background:rgba(255,165,0,0.2);color:#ffc107;border:1px solid rgba(255,165,0,0.3);' : comp.status == 'UPCOMING' ? 'background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.2);' : 'background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);'}"
-                         th:text="${comp.status}">UPCOMING</div>
-                    <h3 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:white;margin-bottom:6px;padding-right:80px;" th:text="${comp.title}">Title</h3>
-                    <p th:if="${comp.prize != null}" style="font-size:12px;color:rgba(255,255,255,0.7);">🏆 <span th:text="${comp.prize}">Prize</span></p>
-                </div>
-                <div style="padding:16px;">
-                    <p th:if="${comp.description != null}" style="font-size:13px;color:#2c3e50;line-height:1.5;margin-bottom:12px;"
-                       th:text="${#strings.abbreviate(comp.description, 100)}">Description</p>
-                    <div th:if="${comp.organizer != null}" style="font-size:11px;color:#8a91a8;margin-bottom:8px;">📌 <span th:text="${comp.organizer}">Organizer</span></div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;">
+            <div style="padding:16px;">
+                <p th:if="${comp.description != null}" style="font-size:13px;color:#2c3e50;line-height:1.5;margin-bottom:12px;"
+                   th:text="${#strings.abbreviate(comp.description, 100)}">Description</p>
+                <div th:if="${comp.organizer != null}" style="font-size:11px;color:#8a91a8;margin-bottom:8px;">📌 <span th:text="${comp.organizer}">Organizer</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;">
                         <span style="font-size:11px;color:#8a91a8;">
                             👥 <span th:text="${comp.registrationCount}">0</span> <span th:text="#{competition.registered}">registered</span>
                         </span>
-                        <a th:href="@{/competitions/{id}(id=${comp.id})}"
-                           style="padding:7px 14px;background:#1b2a6b;color:white;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;" th:text="#{competition.view}">View Details</a>
-                    </div>
+                    <a th:href="@{/competitions/{id}(id=${comp.id})}"
+                       style="padding:7px 14px;background:#1b2a6b;color:white;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;text-decoration:none;" th:text="#{competition.view}">View Details</a>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Empty State -->
-        <div th:if="${competitionPage == null or competitionPage.empty}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
-            <div style="font-size:48px;margin-bottom:16px;">🥇</div>
-            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;margin-bottom:8px;" th:text="#{competition.empty.title}">No Competitions Found</h3>
-            <p style="color:#8a91a8;" th:text="#{competition.empty.subtitle}">Check back soon for new competitions.</p>
-        </div>
+    <!-- Empty State -->
+    <div th:if="${competitionPage == null or competitionPage.empty}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+        <div style="font-size:48px;margin-bottom:16px;">🥇</div>
+        <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;margin-bottom:8px;" th:text="#{competition.empty.title}">No Competitions Found</h3>
+        <p style="color:#8a91a8;" th:text="#{competition.empty.subtitle}">Check back soon for new competitions.</p>
+    </div>
 
-        <!-- Pagination -->
-        <div th:if="${competitionPage != null and competitionPage.totalPages > 1}" style="display:flex;justify-content:center;gap:8px;margin-top:24px;">
-            <a th:if="${not competitionPage.first}"
-               th:href="@{/competitions(page=${competitionPage.number - 1},status=${selectedStatus},facultyId=${selectedFaculty})}"
-               style="padding:8px 16px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;text-decoration:none;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;">← Prev</a>
-            <span style="padding:8px 16px;background:#1b2a6b;color:white;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;"
-                  th:text="${competitionPage.number + 1} + ' / ' + ${competitionPage.totalPages}">1/5</span>
-            <a th:if="${not competitionPage.last}"
-               th:href="@{/competitions(page=${competitionPage.number + 1},status=${selectedStatus},facultyId=${selectedFaculty})}"
-               style="padding:8px 16px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;text-decoration:none;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;">Next →</a>
-        </div>
-    </main>
+    <!-- Pagination -->
+    <div th:if="${competitionPage != null and competitionPage.totalPages > 1}" style="display:flex;justify-content:center;gap:8px;margin-top:24px;">
+        <a th:if="${not competitionPage.first}"
+           th:href="@{/competitions(page=${competitionPage.number - 1},status=${selectedStatus},facultyId=${selectedFaculty})}"
+           style="padding:8px 16px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;text-decoration:none;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;">← Prev</a>
+        <span style="padding:8px 16px;background:#1b2a6b;color:white;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;"
+              th:text="${competitionPage.number + 1} + ' / ' + ${competitionPage.totalPages}">1/5</span>
+        <a th:if="${not competitionPage.last}"
+           th:href="@{/competitions(page=${competitionPage.number + 1},status=${selectedStatus},facultyId=${selectedFaculty})}"
+           style="padding:8px 16px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;text-decoration:none;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;" th:text="#{page.next}">Next →</a>
+    </div>
+</main>
 </div>
 </body>
 </html>

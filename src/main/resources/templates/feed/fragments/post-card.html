@@ -101,10 +101,10 @@
     <div th:id="'comments-' + ${post.id}" class="comments-section" style="display:none;"></div>
     <div class="comment-input-row" th:id="'comment-row-' + ${post.id}" style="display:none;">
         <input type="text" th:id="'comment-input-' + ${post.id}" th:data-post-id="${post.id}"
-               name="content" placeholder="Write a comment..." class="comment-input"
+               name="content" th:placeholder="#{feed.comment.placeholder}" class="comment-input"
                onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
         <button class="btn btn-sm btn-primary" th:data-post-id="${post.id}"
-                onclick="submitComment(this.dataset.postId)">Send</button>
+                onclick="submitComment(this.dataset.postId)" th:text="#{comment.submit}">Send</button>
     </div>
 </div>
 

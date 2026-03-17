@@ -51,10 +51,10 @@
             <span style="color:#8a91a8;font-weight:600;">Sort:</span>
             <select onchange="applySort(this.value)"
                     style="padding:7px 12px;border:1.5px solid #e2e5f0;border-radius:8px;font-family:Montserrat,sans-serif;font-size:12px;color:#1b2a6b;background:#fff;cursor:pointer;">
-                <option value="newest"   th:selected="${param.sort == null or param.sort[0] == 'newest'}">Newest First</option>
-                <option value="oldest"   th:selected="${param.sort != null and param.sort[0] == 'oldest'}">Oldest First</option>
-                <option value="deadline" th:selected="${param.sort != null and param.sort[0] == 'deadline'}">Deadline Soonest</option>
-                <option value="salary"   th:selected="${param.sort != null and param.sort[0] == 'salary'}">Salary</option>
+                <option value="newest"   th:selected="${param.sort == null or param.sort[0] == 'newest'}" th:text="#{career.sort.newest}">Newest First</option>
+                <option value="oldest"   th:selected="${param.sort != null and param.sort[0] == 'oldest'}" th:text="#{career.sort.oldest}">Oldest First</option>
+                <option value="deadline" th:selected="${param.sort != null and param.sort[0] == 'deadline'}" th:text="#{career.sort.deadline}">Deadline Soonest</option>
+                <option value="salary"   th:selected="${param.sort != null and param.sort[0] == 'salary'}" th:text="#{career.sort.salary}">Salary</option>
             </select>
         </div>
     </div>

@@ -4,19 +4,19 @@
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
-        <div class="page-header">
-            <h2>Quiz Result</h2>
-            <a th:href="@{/edu}" class="btn btn-outline">← Back to Education</a>
-        </div>
-        <div class="form-card" style="text-align:center">
-            <h3>Your Score</h3>
-            <div class="score-display" th:text="${score + ' / ' + total}">0 / 0</div>
-            <p th:text="${passed ? 'Congratulations! You passed! 🎉' : 'Keep practicing and try again.'}">Result</p>
-            <a th:href="@{/edu}" class="btn btn-primary" style="margin-top:1rem">Back to Courses</a>
-        </div>
-    </main>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
+    <div class="page-header">
+        <h2 th:text="#{quiz.result.title}">Quiz Result</h2>
+        <a th:href="@{/edu}" class="btn btn-outline">← Back to Education</a>
+    </div>
+    <div class="form-card" style="text-align:center">
+        <h3 th:text="#{quiz.result.score}">Your Score</h3>
+        <div class="score-display" th:text="${score + ' / ' + total}">0 / 0</div>
+        <p th:text="${passed ? 'Congratulations! You passed! 🎉' : 'Keep practicing and try again.'}">Result</p>
+        <a th:href="@{/edu}" class="btn btn-primary" style="margin-top:1rem">Back to Courses</a>
+    </div>
+</main>
 </div>
 <div th:replace="~{fragments/footer :: footer}"></div>
 </body>

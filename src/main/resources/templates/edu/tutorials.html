@@ -2,147 +2,147 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/header :: head(#{page.education})}"></head>
 <style>
-.type-tab { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:30px; font-family:Montserrat,sans-serif; font-weight:700; font-size:12px; text-decoration:none; cursor:pointer; border:2px solid transparent; transition:.2s; }
-.type-tab.all   { background:#1b2a6b; color:white; }
-.type-tab.text  { background:#e3f2fd; color:#1565c0; border-color:#90caf9; }
-.type-tab.video { background:#fce4ec; color:#c62828; border-color:#ef9a9a; }
-.type-tab.audio { background:#e8f5e9; color:#2e7d32; border-color:#a5d6a7; }
-.type-tab.inactive { background:white; color:#8a91a8; border-color:#e0e3ef; }
-.type-tab.inactive:hover { border-color:#1b2a6b; color:#1b2a6b; }
-.tut-card { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(27,42,107,0.08); overflow:hidden; display:flex; flex-direction:column; transition:.2s; }
-.tut-card:hover { box-shadow:0 6px 24px rgba(27,42,107,0.15); transform:translateY(-2px); }
-.tut-card-thumb { width:100%; height:140px; object-fit:cover; background:#f0f2f8; display:flex; align-items:center; justify-content:center; font-size:48px; }
-.tut-card-body { padding:18px; flex:1; display:flex; flex-direction:column; gap:6px; }
-.tut-category { font-size:10px; padding:3px 9px; background:#e8ecf8; color:#1b2a6b; border-radius:20px; font-family:Montserrat,sans-serif; font-weight:700; display:inline-block; }
-.tut-title { font-family:Montserrat,sans-serif; font-weight:800; font-size:14px; color:#1b2a6b; text-decoration:none; line-height:1.4; }
-.tut-title:hover { color:#c0392b; }
-.tut-desc { font-size:12px; color:#8a91a8; flex:1; }
-.tut-meta { display:flex; align-items:center; justify-content:space-between; font-size:11px; color:#8a91a8; margin-top:8px; }
-.badge-text  { background:#e3f2fd; color:#1565c0; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; }
-.badge-video { background:#fce4ec; color:#c62828; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; }
-.badge-audio { background:#e8f5e9; color:#2e7d32; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; }
+    .type-tab { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:30px; font-family:Montserrat,sans-serif; font-weight:700; font-size:12px; text-decoration:none; cursor:pointer; border:2px solid transparent; transition:.2s; }
+    .type-tab.all   { background:#1b2a6b; color:white; }
+    .type-tab.text  { background:#e3f2fd; color:#1565c0; border-color:#90caf9; }
+    .type-tab.video { background:#fce4ec; color:#c62828; border-color:#ef9a9a; }
+    .type-tab.audio { background:#e8f5e9; color:#2e7d32; border-color:#a5d6a7; }
+    .type-tab.inactive { background:white; color:#8a91a8; border-color:#e0e3ef; }
+    .type-tab.inactive:hover { border-color:#1b2a6b; color:#1b2a6b; }
+    .tut-card { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(27,42,107,0.08); overflow:hidden; display:flex; flex-direction:column; transition:.2s; }
+    .tut-card:hover { box-shadow:0 6px 24px rgba(27,42,107,0.15); transform:translateY(-2px); }
+    .tut-card-thumb { width:100%; height:140px; object-fit:cover; background:#f0f2f8; display:flex; align-items:center; justify-content:center; font-size:48px; }
+    .tut-card-body { padding:18px; flex:1; display:flex; flex-direction:column; gap:6px; }
+    .tut-category { font-size:10px; padding:3px 9px; background:#e8ecf8; color:#1b2a6b; border-radius:20px; font-family:Montserrat,sans-serif; font-weight:700; display:inline-block; }
+    .tut-title { font-family:Montserrat,sans-serif; font-weight:800; font-size:14px; color:#1b2a6b; text-decoration:none; line-height:1.4; }
+    .tut-title:hover { color:#c0392b; }
+    .tut-desc { font-size:12px; color:#8a91a8; flex:1; }
+    .tut-meta { display:flex; align-items:center; justify-content:space-between; font-size:11px; color:#8a91a8; margin-top:8px; }
+    .badge-text  { background:#e3f2fd; color:#1565c0; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; }
+    .badge-video { background:#fce4ec; color:#c62828; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; }
+    .badge-audio { background:#e8f5e9; color:#2e7d32; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; }
 </style>
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
 
-        <!-- Header -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-            <div>
-                <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin:0 0 4px;">📚 Tutorials & Resources</h1>
-                <p style="color:#8a91a8;font-size:13px;margin:0;">Learn, watch, and listen to alumni knowledge</p>
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div>
+            <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin:0 0 4px;">📚 Tutorials & Resources</h1>
+            <p style="color:#8a91a8;font-size:13px;margin:0;" th:text="#{edu.subtitle}">Learn, watch, and listen to alumni knowledge</p>
+        </div>
+        <a sec:authorize="hasAnyRole('MEZUN','ADMIN')" th:href="@{/edu/new}"
+           style="background:#1b2a6b;color:white;padding:10px 20px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">
+            + Add Tutorial
+        </a>
+    </div>
+
+    <!-- Search + Filters -->
+    <div style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;">
+        <form th:action="@{/edu}" method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+            <div style="flex:1;min-width:200px;">
+                <label style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;display:block;margin-bottom:5px;">SEARCH</label>
+                <input type="text" name="q" th:value="${q}" th:placeholder="#{navbar.search.placeholder}"
+                       style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;box-sizing:border-box;outline:none;"/>
             </div>
-            <a sec:authorize="hasAnyRole('MEZUN','ADMIN')" th:href="@{/edu/new}"
-               style="background:#1b2a6b;color:white;padding:10px 20px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">
-                + Add Tutorial
-            </a>
-        </div>
+            <div style="min-width:160px;">
+                <label style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;display:block;margin-bottom:5px;">CATEGORY</label>
+                <select name="category" style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;">
+                    <option value="" th:text="#{edu.all_categories}">All Categories</option>
+                    <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}" th:selected="${selected != null and selected == cat}">Cat</option>
+                </select>
+            </div>
+            <button type="submit" style="padding:10px 22px;background:#1b2a6b;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;" th:text="#{common.search}">Search</button>
+            <a th:href="@{/edu}" style="padding:10px 16px;background:#f0f2f8;color:#1b2a6b;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">Reset</a>
+        </form>
+    </div>
 
-        <!-- Search + Filters -->
-        <div style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;">
-            <form th:action="@{/edu}" method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-                <div style="flex:1;min-width:200px;">
-                    <label style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;display:block;margin-bottom:5px;">SEARCH</label>
-                    <input type="text" name="q" th:value="${q}" placeholder="Search tutorials..."
-                           style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;box-sizing:border-box;outline:none;"/>
+    <!-- Media type tabs -->
+    <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;">
+        <a th:href="@{/edu(q=${q},category=${selected})}"
+           th:class="${mediaType == null or mediaType == ''} ? 'type-tab all' : 'type-tab inactive'">
+            📋 All
+        </a>
+        <a th:href="@{/edu(q=${q},category=${selected},mediaType='TEXT')}"
+           th:class="${mediaType == 'TEXT'} ? 'type-tab text' : 'type-tab inactive'">
+            📖 Read
+        </a>
+        <a th:href="@{/edu(q=${q},category=${selected},mediaType='VIDEO')}"
+           th:class="${mediaType == 'VIDEO'} ? 'type-tab video' : 'type-tab inactive'">
+            🎬 Watch
+        </a>
+        <a th:href="@{/edu(q=${q},category=${selected},mediaType='AUDIO')}"
+           th:class="${mediaType == 'AUDIO'} ? 'type-tab audio' : 'type-tab inactive'">
+            🎧 Listen
+        </a>
+    </div>
+
+    <!-- Results count -->
+    <p style="font-size:13px;color:#8a91a8;margin-bottom:16px;" th:if="${tutorials != null}">
+        <strong th:text="${tutorials.totalElements}">0</strong> tutorial(s) found
+    </p>
+
+    <!-- Grid -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px;" th:if="${not tutorials.content.isEmpty()}">
+        <div th:each="t : ${tutorials.content}" class="tut-card">
+
+            <!-- Thumbnail area -->
+            <div class="tut-card-thumb">
+                <div th:if="${t.mediaType.name() == 'VIDEO' and t.mediaUrl != null and !t.mediaUrl.isBlank()}"
+                     style="width:100%;height:140px;background:#111;display:flex;align-items:center;justify-content:center;">
+                    <span style="font-size:48px;">🎬</span>
                 </div>
-                <div style="min-width:160px;">
-                    <label style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;display:block;margin-bottom:5px;">CATEGORY</label>
-                    <select name="category" style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;">
-                        <option value="">All Categories</option>
-                        <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}" th:selected="${selected != null and selected == cat}">Cat</option>
-                    </select>
+                <div th:if="${t.mediaType.name() == 'AUDIO'}"
+                     style="width:100%;height:140px;background:linear-gradient(135deg,#1b2a6b,#27ae60);display:flex;align-items:center;justify-content:center;">
+                    <span style="font-size:48px;">🎧</span>
                 </div>
-                <button type="submit" style="padding:10px 22px;background:#1b2a6b;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;">Search</button>
-                <a th:href="@{/edu}" style="padding:10px 16px;background:#f0f2f8;color:#1b2a6b;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">Reset</a>
-            </form>
-        </div>
-
-        <!-- Media type tabs -->
-        <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;">
-            <a th:href="@{/edu(q=${q},category=${selected})}"
-               th:class="${mediaType == null or mediaType == ''} ? 'type-tab all' : 'type-tab inactive'">
-                📋 All
-            </a>
-            <a th:href="@{/edu(q=${q},category=${selected},mediaType='TEXT')}"
-               th:class="${mediaType == 'TEXT'} ? 'type-tab text' : 'type-tab inactive'">
-                📖 Read
-            </a>
-            <a th:href="@{/edu(q=${q},category=${selected},mediaType='VIDEO')}"
-               th:class="${mediaType == 'VIDEO'} ? 'type-tab video' : 'type-tab inactive'">
-                🎬 Watch
-            </a>
-            <a th:href="@{/edu(q=${q},category=${selected},mediaType='AUDIO')}"
-               th:class="${mediaType == 'AUDIO'} ? 'type-tab audio' : 'type-tab inactive'">
-                🎧 Listen
-            </a>
-        </div>
-
-        <!-- Results count -->
-        <p style="font-size:13px;color:#8a91a8;margin-bottom:16px;" th:if="${tutorials != null}">
-            <strong th:text="${tutorials.totalElements}">0</strong> tutorial(s) found
-        </p>
-
-        <!-- Grid -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px;" th:if="${not tutorials.content.isEmpty()}">
-            <div th:each="t : ${tutorials.content}" class="tut-card">
-
-                <!-- Thumbnail area -->
-                <div class="tut-card-thumb">
-                    <div th:if="${t.mediaType.name() == 'VIDEO' and t.mediaUrl != null and !t.mediaUrl.isBlank()}"
-                         style="width:100%;height:140px;background:#111;display:flex;align-items:center;justify-content:center;">
-                        <span style="font-size:48px;">🎬</span>
-                    </div>
-                    <div th:if="${t.mediaType.name() == 'AUDIO'}"
-                         style="width:100%;height:140px;background:linear-gradient(135deg,#1b2a6b,#27ae60);display:flex;align-items:center;justify-content:center;">
-                        <span style="font-size:48px;">🎧</span>
-                    </div>
-                    <div th:if="${t.mediaType.name() == 'TEXT'}"
-                         style="width:100%;height:140px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);display:flex;align-items:center;justify-content:center;">
-                        <span style="font-size:48px;">📖</span>
-                    </div>
-                </div>
-
-                <div class="tut-card-body">
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <span th:if="${t.category}" class="tut-category" th:text="${t.category}">Cat</span>
-                        <span th:if="${t.mediaType.name() == 'TEXT'}"  class="badge-text">Read</span>
-                        <span th:if="${t.mediaType.name() == 'VIDEO'}" class="badge-video">Watch</span>
-                        <span th:if="${t.mediaType.name() == 'AUDIO'}" class="badge-audio">Listen</span>
-                    </div>
-                    <a th:href="@{/edu/tutorial/{id}(id=${t.id})}" class="tut-title"
-                       th:text="${t.getLocalizedTitle(lang)}">Tutorial Title</a>
-                    <p class="tut-desc" th:if="${t.description}" th:text="${#strings.abbreviate(t.description, 80)}">Desc</p>
-                    <div class="tut-meta">
-                        <span th:text="${t.author != null ? t.author.fullName : ''}">Author</span>
-                        <span>👁 <span th:text="${t.viewCount}">0</span></span>
-                    </div>
+                <div th:if="${t.mediaType.name() == 'TEXT'}"
+                     style="width:100%;height:140px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);display:flex;align-items:center;justify-content:center;">
+                    <span style="font-size:48px;">📖</span>
                 </div>
             </div>
-        </div>
 
-        <!-- Empty state -->
-        <div th:if="${tutorials.content.isEmpty()}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
-            <div style="font-size:48px;margin-bottom:16px;">📚</div>
-            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;">No tutorials found</h3>
-            <p style="color:#8a91a8;margin-bottom:20px;">Try a different search or be the first to add one!</p>
-            <a sec:authorize="hasAnyRole('MEZUN','ADMIN')" th:href="@{/edu/new}"
-               style="background:#1b2a6b;color:white;padding:10px 24px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">+ Add Tutorial</a>
+            <div class="tut-card-body">
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span th:if="${t.category}" class="tut-category" th:text="${t.category}">Cat</span>
+                    <span th:if="${t.mediaType.name() == 'TEXT'}"  class="badge-text">Read</span>
+                    <span th:if="${t.mediaType.name() == 'VIDEO'}" class="badge-video">Watch</span>
+                    <span th:if="${t.mediaType.name() == 'AUDIO'}" class="badge-audio">Listen</span>
+                </div>
+                <a th:href="@{/edu/tutorial/{id}(id=${t.id})}" class="tut-title"
+                   th:text="${t.getLocalizedTitle(lang)}">Tutorial Title</a>
+                <p class="tut-desc" th:if="${t.description}" th:text="${#strings.abbreviate(t.description, 80)}">Desc</p>
+                <div class="tut-meta">
+                    <span th:text="${t.author != null ? t.author.fullName : ''}">Author</span>
+                    <span>👁 <span th:text="${t.viewCount}">0</span></span>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <!-- Pagination -->
-        <div style="display:flex;justify-content:center;gap:8px;margin-top:24px;" th:if="${tutorials.totalPages > 1}">
-            <a th:if="${not tutorials.first}"
-               th:href="@{/edu(q=${q},category=${selected},mediaType=${mediaType},page=${tutorials.number-1})}"
-               style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;text-decoration:none;">← Prev</a>
-            <a th:if="${not tutorials.last}"
-               th:href="@{/edu(q=${q},category=${selected},mediaType=${mediaType},page=${tutorials.number+1})}"
-               style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;text-decoration:none;">Next →</a>
-        </div>
+    <!-- Empty state -->
+    <div th:if="${tutorials.content.isEmpty()}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
+        <div style="font-size:48px;margin-bottom:16px;">📚</div>
+        <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;" th:text="#{edu.no_tutorials_title}">No tutorials found</h3>
+        <p style="color:#8a91a8;margin-bottom:20px;">Try a different search or be the first to add one!</p>
+        <a sec:authorize="hasAnyRole('MEZUN','ADMIN')" th:href="@{/edu/new}"
+           style="background:#1b2a6b;color:white;padding:10px 24px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">+ Add Tutorial</a>
+    </div>
 
-    </main>
+    <!-- Pagination -->
+    <div style="display:flex;justify-content:center;gap:8px;margin-top:24px;" th:if="${tutorials.totalPages > 1}">
+        <a th:if="${not tutorials.first}"
+           th:href="@{/edu(q=${q},category=${selected},mediaType=${mediaType},page=${tutorials.number-1})}"
+           style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;text-decoration:none;">← Prev</a>
+        <a th:if="${not tutorials.last}"
+           th:href="@{/edu(q=${q},category=${selected},mediaType=${mediaType},page=${tutorials.number+1})}"
+           style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;text-decoration:none;" th:text="#{page.next}">Next →</a>
+    </div>
+
+</main>
 </div>
 </body>
 </html>

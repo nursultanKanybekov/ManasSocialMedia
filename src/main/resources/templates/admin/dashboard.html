@@ -376,7 +376,7 @@
   <!-- Header -->
   <div class="adm-header">
     <div class="adm-header-left">
-      <h1>Admin Dashboard</h1>
+      <h1 th:text="#{admin.title}">Admin Dashboard</h1>
       <p>ManasMezun University Ecosystem · System Overview</p>
     </div>
     <div class="adm-badge">
@@ -432,7 +432,7 @@
       <div style="margin-top:8px;display:flex;align-items:center;gap:5px;">
         <span style="width:6px;height:6px;border-radius:50%;background:#0d9488;
                      animation:adPulse 1.5s infinite;display:inline-block;"></span>
-        <span style="font-size:10px;font-weight:600;color:#0d9488;">Live</span>
+        <span style="font-size:10px;font-weight:600;color:#0d9488;" th:text="#{common.live}">Live</span>
       </div>
     </div>
 
@@ -477,7 +477,7 @@
         <a th:href="@{/admin/users/{id}(id=${p.user.id})}"
            style="font-size:11px;font-weight:700;color:#8a92a8;text-decoration:none;padding:4px 10px;border-radius:8px;background:#f0f3f9;transition:background .14s;"
            onmouseover="this.style.background='#e8edff';this.style.color='#1b2a6b'"
-           onmouseout="this.style.background='#f0f3f9';this.style.color='#8a92a8'">View</a>
+           onmouseout="this.style.background='#f0f3f9';this.style.color='#8a92a8'" th:text="#{common.view}">View</a>
       </div>
     </div>
 
@@ -497,7 +497,7 @@
           <a th:href="@{/admin/users}" class="adm-action-btn navy">
             <div class="icon">👤</div>
             <div>
-              <div>Manage Users</div>
+              <div th:text="#{admin.manage_users_link}">Manage Users</div>
               <div class="adm-action-meta">View, edit, suspend accounts</div>
             </div>
             <span class="adm-action-arrow">›</span>
@@ -517,7 +517,7 @@
           <a th:href="@{/admin/create-secretary}" class="adm-action-btn green">
             <div class="icon">🛡</div>
             <div>
-              <div>Create Secretary</div>
+              <div th:text="#{admin.create_secretary}">Create Secretary</div>
               <div class="adm-action-meta">Add validation staff</div>
             </div>
             <span class="adm-action-arrow">›</span>
@@ -526,7 +526,7 @@
           <a th:href="@{/admin/news}" class="adm-action-btn purple">
             <div class="icon">📰</div>
             <div>
-              <div>University News</div>
+              <div th:text="#{nav.university_news}">University News</div>
               <div class="adm-action-meta">Manage announcements</div>
             </div>
             <span class="adm-action-arrow">›</span>
@@ -535,7 +535,7 @@
           <a th:href="@{/admin/import-mezuns}" class="adm-action-btn green">
             <div class="icon">📥</div>
             <div>
-              <div>Import Mezuns</div>
+              <div th:text="#{admin.import_mezuns}">Import Mezuns</div>
               <div class="adm-action-meta">Bulk import via Excel</div>
             </div>
             <span class="adm-action-arrow">›</span>
@@ -550,7 +550,7 @@
               <div class="icon">🔄</div>
               <div style="text-align:left;">
                 <div th:text="#{admin.recalculate}">Recalculate Rankings</div>
-                <div style="font-size:11px;font-weight:400;opacity:.6;margin-top:2px;">Rebuild leaderboard scores</div>
+                <div style="font-size:11px;font-weight:400;opacity:.6;margin-top:2px;" th:text="#{admin.recalculate}">Rebuild leaderboard scores</div>
               </div>
             </button>
           </form>
@@ -559,12 +559,12 @@
 
       <!-- Mini stats overview -->
       <div class="adm-card" style="padding:20px;">
-        <div style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:800;color:#0d1b4b;margin-bottom:14px;">User Distribution</div>
+        <div style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:800;color:#0d1b4b;margin-bottom:14px;" th:text="#{admin.user_distribution}">User Distribution</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
 
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-              <span style="font-size:12px;font-weight:600;color:#475569;">Active</span>
+              <span style="font-size:12px;font-weight:600;color:#475569;" th:text="#{admin.active}">Active</span>
               <span style="font-size:12px;font-weight:700;color:#10b981;" th:text="${activeUsers}">0</span>
             </div>
             <div style="background:#f0f3f9;border-radius:10px;height:6px;overflow:hidden;">
@@ -574,7 +574,7 @@
 
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-              <span style="font-size:12px;font-weight:600;color:#475569;">Pending</span>
+              <span style="font-size:12px;font-weight:600;color:#475569;" th:text="#{admin.pending}">Pending</span>
               <span style="font-size:12px;font-weight:700;color:#f59e0b;" th:text="${pendingUsers}">0</span>
             </div>
             <div style="background:#f0f3f9;border-radius:10px;height:6px;overflow:hidden;">
@@ -584,7 +584,7 @@
 
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-              <span style="font-size:12px;font-weight:600;color:#475569;">Suspended</span>
+              <span style="font-size:12px;font-weight:600;color:#475569;" th:text="#{admin.suspended}">Suspended</span>
               <span style="font-size:12px;font-weight:700;color:#ef4444;" th:text="${suspendedUsers}">0</span>
             </div>
             <div style="background:#f0f3f9;border-radius:10px;height:6px;overflow:hidden;">

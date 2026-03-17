@@ -596,7 +596,7 @@
                 </div>
 
                 <textarea id="msgInput"
-                          placeholder="Type a message..."
+                          th:placeholder="#{chat.type_message}"
                           rows="1"
                           onkeydown="handleKey(event)"
                           oninput="autoGrow(this);handleTyping();"></textarea>
@@ -638,8 +638,8 @@
         <!-- No room selected -->
         <div th:if="${roomId == null}" class="no-room">
             <div style="font-size:56px;">💬</div>
-            <h3 style="font-family:Montserrat,sans-serif;font-weight:700;color:#1b2a6b;">Select a conversation</h3>
-            <p style="font-size:14px;">Choose a chat room from the left panel to start messaging</p>
+            <h3 style="font-family:Montserrat,sans-serif;font-weight:700;color:#1b2a6b;" th:text="#{chat.select_conv}">Select a conversation</h3>
+            <p style="font-size:14px;" th:text="#{chat.select_conv_sub}">Choose a chat room to start messaging</p>
             <button onclick="openRoomsSidebar()" class="no-room-open-btn">
                 ☰ Open Chats
             </button>
@@ -1528,7 +1528,7 @@
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
                 <input id="nm-search-input" type="text"
-                       placeholder="Search by name or email…"
+                       th:placeholder="#{navbar.search.placeholder}"
                        autocomplete="off"
                        oninput="nmDebounce(this.value)"
                        style="width:100%;padding:11px 14px 11px 38px;border:none;border-radius:10px;
@@ -1991,7 +1991,7 @@
          style="width:9px;height:9px;border-radius:50%;background:#fbbf24;
                 flex-shrink:0;transition:background .5s;"></div>
     <span id="call-active-label"
-          style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;">Connecting…</span>
+          style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;" th:text="#{chat.connecting}">Connecting…</span>
     <span id="call-timer"
           style="font-family:Montserrat,sans-serif;font-size:12px;opacity:.75;min-width:42px;">0:00</span>
     <button onclick="toggleMute()" id="mute-btn"

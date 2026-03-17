@@ -4,36 +4,36 @@
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
 
-        <div class="page-header">
-            <h2>My Applications</h2>
-        </div>
+    <div class="page-header">
+        <h2 th:text="#{career.my_applications}">My Applications</h2>
+    </div>
 
-        <div th:if="${applications.isEmpty()}" class="empty-state">
-            <p>You haven't applied for any jobs yet. <a th:href="@{/career/jobs}">Browse Jobs</a></p>
-        </div>
+    <div th:if="${applications.isEmpty()}" class="empty-state">
+        <p>You haven't applied for any jobs yet. <a th:href="@{/career/jobs}">Browse Jobs</a></p>
+    </div>
 
-        <div class="applications-list" th:if="${!applications.isEmpty()}">
-            <div th:each="app : ${applications}" class="application-card">
-                <div class="application-header">
-                    <h4><a th:href="@{/career/jobs/{id}(id=${app.job.id})}"
-                           th:text="${app.job.titleI18n['en'] ?: 'Job'}">Job Title</a></h4>
-                    <span class="status-badge" th:text="${app.status}">PENDING</span>
-                </div>
-                <div class="application-meta">
-                    <span>Applied: <span th:text="${#temporals.format(app.appliedAt, 'dd MMM yyyy')}">Date</span></span>
-                    <span th:if="${app.job.location}">📍 <span th:text="${app.job.location}">Location</span></span>
-                </div>
-                <div th:if="${app.coverLetter}" class="cover-letter">
-                    <strong>Cover Letter:</strong>
-                    <p th:text="${app.coverLetter}">Cover letter text</p>
-                </div>
+    <div class="applications-list" th:if="${!applications.isEmpty()}">
+        <div th:each="app : ${applications}" class="application-card">
+            <div class="application-header">
+                <h4><a th:href="@{/career/jobs/{id}(id=${app.job.id})}"
+                       th:text="${app.job.titleI18n['en'] ?: 'Job'}">Job Title</a></h4>
+                <span class="status-badge" th:text="${app.status}">PENDING</span>
+            </div>
+            <div class="application-meta">
+                <span>Applied: <span th:text="${#temporals.format(app.appliedAt, 'dd MMM yyyy')}">Date</span></span>
+                <span th:if="${app.job.location}">📍 <span th:text="${app.job.location}">Location</span></span>
+            </div>
+            <div th:if="${app.coverLetter}" class="cover-letter">
+                <strong>Cover Letter:</strong>
+                <p th:text="${app.coverLetter}">Cover letter text</p>
             </div>
         </div>
+    </div>
 
-    </main>
+</main>
 </div>
 <div th:replace="~{fragments/footer :: footer}"></div>
 </body>

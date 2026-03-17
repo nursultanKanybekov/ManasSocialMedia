@@ -429,7 +429,7 @@
                     </div>
                     <div class="fd-user-name" th:text="${currentUser.fullName}">Name</div>
                     <div class="fd-user-role" th:text="${currentUser.role}">ROLE</div>
-                    <a th:href="@{/profile/{id}(id=${currentUser.id})}" class="fd-view-profile-btn">View Profile →</a>
+                    <a th:href="@{/profile/{id}(id=${currentUser.id})}" class="fd-view-profile-btn" th:text="#{feed.view_profile}">View Profile →</a>
                     <div class="fd-stats" th:if="${currentUser.profile != null}">
                         <div class="fd-stat">
                             <strong th:text="${currentUser.profile.totalPoints}">0</strong>
@@ -463,7 +463,7 @@
                 <div class="fd-creator">
                     <div class="fd-creator-row">
                         <img th:src="${currentUser.profile != null and currentUser.profile.avatarUrl != null ? currentUser.profile.avatarUrl : '/images/default-avatar.svg'}" class="fd-creator-avatar" alt="avatar"/>
-                        <textarea id="postContent" name="content" class="fd-creator-input" placeholder="What's on your mind?" rows="1" onclick="expandPostBox()"></textarea>
+                        <textarea id="postContent" name="content" class="fd-creator-input" th:placeholder="#{feed.whats_on_your_mind}" rows="1" onclick="expandPostBox()"></textarea>
                     </div>
                     <div id="postExpanded" class="fd-creator-expanded">
                         <div id="imagePreviewWrap" style="display:none;" class="fd-img-preview-wrap">
@@ -472,17 +472,17 @@
                         </div>
                         <div class="fd-creator-actions">
                             <label for="postImage" class="fd-action-btn" style="cursor:pointer;">
-                                📷 Photo
+                                <span th:text="#{feed.photo}">📷 Photo</span>
                                 <input type="file" id="postImage" name="image" accept="image/*" style="display:none;" onchange="previewImage(this)"/>
                             </label>
                             <select id="postType" name="postType" class="fd-type-select">
-                                <option value="GENERAL">💬 General</option>
-                                <option value="SUCCESS_STORY">✨ Success Story</option>
-                                <option value="NEWS">📰 News</option>
-                                <option value="ANNOUNCEMENT">📢 Announcement</option>
+                                <option value="GENERAL"   th:text="#{feed.post.general}">💬 General</option>
+                                <option value="SUCCESS_STORY" th:text="#{feed.post.success}">✨ Success Story</option>
+                                <option value="NEWS"      th:text="#{feed.post.news}">📰 News</option>
+                                <option value="ANNOUNCEMENT" th:text="#{feed.post.announcement}">📢 Announcement</option>
                             </select>
-                            <button onclick="cancelPost()" class="fd-cancel-btn">Cancel</button>
-                            <button id="postSubmitBtn" class="fd-submit-btn" onclick="submitPost()">🚀 Post</button>
+                            <button onclick="cancelPost()" class="fd-cancel-btn" th:text="#{feed.post.cancel}">Cancel</button>
+                            <button id="postSubmitBtn" class="fd-submit-btn" onclick="submitPost()" th:text="#{feed.post.submit}">🚀 Post</button>
                         </div>
                     </div>
                 </div>
@@ -491,10 +491,10 @@
             <div id="postError" style="display:none;" class="fd-error"></div>
 
             <div class="fd-tabs">
-                <button class="fd-tab active" onclick="loadFeedTab(this, '')">All</button>
-                <button class="fd-tab" onclick="loadFeedTab(this, 'NEWS')">📰 News</button>
-                <button class="fd-tab" onclick="loadFeedTab(this, 'SUCCESS_STORY')">✨ Success</button>
-                <button class="fd-tab" onclick="loadFeedTab(this, 'ANNOUNCEMENT')">📢 Announcements</button>
+                <button class="fd-tab active" onclick="loadFeedTab(this, '')"     th:text="#{feed.tab.all}">All</button>
+                <button class="fd-tab"        onclick="loadFeedTab(this, 'NEWS')" th:text="#{feed.tab.news}">📰 News</button>
+                <button class="fd-tab"        onclick="loadFeedTab(this, 'SUCCESS_STORY')" th:text="#{feed.tab.success}">✨ Success</button>
+                <button class="fd-tab"        onclick="loadFeedTab(this, 'ANNOUNCEMENT')" th:text="#{feed.tab.announcements}">📢 Announcements</button>
             </div>
 
             <div id="feed-list">
@@ -582,7 +582,7 @@
                     <div th:id="${'comments-' + post.id}" class="fd-comments" style="display:none;"></div>
                     <div th:id="${'comment-row-' + post.id}" class="fd-comment-row" style="display:none;">
                         <input type="text" th:id="${'comment-input-' + post.id}" name="content"
-                               placeholder="Write a comment…" class="fd-comment-input"
+                               th:placeholder="#{feed.comment.placeholder}" class="fd-comment-input"
                                th:attr="data-post-id=${post.id}"
                                onkeydown="if(event.key==='Enter') submitComment(this.dataset.postId)"/>
                         <button class="fd-comment-send" th:attr="data-post-id=${post.id}" onclick="submitComment(this.dataset.postId)">➤</button>
@@ -809,7 +809,7 @@
                      width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#8a91a8" stroke-width="2.2">
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
-                <input id="share-user-search" type="text" placeholder="Search users by name or email…"
+                <input id="share-user-search" type="text" th:placeholder="#{feed.share.search}"
                        autocomplete="off"
                        oninput="shareUserDebounce(this.value)"
                        style="width:100%;padding:9px 12px 9px 34px;border:1.5px solid #e0e3ef;border-radius:10px;

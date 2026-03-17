@@ -37,14 +37,14 @@
     <div class="navbar-right">
 
         <!-- Language switcher -->
-        <div class="lang-switcher">
-            <a th:href="@{''(lang='ky')}" class="lang-btn" th:classappend="${#locale.language == 'ky'} ? ' active'">KY</a>
-            <a th:href="@{''(lang='ru')}" class="lang-btn" th:classappend="${#locale.language == 'ru'} ? ' active'">RU</a>
-            <a th:href="@{''(lang='tr')}" class="lang-btn" th:classappend="${#locale.language == 'tr'} ? ' active'">TR</a>
-            <a th:href="@{''(lang='en')}" class="lang-btn" th:classappend="${#locale.language == 'en'} ? ' active'">EN</a>
+        <div class="lang-switcher" id="lang-switcher">
+            <button class="lang-btn" id="lb-kg" onclick="setLang('kg')">KG</button>
+            <button class="lang-btn" id="lb-ru" onclick="setLang('ru')">RU</button>
+            <button class="lang-btn" id="lb-tr" onclick="setLang('tr')">TR</button>
+            <button class="lang-btn" id="lb-en" onclick="setLang('en')">EN</button>
         </div>
 
-        <!-- Notification bell (authenticated) -->
+        <!-- Notification bell -->
         <div sec:authorize="isAuthenticated()" class="notif-bell-wrap dropdown-wrap">
             <button class="icon-btn notif-bell-btn"
                     onclick="toggleDropdown('notif-dd'); loadNotifDropdown();"
@@ -70,47 +70,32 @@
 
         <script th:inline="none">
             /*<![CDATA[*/
-            // All functions on window so they are global regardless of script load order
             window._notifItems = window._notifItems || [];
-
             window.escH = function(s) {
                 return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             };
-
             window.loadNotifications = function() {
                 fetch('/notifications/api/list', {credentials: 'same-origin'})
-                    .then(function(r){
-                        if (!r.ok || r.redirected) return null;
-                        return r.json();
-                    })
+                    .then(function(r){ if (!r.ok || r.redirected) return null; return r.json(); })
                     .then(function(data) {
                         if (!data) return;
                         window._notifItems = data.notifications || [];
                         var badge = document.getElementById('notif-badge');
                         if (!badge) return;
                         var count = data.unreadCount || 0;
-                        if (count > 0) {
-                            badge.textContent = count > 99 ? '99+' : count;
-                            badge.style.display = 'flex';
-                        } else {
-                            badge.style.display = 'none';
-                        }
+                        if (count > 0) { badge.textContent = count > 99 ? '99+' : count; badge.style.display = 'flex'; }
+                        else badge.style.display = 'none';
                     }).catch(function(){});
             };
-
             window.loadNotifDropdown = function() {
                 fetch('/notifications/api/list', {credentials: 'same-origin'})
-                    .then(function(r){
-                        if (!r.ok || r.redirected) return null;
-                        return r.json();
-                    })
+                    .then(function(r){ if (!r.ok || r.redirected) return null; return r.json(); })
                     .then(function(data) {
                         if (!data) return;
                         window._notifItems = data.notifications || [];
                         window.renderNotifDropdown();
                     }).catch(function(){});
             };
-
             window.renderNotifDropdown = function() {
                 var body = document.getElementById('notif-dropdown-body');
                 if (!body) return;
@@ -127,19 +112,16 @@
                     var fw   = n.isRead ? '400' : '600';
                     var id   = n.id ? window.escH(n.id) : '';
                     html += '<a href="' + link + '"'
-                        + (id ? ' onclick="window.markNotifRead(event,'' + id + '')"' : '')
-                    + ' style="' + bg + 'display:flex;align-items:flex-start;gap:10px;padding:12px 16px;text-decoration:none;border-bottom:1px solid #f0f2f8;color:inherit;">'
-                    + '<span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';margin-top:6px;flex-shrink:0;display:inline-block;"></span>'
-                    + '<div style="flex:1;min-width:0;">'
-                    + '<div style="font-size:11px;color:#8a91a8;margin-bottom:3px;">'
-                    + window.escH(n.icon||'🔔') + ' ' + window.escH(n.createdAt||'') + '</div>'
-                    + '<div style="font-size:13px;color:#1B2A6B;font-weight:' + fw + ';line-height:1.45;word-break:break-word;">'
-                    + window.escH(n.message||'') + '</div>'
-                    + '</div></a>';
+                        + (id ? ' onclick="window.markNotifRead(event,\'' + id + '\')"' : '')
+                        + ' style="' + bg + 'display:flex;align-items:flex-start;gap:10px;padding:12px 16px;text-decoration:none;border-bottom:1px solid #f0f2f8;color:inherit;">'
+                        + '<span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';margin-top:6px;flex-shrink:0;display:inline-block;"></span>'
+                        + '<div style="flex:1;min-width:0;">'
+                        + '<div style="font-size:11px;color:#8a91a8;margin-bottom:3px;">' + window.escH(n.icon||'🔔') + ' ' + window.escH(n.createdAt||'') + '</div>'
+                        + '<div style="font-size:13px;color:#1B2A6B;font-weight:' + fw + ';line-height:1.45;word-break:break-word;">' + window.escH(n.message||'') + '</div>'
+                        + '</div></a>';
                 });
                 body.innerHTML = html;
             };
-
             window.markNotifRead = function(e, id) {
                 if (e) e.stopPropagation();
                 if (!id) return;
@@ -153,7 +135,6 @@
                     }
                 }).catch(function(){});
             };
-
             window.markAllNotifRead = function() {
                 fetch('/notifications/mark-all-read', {method:'POST', credentials:'same-origin'}).then(function() {
                     window._notifItems.forEach(function(n){ n.isRead=true; });
@@ -162,36 +143,18 @@
                     window.renderNotifDropdown();
                 }).catch(function(){});
             };
-
-            // WebSocket real-time push listener
             document.addEventListener('manasNotification', function(e) {
                 var d = e.detail || {};
-                window._notifItems.unshift({
-                    id: null, icon: d.icon||'🔔', message: d.message||'',
-                    link: d.link||'#', isRead: false,
-                    createdAt: new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
-                });
+                window._notifItems.unshift({ id: null, icon: d.icon||'🔔', message: d.message||'', link: d.link||'#', isRead: false,
+                    createdAt: new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) });
                 window.renderNotifDropdown();
                 var badge = document.getElementById('notif-badge');
-                if (badge) {
-                    var cur = parseInt(badge.textContent)||0;
-                    badge.textContent = cur+1;
-                    badge.style.display='flex';
-                }
+                if (badge) { var cur = parseInt(badge.textContent)||0; badge.textContent = cur+1; badge.style.display='flex'; }
             });
-
-            // Init on load — defer to ensure DOM is ready
             (function init() {
                 if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', function() {
-                        window.loadNotifications();
-                        setInterval(window.loadNotifications, 30000);
-                    });
-                } else {
-                    // Already loaded
-                    window.loadNotifications();
-                    setInterval(window.loadNotifications, 30000);
-                }
+                    document.addEventListener('DOMContentLoaded', function() { window.loadNotifications(); setInterval(window.loadNotifications, 30000); });
+                } else { window.loadNotifications(); setInterval(window.loadNotifications, 30000); }
             })();
             /*]]>*/
         </script>
@@ -273,6 +236,91 @@
         </div>
 
     </div>
+
+    <!-- ═══════════════════════════════════════════
+         Google Translate — hidden widget container
+         Placed outside nav so it never leaks into it
+    ═══════════════════════════════════════════════ -->
+    <div id="google_translate_element" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
+
+    <script>
+        /* Language switcher using Google Translate cookie method
+           All 4 languages: EN / RU / TR / KY
+           Cookie /en/XX tells Google Translate what language to render */
+        (function () {
+
+            var LANGS = ['en', 'ru', 'tr', 'kg'];
+            var GT    = { en: null, ru: 'ru', tr: 'tr', kg: 'ky' };
+
+            /* Read active language from cookie, fallback to 'en' */
+            function getActiveLang() {
+                var m = document.cookie.match(/googtrans=\/en\/([a-z]+)/);
+                var code = m ? m[1] : 'en'; return code === 'ky' ? 'kg' : code;
+            }
+
+            /* Write or clear the googtrans cookie */
+            function setCookie(langCode) {
+                var val = langCode ? '/en/' + langCode : '/en/en';
+                var exp = langCode ? '' : '; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+                var host = location.hostname;
+                ['; path=/', '; path=/; domain=' + host, '; path=/; domain=.' + host].forEach(function (suffix) {
+                    document.cookie = 'googtrans=' + val + suffix + exp;
+                });
+            }
+
+            /* Highlight the correct button */
+            function highlight(lang) {
+                LANGS.forEach(function (l) {
+                    var btn = document.getElementById('lb-' + l);
+                    if (btn) btn.classList.toggle('active', l === lang);
+                });
+            }
+
+            /* Called by each button */
+            window.setLang = function (lang) {
+                if (lang === 'en') {
+                    setCookie(null);   /* clear cookie → English */
+                } else {
+                    setCookie(GT[lang]);
+                }
+                highlight(lang);
+                location.reload();     /* reload so GT applies on fresh page */
+            };
+
+            /* On every page load: highlight whichever lang is active */
+            document.addEventListener('DOMContentLoaded', function () {
+                highlight(getActiveLang());
+            });
+
+        })();
+    </script>
+
+    <!-- Google Translate widget (free, no API key) -->
+    <script src="//translate.google.com/translate_a/element.js?cb=gtInit"></script>
+    <script>
+        function gtInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'ru,tr,ky',
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+
+    <style>
+        /* ── Hide every bit of Google Translate's own visible UI ── */
+        .goog-te-banner-frame,
+        #goog-gt-tt,
+        .goog-te-balloon-frame,
+        .goog-tooltip                    { display: none !important; }
+        .goog-text-highlight             { background: none !important; box-shadow: none !important; }
+        body                             { top: 0 !important; }
+        /* GT injects a <span class=skiptranslate> directly in <body> — hide it */
+        body > .skiptranslate            { display: none !important; }
+        /* Never let anything inside our container bleed out */
+        #google_translate_element,
+        #google_translate_element *      { display: none !important; }
+    </style>
 </nav>
 </body>
 </html>

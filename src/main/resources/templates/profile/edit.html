@@ -12,12 +12,12 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px;">
       <h1 class="edit-page-title" style="margin:0;">&#9999;&#65039; <span th:text="#{profile.edit}">Edit Profile</span></h1>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <a href="#sec-personal" class="ep-nav-pill">Personal</a>
-        <a href="#sec-work"     class="ep-nav-pill">Experience</a>
-        <a href="#sec-edu"      class="ep-nav-pill">Education</a>
-        <a href="#sec-skills"   class="ep-nav-pill">Skills</a>
-        <a href="#sec-langs"    class="ep-nav-pill">Languages</a>
-        <a href="#sec-certs"    class="ep-nav-pill">Certifications</a>
+        <a href="#sec-personal" class="ep-nav-pill" th:text="#{profile.section.personal}">Personal</a>
+        <a href="#sec-work"     class="ep-nav-pill" th:text="#{profile.section.work}">Experience</a>
+        <a href="#sec-edu"      class="ep-nav-pill" th:text="#{profile.section.edu}">Education</a>
+        <a href="#sec-skills"   class="ep-nav-pill" th:text="#{profile.section.skills}">Skills</a>
+        <a href="#sec-langs"    class="ep-nav-pill" th:text="#{profile.section.langs}">Languages</a>
+        <a href="#sec-certs"    class="ep-nav-pill" th:text="#{profile.section.certs}">Certifications</a>
       </div>
     </div>
 
@@ -50,7 +50,7 @@
 
       <!-- 2. PERSONAL INFO -->
       <div id="sec-personal" class="ep-card">
-        <div class="ep-card-title">&#128100; Personal Information</div>
+        <div class="ep-card-title">&#128100; <span th:text="#{profile.section.personal}">Personal Information</span></div>
         <div class="ep-form-grid two-col">
           <div class="ep-form-group">
             <label class="ep-label" th:text="#{profile.full_name}">Full Name</label>
@@ -61,32 +61,32 @@
             <input type="text" class="ep-input" th:field="*{headline}" th:value="${profile.headline}" th:placeholder="#{profile.headline_placeholder}"/>
           </div>
           <div class="ep-form-group">
-            <label class="ep-label">Current Job Title</label>
-            <input type="text" class="ep-input" th:field="*{currentJobTitle}" th:value="${profile.currentJobTitle}" placeholder="e.g. Backend Developer"/>
+            <label class="ep-label" th:text="#{profile.job_title}">Current Job Title</label>
+            <input type="text" class="ep-input" th:field="*{currentJobTitle}" th:value="${profile.currentJobTitle}" th:placeholder="#{profile.job_title_ph}"/>
           </div>
           <div class="ep-form-group">
-            <label class="ep-label">Current Company</label>
-            <input type="text" class="ep-input" th:field="*{currentCompany}" th:value="${profile.currentCompany}" placeholder="e.g. Google"/>
+            <label class="ep-label" th:text="#{profile.company}">Current Company</label>
+            <input type="text" class="ep-input" th:field="*{currentCompany}" th:value="${profile.currentCompany}" th:placeholder="#{profile.company_ph}"/>
           </div>
           <div class="ep-form-group">
-            <label class="ep-label">&#128222; Phone</label>
-            <input type="tel" class="ep-input" th:field="*{phone}" th:value="${profile.phone}" placeholder="+996 700 123 456"/>
+            <label class="ep-label">&#128222; <span th:text="#{profile.phone}">Phone</span></label>
+            <input type="tel" class="ep-input" th:field="*{phone}" th:value="${profile.phone}" th:placeholder="#{profile.phone_ph}"/>
           </div>
           <div class="ep-form-group">
-            <label class="ep-label">&#128205; Location</label>
-            <input type="text" class="ep-input" th:field="*{location}" th:value="${profile.location}" placeholder="Bishkek, Kyrgyzstan"/>
+            <label class="ep-label">&#128205; <span th:text="#{profile.location}">Location</span></label>
+            <input type="text" class="ep-input" th:field="*{location}" th:value="${profile.location}" th:placeholder="#{profile.location_ph}"/>
           </div>
           <div class="ep-form-group">
-            <label class="ep-label">&#127760; Website / Portfolio</label>
-            <input type="url" class="ep-input" th:field="*{website}" th:value="${profile.website}" placeholder="https://yourportfolio.com"/>
+            <label class="ep-label">&#127760; <span th:text="#{profile.website}">Website</span></label>
+            <input type="url" class="ep-input" th:field="*{website}" th:value="${profile.website}" th:placeholder="#{profile.website_ph}"/>
           </div>
           <div class="ep-form-group">
             <label class="ep-label">&#127874; Date of Birth <small style="color:#94a3b8;">(for CV)</small></label>
             <input type="date" class="ep-input" th:field="*{dateOfBirth}" th:value="${profile.dateOfBirth}"/>
           </div>
           <div class="ep-form-group">
-            <label class="ep-label">Nationality <small style="color:#94a3b8;">(for CV)</small></label>
-            <input type="text" class="ep-input" th:field="*{nationality}" th:value="${profile.nationality}" placeholder="e.g. Kyrgyz"/>
+            <label class="ep-label"><span th:text="#{profile.nationality}">Nationality</span> <small style="color:#94a3b8;">(for CV)</small></label>
+            <input type="text" class="ep-input" th:field="*{nationality}" th:value="${profile.nationality}" th:placeholder="#{profile.nationality_ph}"/>
           </div>
           <div class="ep-form-group" style="grid-column:1/-1;">
             <label class="ep-label" th:text="#{profile.about}">About</label>
@@ -119,7 +119,7 @@
           <button type="button" class="ep-add-btn" onclick="addEntry('work')">+ Add Position</button>
         </div>
         <div id="work-entries"></div>
-        <p id="work-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;">No work experience yet. Click "+ Add Position" to start.</p>
+        <p id="work-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;" th:text="#{profile.no_work}">No work experience yet.</p>
       </div>
 
       <!-- 4. EDUCATION -->
@@ -129,18 +129,18 @@
           <button type="button" class="ep-add-btn" onclick="addEntry('edu')">+ Add Education</button>
         </div>
         <div id="edu-entries"></div>
-        <p id="edu-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;">No education added yet.</p>
+        <p id="edu-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;" th:text="#{profile.no_edu}">No education added yet.</p>
       </div>
 
       <!-- 5. SKILLS -->
       <div id="sec-skills" class="ep-card">
-        <div class="ep-card-title">&#9889; Skills</div>
+        <div class="ep-card-title">&#9889; <span th:text="#{profile.skills}">Skills</span></div>
         <div class="ep-form-group">
-          <label class="ep-label">Skills</label>
+          <label class="ep-label" th:text="#{profile.skills}">Skills</label>
           <input type="text" class="ep-input" id="skillsInput"
                  th:value="${#strings.listJoin(profile.skills, ', ')}"
-                 placeholder="Java, Spring Boot, PostgreSQL, Docker..."/>
-          <span class="ep-hint">Separate with commas</span>
+                 th:placeholder="#{profile.skills_ph2}"/>
+          <span class="ep-hint" th:text="#{profile.skills_hint}">Separate with commas</span>
         </div>
         <div id="skill-tags-preview" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;"></div>
       </div>
@@ -152,7 +152,7 @@
           <button type="button" class="ep-add-btn" onclick="addEntry('lang')">+ Add Language</button>
         </div>
         <div id="lang-entries"></div>
-        <p id="lang-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;">No languages added yet.</p>
+        <p id="lang-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;" th:text="#{profile.no_langs}">No languages added yet.</p>
       </div>
 
       <!-- 7. CERTIFICATIONS -->
@@ -162,13 +162,13 @@
           <button type="button" class="ep-add-btn" onclick="addEntry('cert')">+ Add Certification</button>
         </div>
         <div id="cert-entries"></div>
-        <p id="cert-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;">No certifications added yet.</p>
+        <p id="cert-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;" th:text="#{profile.no_certs}">No certifications added yet.</p>
       </div>
 
       <!-- SAVE -->
       <div class="ep-card" style="display:flex;gap:12px;align-items:center;">
-        <button type="submit" class="ep-btn-save" style="flex:1;">&#128190; Save All Changes</button>
-        <a th:href="@{/profile/{id}(id=${user.id})}" class="ep-btn-cancel">Cancel</a>
+        <button type="submit" class="ep-btn-save" style="flex:1;" th:text="#{profile.save}">Save All Changes</button>
+        <a th:href="@{/profile/{id}(id=${user.id})}" class="ep-btn-cancel" th:text="#{common.cancel}">Cancel</a>
       </div>
     </form>
 
@@ -301,7 +301,7 @@
 <button type="button" class="entry-remove-btn" onclick="removeEntry('work',${item.id})">x</button>
 <div class="entry-grid">
 <div class="entry-field"><label>Job Title</label><input data-k="title" value="${esc(d.title)}" placeholder="e.g. Software Engineer"/></div>
-<div class="entry-field"><label>Company</label><input data-k="company" value="${esc(d.company)}" placeholder="e.g. Google"/></div>
+<div class="entry-field"><label>Company</label><input data-k="company" value="${esc(d.company)}" th:placeholder="#{profile.company_ph}"/></div>
 <div class="entry-field"><label>Location</label><input data-k="location" value="${esc(d.location)}" placeholder="Bishkek / Remote"/></div>
 <div class="entry-field"><label>Start Date</label><input type="month" data-k="startDate" value="${esc(d.startDate)}"/></div>
 <div class="entry-field"><label>End Date</label><input type="month" data-k="endDate" value="${esc(d.endDate)}" id="endDate_${item.id}"/></div>
