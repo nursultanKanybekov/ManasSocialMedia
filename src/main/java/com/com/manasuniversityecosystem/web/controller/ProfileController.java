@@ -50,15 +50,23 @@ public class ProfileController {
 
     // ── GET /profile/{id}  — view any user's profile ─────────
     @GetMapping("/{id}")
-    public String viewProfile(@PathVariable UUID id,
+    public String viewProfile(@PathVariable String id,
                               @AuthenticationPrincipal UserDetailsImpl principal,
                               @RequestParam(defaultValue = "en") String lang,
                               Model model) {
-        AppUser profileUser = userService.getById(id);
-        Profile profile     = profileService.getByUserId(id);
+        // Guard: reject non-UUID paths (e.g. Telegram @handle clicked as relative href)
+        UUID userId;
+        try {
+            userId = UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            log.warn("Non-UUID profile path: /profile/{} — redirecting", id);
+            return "redirect:/";
+        }
+        AppUser profileUser = userService.getById(userId);
+        Profile profile     = profileService.getByUserId(userId);
 
         // CV visible to: self, or employer/admin who has a job this user applied to
-        boolean isOwn = principal.getId().equals(id);
+        boolean isOwn = principal.getId().equals(userId);
         boolean viewerIsEmployer = false;
         try {
             com.com.manasuniversityecosystem.domain.entity.AppUser viewer = userService.getById(principal.getId());
@@ -67,13 +75,13 @@ public class ProfileController {
                     || viewer.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.SUPER_ADMIN;
         } catch (Exception ignored) {}
         boolean canViewCv = isOwn || (viewerIsEmployer &&
-                jobApplicationRepo.existsByApplicantIdAndJobPosterId(id, principal.getId()));
+                jobApplicationRepo.existsByApplicantIdAndJobPosterId(userId, principal.getId()));
 
         model.addAttribute("profileUser",  profileUser);
         model.addAttribute("profile",      profile);
-        model.addAttribute("userBadges",   userBadgeRepo.findByUserIdWithBadge(id));
-        model.addAttribute("postCount",    postService.countUserPosts(id));
-        model.addAttribute("recentPosts",  postService.getUserPosts(id, 0, 12).getContent());
+        model.addAttribute("userBadges",   userBadgeRepo.findByUserIdWithBadge(userId));
+        model.addAttribute("postCount",    postService.countUserPosts(userId));
+        model.addAttribute("recentPosts",  postService.getUserPosts(userId, 0, 12).getContent());
         model.addAttribute("isOwn",        isOwn);
         model.addAttribute("canViewCv",    canViewCv);
         model.addAttribute("lang",         lang);

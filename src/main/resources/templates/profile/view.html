@@ -203,10 +203,25 @@
                 <div class="pv-card" th:if="${!#maps.isEmpty(profile.socialLinks)}">
                     <div class="pv-card-title">&#128279; <span th:text="#{profile.social_links}">Links</span></div>
                     <div class="pv-social-list">
-                        <a th:each="entry : ${profile.socialLinks}" th:href="${entry.value}" target="_blank" rel="noopener" class="pv-social-link">
-                            <span th:text="${entry.key}">platform</span>
-                            <span style="margin-left:auto;opacity:.4;font-size:11px;">&#8599;</span>
-                        </a>
+                        <th:block th:each="entry : ${profile.socialLinks}">
+                            <th:block th:with="
+                                rawVal=${entry.value},
+                                keyLower=${#strings.toLowerCase(entry.key)},
+                                isTelegram=${#strings.contains(keyLower,'telegram') or #strings.contains(keyLower,'tg')},
+                                isWhatsapp=${#strings.contains(keyLower,'whatsapp')},
+                                isInstagram=${#strings.contains(keyLower,'instagram') or #strings.contains(keyLower,'ig')},
+                                isPhone=${#strings.startsWith(rawVal,'+') or #strings.startsWith(rawVal,'00')},
+                                startsWithAt=${#strings.startsWith(rawVal,'@')},
+                                strippedAt=${startsWithAt ? #strings.substring(rawVal,1) : rawVal},
+                                hasScheme=${#strings.startsWith(rawVal,'http://') or #strings.startsWith(rawVal,'https://')},
+                                safeUrl=${hasScheme ? rawVal : (isTelegram ? ('https://t.me/' + strippedAt) : (isWhatsapp ? ('https://wa.me/' + strippedAt) : (isPhone ? ('tel:' + rawVal) : ('https://' + rawVal))))}
+                            ">
+                                <a th:href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="pv-social-link">
+                                    <span th:text="${entry.key}">platform</span>
+                                    <span style="margin-left:auto;font-size:11px;opacity:.5;">&#8599;</span>
+                                </a>
+                            </th:block>
+                        </th:block>
                     </div>
                 </div>
 
