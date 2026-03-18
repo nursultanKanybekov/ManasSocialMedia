@@ -2,66 +2,360 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/header :: head(#{page.education})}"></head>
 <style>
-    .type-tab { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:30px; font-family:Montserrat,sans-serif; font-weight:700; font-size:12px; text-decoration:none; cursor:pointer; border:2px solid transparent; transition:.2s; }
-    .type-tab.all   { background:#1b2a6b; color:white; }
-    .type-tab.text  { background:#e3f2fd; color:#1565c0; border-color:#90caf9; }
-    .type-tab.video { background:#fce4ec; color:#c62828; border-color:#ef9a9a; }
-    .type-tab.audio { background:#e8f5e9; color:#2e7d32; border-color:#a5d6a7; }
-    .type-tab.inactive { background:white; color:#8a91a8; border-color:#e0e3ef; }
-    .type-tab.inactive:hover { border-color:#1b2a6b; color:#1b2a6b; }
-    .tut-card { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(27,42,107,0.08); overflow:hidden; display:flex; flex-direction:column; transition:.2s; }
-    .tut-card:hover { box-shadow:0 6px 24px rgba(27,42,107,0.15); transform:translateY(-2px); }
-    .tut-card-thumb { width:100%; height:140px; object-fit:cover; background:#f0f2f8; display:flex; align-items:center; justify-content:center; font-size:48px; }
-    .tut-card-body { padding:18px; flex:1; display:flex; flex-direction:column; gap:6px; }
-    .tut-category { font-size:10px; padding:3px 9px; background:#e8ecf8; color:#1b2a6b; border-radius:20px; font-family:Montserrat,sans-serif; font-weight:700; display:inline-block; }
-    .tut-title { font-family:Montserrat,sans-serif; font-weight:800; font-size:14px; color:#1b2a6b; text-decoration:none; line-height:1.4; }
-    .tut-title:hover { color:#c0392b; }
-    .tut-desc { font-size:12px; color:#8a91a8; flex:1; }
-    .tut-meta { display:flex; align-items:center; justify-content:space-between; font-size:11px; color:#8a91a8; margin-top:8px; }
-    .badge-text  { background:#e3f2fd; color:#1565c0; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; }
-    .badge-video { background:#fce4ec; color:#c62828; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; }
-    .badge-audio { background:#e8f5e9; color:#2e7d32; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; }
+    /* ══════════════════════════════════════════
+       TUTORIALS PAGE — mobile-first redesign
+    ══════════════════════════════════════════ */
+
+    /* ── Page header ── */
+    .tu-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .tu-header-text h1 {
+        font-family: Montserrat, sans-serif;
+        font-weight: 900;
+        font-size: 22px;
+        color: #1b2a6b;
+        margin: 0 0 4px;
+        line-height: 1.2;
+    }
+    .tu-header-text p {
+        color: #8a91a8;
+        font-size: 13px;
+        margin: 0;
+    }
+    .tu-add-btn {
+        background: #1b2a6b;
+        color: white;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        text-decoration: none;
+        white-space: nowrap;
+        flex-shrink: 0;
+        align-self: flex-start;
+        transition: background .15s;
+    }
+    .tu-add-btn:hover { background: #2d43a6; }
+
+    /* ── Search / filter card ── */
+    .tu-filters {
+        background: white;
+        border-radius: 14px;
+        padding: 16px 18px;
+        box-shadow: 0 2px 12px rgba(27,42,107,0.08);
+        margin-bottom: 18px;
+        border: 1.5px solid #f0f2f8;
+    }
+    .tu-filter-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+    .tu-filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .tu-filter-group.grow { flex: 1; min-width: 160px; }
+    .tu-filter-group.fixed { min-width: 150px; }
+    .tu-filter-label {
+        font-family: Montserrat, sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        color: #8a91a8;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+    .tu-filter-input,
+    .tu-filter-select {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1.5px solid #e0e3ef;
+        border-radius: 9px;
+        font-size: 13px;
+        font-family: Montserrat, sans-serif;
+        color: #1b2a6b;
+        background: #fafbff;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color .15s;
+    }
+    .tu-filter-input:focus,
+    .tu-filter-select:focus { border-color: #1b2a6b; }
+    .tu-filter-actions {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+        flex-shrink: 0;
+    }
+    .tu-btn-search {
+        padding: 10px 20px;
+        background: #1b2a6b;
+        color: white;
+        border: none;
+        border-radius: 9px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background .13s;
+        white-space: nowrap;
+    }
+    .tu-btn-search:hover { background: #2d43a6; }
+    .tu-btn-reset {
+        padding: 10px 14px;
+        background: #f0f2f8;
+        color: #1b2a6b;
+        border-radius: 9px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        text-decoration: none;
+        transition: background .13s;
+        white-space: nowrap;
+    }
+    .tu-btn-reset:hover { background: #dde2f0; }
+
+    /* ── Media type tabs ── */
+    .tu-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+    .tu-tabs::-webkit-scrollbar { display: none; }
+
+    .type-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 16px;
+        border-radius: 30px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 12px;
+        text-decoration: none;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: .18s;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .type-tab.all    { background: #1b2a6b; color: white; }
+    .type-tab.text   { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+    .type-tab.video  { background: #fce4ec; color: #c62828; border-color: #ef9a9a; }
+    .type-tab.audio  { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+    .type-tab.inactive { background: white; color: #8a91a8; border-color: #e0e3ef; }
+    .type-tab.inactive:hover { border-color: #1b2a6b; color: #1b2a6b; }
+
+    /* ── Results count ── */
+    .tu-count {
+        font-size: 13px;
+        color: #8a91a8;
+        margin-bottom: 16px;
+    }
+    .tu-count strong { color: #1b2a6b; }
+
+    /* ── Tutorial cards grid ── */
+    .tu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+        gap: 18px;
+    }
+
+    .tut-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(27,42,107,0.08);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: .2s;
+        border: 1.5px solid #f0f2f8;
+    }
+    .tut-card:hover {
+        box-shadow: 0 6px 24px rgba(27,42,107,0.15);
+        transform: translateY(-2px);
+    }
+    .tut-card-thumb {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+        background: #f0f2f8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+    }
+    .tut-card-body {
+        padding: 16px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .tut-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .tut-category {
+        font-size: 10px; padding: 3px 9px;
+        background: #e8ecf8; color: #1b2a6b;
+        border-radius: 20px; font-family: Montserrat, sans-serif; font-weight: 700;
+    }
+    .badge-text  { background: #e3f2fd; color: #1565c0; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; font-family: Montserrat, sans-serif; }
+    .badge-video { background: #fce4ec; color: #c62828; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; font-family: Montserrat, sans-serif; }
+    .badge-audio { background: #e8f5e9; color: #2e7d32; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; font-family: Montserrat, sans-serif; }
+    .tut-title {
+        font-family: Montserrat, sans-serif;
+        font-weight: 800;
+        font-size: 14px;
+        color: #1b2a6b;
+        text-decoration: none;
+        line-height: 1.4;
+    }
+    .tut-title:hover { color: #c0392b; }
+    .tut-desc { font-size: 12px; color: #8a91a8; flex: 1; line-height: 1.5; }
+    .tut-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #8a91a8;
+        margin-top: 6px;
+    }
+
+    /* ── Empty state ── */
+    .tu-empty {
+        background: white;
+        border-radius: 16px;
+        padding: 56px 24px;
+        text-align: center;
+        box-shadow: 0 2px 12px rgba(27,42,107,0.08);
+        border: 1.5px solid #f0f2f8;
+    }
+    .tu-empty-icon { font-size: 48px; margin-bottom: 14px; }
+    .tu-empty-title {
+        font-family: Montserrat, sans-serif;
+        font-weight: 800;
+        color: #1b2a6b;
+        font-size: 18px;
+        margin: 0 0 8px;
+    }
+    .tu-empty-sub { color: #8a91a8; font-size: 13px; margin: 0 0 18px; }
+
+    /* ── Pagination ── */
+    .tu-pagination {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 24px;
+        flex-wrap: wrap;
+    }
+    .tu-page-link {
+        padding: 8px 14px;
+        background: white;
+        border: 1.5px solid #e0e3ef;
+        border-radius: 9px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 12px;
+        color: #1b2a6b;
+        text-decoration: none;
+        transition: background .13s;
+    }
+    .tu-page-link:hover { background: #e8ecf8; border-color: #1b2a6b; }
+
+    /* ══ RESPONSIVE ══ */
+    @media (max-width: 640px) {
+        /* Header: title wraps, button goes below title */
+        .tu-header {
+            flex-direction: column;
+            gap: 12px;
+        }
+        .tu-header-text h1 { font-size: 20px; }
+        .tu-add-btn {
+            width: 100%;
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        /* Filter: stack all fields vertically */
+        .tu-filter-row  { flex-direction: column; gap: 10px; }
+        .tu-filter-group.grow,
+        .tu-filter-group.fixed { min-width: 100%; }
+        .tu-filter-actions { width: 100%; }
+        .tu-btn-search { flex: 1; }
+        .tu-btn-reset  { flex-shrink: 0; }
+
+        /* Tabs: scroll horizontally */
+        .tu-tabs { gap: 6px; }
+        .type-tab { padding: 8px 14px; font-size: 11px; }
+
+        /* Grid: single column on small screens */
+        .tu-grid { grid-template-columns: 1fr; gap: 12px; }
+
+        .tut-card-thumb { height: 120px; }
+        .tut-card-body  { padding: 14px; }
+    }
+
+    @media (max-width: 400px) {
+        .tu-header-text h1 { font-size: 18px; }
+        .type-tab { padding: 7px 12px; font-size: 11px; gap: 4px; }
+    }
 </style>
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<!-- layout-body removed: sidebar is now fixed positioned -->
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 <main class="main-content">
 
-    <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-        <div>
-            <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin:0 0 4px;">📚 Tutorials & Resources</h1>
-            <p style="color:#8a91a8;font-size:13px;margin:0;" th:text="#{edu.subtitle}">Learn, watch, and listen to alumni knowledge</p>
+    <!-- ── Header ── -->
+    <div class="tu-header">
+        <div class="tu-header-text">
+            <h1>📚 <span th:text="#{page.education}">Tutorials &amp; Resources</span></h1>
+            <p th:text="#{edu.subtitle}">Learn, watch, and listen to alumni knowledge</p>
         </div>
-        <a sec:authorize="hasAnyRole('MEZUN','ADMIN')" th:href="@{/edu/new}"
-           style="background:#1b2a6b;color:white;padding:10px 20px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">
+        <a sec:authorize="hasAnyRole('MEZUN','ADMIN')" th:href="@{/edu/new}" class="tu-add-btn">
             + Add Tutorial
         </a>
     </div>
 
-    <!-- Search + Filters -->
-    <div style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;">
-        <form th:action="@{/edu}" method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-            <div style="flex:1;min-width:200px;">
-                <label style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;display:block;margin-bottom:5px;">SEARCH</label>
-                <input type="text" name="q" th:value="${q}" th:placeholder="#{navbar.search.placeholder}"
-                       style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;box-sizing:border-box;outline:none;"/>
+    <!-- ── Search + Filters ── -->
+    <div class="tu-filters">
+        <form th:action="@{/edu}" method="get" class="tu-filter-row">
+            <div class="tu-filter-group grow">
+                <label class="tu-filter-label">Search</label>
+                <input type="text" name="q" th:value="${q}"
+                       th:placeholder="#{navbar.search.placeholder}"
+                       class="tu-filter-input"/>
             </div>
-            <div style="min-width:160px;">
-                <label style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:#8a91a8;display:block;margin-bottom:5px;">CATEGORY</label>
-                <select name="category" style="width:100%;padding:9px 14px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;">
+            <div class="tu-filter-group fixed">
+                <label class="tu-filter-label">Category</label>
+                <select name="category" class="tu-filter-select">
                     <option value="" th:text="#{edu.all_categories}">All Categories</option>
-                    <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}" th:selected="${selected != null and selected == cat}">Cat</option>
+                    <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}"
+                            th:selected="${selected != null and selected == cat}">Cat</option>
                 </select>
             </div>
-            <button type="submit" style="padding:10px 22px;background:#1b2a6b;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;cursor:pointer;" th:text="#{common.search}">Search</button>
-            <a th:href="@{/edu}" style="padding:10px 16px;background:#f0f2f8;color:#1b2a6b;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">Reset</a>
+            <div class="tu-filter-actions">
+                <button type="submit" class="tu-btn-search" th:text="#{common.search_en}">Search</button>
+                <a th:href="@{/edu}" class="tu-btn-reset">Reset</a>
+            </div>
         </form>
     </div>
 
-    <!-- Media type tabs -->
-    <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;">
+    <!-- ── Media type tabs ── -->
+    <div class="tu-tabs">
         <a th:href="@{/edu(q=${q},category=${selected})}"
            th:class="${mediaType == null or mediaType == ''} ? 'type-tab all' : 'type-tab inactive'">
             📋 All
@@ -80,33 +374,33 @@
         </a>
     </div>
 
-    <!-- Results count -->
-    <p style="font-size:13px;color:#8a91a8;margin-bottom:16px;" th:if="${tutorials != null}">
+    <!-- ── Results count ── -->
+    <p class="tu-count" th:if="${tutorials != null}">
         <strong th:text="${tutorials.totalElements}">0</strong> tutorial(s) found
     </p>
 
-    <!-- Grid -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px;" th:if="${not tutorials.content.isEmpty()}">
+    <!-- ── Grid ── -->
+    <div class="tu-grid" th:if="${not tutorials.content.isEmpty()}">
         <div th:each="t : ${tutorials.content}" class="tut-card">
 
-            <!-- Thumbnail area -->
+            <!-- Thumbnail -->
             <div class="tut-card-thumb">
-                <div th:if="${t.mediaType.name() == 'VIDEO' and t.mediaUrl != null and !t.mediaUrl.isBlank()}"
-                     style="width:100%;height:140px;background:#111;display:flex;align-items:center;justify-content:center;">
+                <div th:if="${t.mediaType.name() == 'VIDEO'}"
+                     style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;">
                     <span style="font-size:48px;">🎬</span>
                 </div>
                 <div th:if="${t.mediaType.name() == 'AUDIO'}"
-                     style="width:100%;height:140px;background:linear-gradient(135deg,#1b2a6b,#27ae60);display:flex;align-items:center;justify-content:center;">
+                     style="width:100%;height:100%;background:linear-gradient(135deg,#1b2a6b,#27ae60);display:flex;align-items:center;justify-content:center;">
                     <span style="font-size:48px;">🎧</span>
                 </div>
                 <div th:if="${t.mediaType.name() == 'TEXT'}"
-                     style="width:100%;height:140px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);display:flex;align-items:center;justify-content:center;">
+                     style="width:100%;height:100%;background:linear-gradient(135deg,#e3f2fd,#bbdefb);display:flex;align-items:center;justify-content:center;">
                     <span style="font-size:48px;">📖</span>
                 </div>
             </div>
 
             <div class="tut-card-body">
-                <div style="display:flex;align-items:center;gap:6px;">
+                <div class="tut-badges">
                     <span th:if="${t.category}" class="tut-category" th:text="${t.category}">Cat</span>
                     <span th:if="${t.mediaType.name() == 'TEXT'}"  class="badge-text">Read</span>
                     <span th:if="${t.mediaType.name() == 'VIDEO'}" class="badge-video">Watch</span>
@@ -114,7 +408,8 @@
                 </div>
                 <a th:href="@{/edu/tutorial/{id}(id=${t.id})}" class="tut-title"
                    th:text="${t.getLocalizedTitle(lang)}">Tutorial Title</a>
-                <p class="tut-desc" th:if="${t.description}" th:text="${#strings.abbreviate(t.description, 80)}">Desc</p>
+                <p class="tut-desc" th:if="${t.description}"
+                   th:text="${#strings.abbreviate(t.description, 80)}">Desc</p>
                 <div class="tut-meta">
                     <span th:text="${t.author != null ? t.author.fullName : ''}">Author</span>
                     <span>👁 <span th:text="${t.viewCount}">0</span></span>
@@ -123,26 +418,27 @@
         </div>
     </div>
 
-    <!-- Empty state -->
-    <div th:if="${tutorials.content.isEmpty()}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
-        <div style="font-size:48px;margin-bottom:16px;">📚</div>
-        <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;" th:text="#{edu.no_tutorials_title}">No tutorials found</h3>
-        <p style="color:#8a91a8;margin-bottom:20px;">Try a different search or be the first to add one!</p>
+    <!-- ── Empty state ── -->
+    <div th:if="${tutorials.content.isEmpty()}" class="tu-empty">
+        <div class="tu-empty-icon">📚</div>
+        <h3 class="tu-empty-title" th:text="#{edu.no_tutorials_title}">No tutorials found</h3>
+        <p class="tu-empty-sub">Try a different search or be the first to add one!</p>
         <a sec:authorize="hasAnyRole('MEZUN','ADMIN')" th:href="@{/edu/new}"
-           style="background:#1b2a6b;color:white;padding:10px 24px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">+ Add Tutorial</a>
+           style="display:inline-block;background:#1b2a6b;color:white;padding:10px 24px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">
+            + Add Tutorial
+        </a>
     </div>
 
-    <!-- Pagination -->
-    <div style="display:flex;justify-content:center;gap:8px;margin-top:24px;" th:if="${tutorials.totalPages > 1}">
+    <!-- ── Pagination ── -->
+    <div class="tu-pagination" th:if="${tutorials.totalPages > 1}">
         <a th:if="${not tutorials.first}"
            th:href="@{/edu(q=${q},category=${selected},mediaType=${mediaType},page=${tutorials.number-1})}"
-           style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;text-decoration:none;">← Prev</a>
+           class="tu-page-link">← Prev</a>
         <a th:if="${not tutorials.last}"
            th:href="@{/edu(q=${q},category=${selected},mediaType=${mediaType},page=${tutorials.number+1})}"
-           style="padding:7px 14px;background:white;border:1.5px solid #e0e3ef;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#1b2a6b;text-decoration:none;" th:text="#{page.next}">Next →</a>
+           class="tu-page-link" th:text="#{page.next}">Next →</a>
     </div>
 
 </main>
-</div>
 </body>
 </html>

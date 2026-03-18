@@ -32,6 +32,9 @@ public class ObisStudentInfo {
      */
     private Integer studyYear;
 
+    /** Faculty name as it appears on OBIS portal — authoritative source */
+    private String facultyName;
+
     /** OBIS username used to authenticate */
     private String obisUsername;
 }

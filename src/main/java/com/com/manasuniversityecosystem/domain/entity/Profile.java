@@ -76,6 +76,10 @@ public class Profile {
 
     private Integer rankPosition;
 
+    /** Current year of study (1–6 for OBIS students, manually set for others).
+     Set automatically from OBIS login, can also be edited by the student. */
+    private Integer studyYear;
+
     /** Set by alumni themselves — enables them to appear in the mentorship table */
     @Column(nullable = false)
     @Builder.Default

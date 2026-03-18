@@ -79,6 +79,7 @@ public class ProfileService {
         if (req.getNationality()      != null) profile.setNationality(req.getNationality());
         if (req.getSkills()           != null) profile.setSkills(req.getSkills());
         if (req.getSocialLinks()      != null) profile.setSocialLinks(req.getSocialLinks());
+        if (req.getStudyYear()        != null) profile.setStudyYear(req.getStudyYear());
         if (req.getCanMentor()        != null) profile.setCanMentor(req.getCanMentor());
         if (req.getMentorJobTitle()   != null) profile.setMentorJobTitle(req.getMentorJobTitle());
 

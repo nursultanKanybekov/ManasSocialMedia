@@ -280,8 +280,40 @@ public class UniversityAuthService {
             obisEmail = studentId + "@manas.edu.kg";
         }
 
-        log.debug("OBIS scrape result — name='{}' id='{}' admYear={} studyYear={} avatar={}",
-                fullName, studentId, admissionYear, studyYear,
+        // ── Faculty name ───────────────────────────────────────────────────────
+        // OBIS shows faculty in various places — try several selectors
+        String facultyName = null;
+
+        // Source 1: detail table row "Факультети" or "Факультет"
+        for (String label : new String[]{"Факультети", "Факультет", "Факультеті"}) {
+            facultyName = getTableRowValue(doc, label);
+            if (!isBlank(facultyName)) break;
+        }
+        // Source 2: .user-header small or breadcrumb spans
+        if (isBlank(facultyName)) {
+            for (Element el : doc.select(".user-header small, .breadcrumb-item, .info-box-text")) {
+                String t = el.text().trim();
+                if (t.length() > 4 && !t.matches(".*\\d{4}.*") && t.contains(" ")) {
+                    facultyName = t;
+                    break;
+                }
+            }
+        }
+        // Source 3: any <td> or <li> containing "факультет" (case-insensitive)
+        if (isBlank(facultyName)) {
+            for (Element el : doc.select("td, li, p")) {
+                String t = el.text().trim();
+                if (t.toLowerCase().contains("факультет") && t.length() < 150) {
+                    // Strip label prefix if present: "Факультети: Engineering" → "Engineering"
+                    int colon = t.indexOf(':');
+                    facultyName = (colon >= 0 ? t.substring(colon + 1) : t).trim();
+                    if (!isBlank(facultyName)) break;
+                }
+            }
+        }
+
+        log.debug("OBIS scrape result — name='{}' id='{}' admYear={} studyYear={} faculty='{}' avatar={}",
+                fullName, studentId, admissionYear, studyYear, facultyName,
                 avatarUrl != null ? "present" : "absent");
 
         return ObisStudentInfo.builder()
@@ -291,6 +323,7 @@ public class UniversityAuthService {
                 .avatarUrl(avatarUrl)
                 .admissionYear(admissionYear)
                 .studyYear(studyYear)
+                .facultyName(facultyName)
                 .obisUsername(obisUsername)
                 .build();
     }

@@ -1,8 +1,10 @@
 package com.com.manasuniversityecosystem.web.controller;
 
 import com.com.manasuniversityecosystem.domain.entity.Faculty;
+import com.com.manasuniversityecosystem.domain.entity.notification.Notification;
 import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.repository.UserRepository;
+import com.com.manasuniversityecosystem.repository.notification.NotificationRepository;
 import com.com.manasuniversityecosystem.service.OnlineUserTracker;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -15,6 +17,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
 import java.util.UUID;
 
 @Controller
@@ -24,9 +27,10 @@ import java.util.UUID;
 @Slf4j
 public class SuperAdminController {
 
-    private final FacultyRepository facultyRepository;
-    private final UserRepository userRepository;
-    private final OnlineUserTracker onlineUserTracker;
+    private final FacultyRepository    facultyRepository;
+    private final UserRepository       userRepository;
+    private final OnlineUserTracker    onlineUserTracker;
+    private final NotificationRepository notificationRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -38,6 +42,13 @@ public class SuperAdminController {
         model.addAttribute("totalUsers",    userRepository.count());
         model.addAttribute("totalFaculties",facultyRepository.count());
         model.addAttribute("onlineCount",   onlineUserTracker.countOnline());
+
+        // Unread NEW_FACULTY_DETECTED alerts — shown as banner on dashboard
+        List<Notification> facultyAlerts = notificationRepository
+                .findByTypeAndIsReadFalse(Notification.NotifType.NEW_FACULTY_DETECTED);
+        model.addAttribute("facultyAlerts", facultyAlerts);
+        model.addAttribute("facultyAlertCount", facultyAlerts.size());
+
         return "super-admin/dashboard";
     }
 

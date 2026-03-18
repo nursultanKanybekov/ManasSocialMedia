@@ -60,6 +60,20 @@
             <label class="ep-label" th:text="#{profile.headline}">Headline</label>
             <input type="text" class="ep-input" th:field="*{headline}" th:value="${profile.headline}" th:placeholder="#{profile.headline_placeholder}"/>
           </div>
+          <!-- Course year — only visible for STUDENT role -->
+          <div class="ep-form-group" sec:authorize="hasRole('STUDENT')">
+            <label class="ep-label">🎓 Course Year</label>
+            <select class="ep-input" th:field="*{studyYear}">
+              <option value="">— Select year —</option>
+              <option value="1" th:selected="${profile.studyYear == 1}">1st Year</option>
+              <option value="2" th:selected="${profile.studyYear == 2}">2nd Year</option>
+              <option value="3" th:selected="${profile.studyYear == 3}">3rd Year</option>
+              <option value="4" th:selected="${profile.studyYear == 4}">4th Year</option>
+              <option value="5" th:selected="${profile.studyYear == 5}">5th Year</option>
+              <option value="6" th:selected="${profile.studyYear == 6}">6th Year</option>
+            </select>
+            <span class="ep-hint">Automatically synced from OBIS. You can also set it manually.</span>
+          </div>
           <div class="ep-form-group">
             <label class="ep-label" th:text="#{profile.job_title}">Current Job Title</label>
             <input type="text" class="ep-input" th:field="*{currentJobTitle}" th:value="${profile.currentJobTitle}" th:placeholder="#{profile.job_title_ph}"/>

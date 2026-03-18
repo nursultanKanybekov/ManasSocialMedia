@@ -46,7 +46,10 @@ public class Notification {
         // System
         BADGE_EARNED,
         SYSTEM,
-        PASSWORD_RESET_REQUEST
+        PASSWORD_RESET_REQUEST,
+
+        // Faculty
+        NEW_FACULTY_DETECTED   // superadmin notified when OBIS returns unknown faculty name
     }
 
     @Id

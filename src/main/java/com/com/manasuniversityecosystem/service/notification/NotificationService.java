@@ -221,6 +221,27 @@ public class NotificationService {
         log.info("[Auth] Password reset notification + chat sent for user={}", userEmail);
     }
 
+    // ── Faculty detection ─────────────────────────────────────────────────────
+
+    /**
+     * Fired when OBIS returns a faculty name not found in the DB.
+     * Notifies all SUPER_ADMINs with a link to /super-admin dashboard.
+     */
+    @Async @Transactional
+    public void notifyNewFacultyDetected(String facultyName, String studentName) {
+        String msg  = "\uD83C\uDFDB New faculty detected from OBIS: \"" + facultyName + "\" "
+                + "(triggered by student: " + studentName + "). "
+                + "Please review and add it to the system.";
+        String link = "/super-admin";
+        String icon = "\uD83C\uDFDB";
+
+        userRepo.findByRole(UserRole.SUPER_ADMIN).forEach(sa ->
+                saveNotification(sa.getId(), null,
+                        NotifType.NEW_FACULTY_DETECTED, msg, link, icon));
+
+        log.info("[Faculty] New faculty detected from OBIS: '{}' — superadmins notified.", facultyName);
+    }
+
     // ── System / Badge ────────────────────────────────────────
 
     @Async @Transactional

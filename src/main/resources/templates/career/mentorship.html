@@ -95,83 +95,69 @@
     <!-- === MENTOR TABLE === -->
     <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(27,42,107,0.08);overflow:hidden;">
         <!-- Table header / filters -->
-        <div style="padding:16px 20px;border-bottom:1.5px solid #f0f2f8;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-            <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;color:#1b2a6b;">👨‍🏫 Available Mentors</div>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                <!-- Search -->
-                <form th:action="@{/career/mentorship}" method="get" style="display:flex;gap:8px;align-items:center;">
-                    <input type="text" name="search" th:value="${searchQ}" th:placeholder="#{career.search_ph}"
-                           style="padding:7px 12px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;outline:none;width:200px;"/>
-                    <!-- Sort -->
-                    <select name="sortBy" onchange="this.form.submit()"
-                            style="padding:7px 12px;border:1.5px solid #e0e3ef;border-radius:8px;font-size:13px;">
-                        <option value="" th:selected="${sortBy == null}">Sort: Default</option>
-                        <option value="points" th:selected="${sortBy == 'points'}">Sort: Points</option>
-                        <option value="name" th:selected="${sortBy == 'name'}">Sort: Name A-Z</option>
-                    </select>
-                    <button type="submit" style="padding:7px 14px;background:#1b2a6b;color:white;border:none;border-radius:8px;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;cursor:pointer;" th:text="#{career.search}">Search</button>
-                    <a th:href="@{/career/mentorship}" style="padding:7px 12px;background:#f0f2f8;color:#1b2a6b;border-radius:8px;font-size:12px;font-family:Montserrat,sans-serif;font-weight:600;text-decoration:none;">Clear</a>
-                </form>
-            </div>
+        <div class="mh-table-header">
+            <div class="mh-table-title">👨‍🏫 <span th:text="#{career.available_mentors}">Available Mentors</span></div>
+            <form th:action="@{/career/mentorship}" method="get" class="mh-filter-form">
+                <input type="text" name="search" th:value="${searchQ}" th:placeholder="#{career.search_ph}"
+                       class="mh-filter-input"/>
+                <select name="sortBy" onchange="this.form.submit()" class="mh-filter-select">
+                    <option value="" th:selected="${sortBy == null}">Sort: Default</option>
+                    <option value="points" th:selected="${sortBy == 'points'}">Sort: Points</option>
+                    <option value="name" th:selected="${sortBy == 'name'}">Sort: Name A-Z</option>
+                </select>
+                <button type="submit" class="mh-btn-search" th:text="#{career.search}">Search</button>
+                <a th:href="@{/career/mentorship}" class="mh-btn-clear">Clear</a>
+            </form>
         </div>
 
-        <!-- Table -->
-        <div th:if="${mentorProfiles != null and !mentorProfiles.isEmpty()}">
-            <table style="width:100%;border-collapse:collapse;">
+        <!-- ── DESKTOP TABLE ── -->
+        <div th:if="${mentorProfiles != null and !mentorProfiles.isEmpty()}" class="mh-table-wrap">
+            <table class="mh-table">
                 <thead>
-                <tr style="background:#f8f9ff;">
-                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">#</th>
-                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Mentor</th>
-                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Role / Sphere</th>
-                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Skills</th>
-                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Points</th>
-                    <th style="padding:12px 16px;text-align:left;font-family:Montserrat,sans-serif;font-weight:700;font-size:12px;color:#8a91a8;text-transform:uppercase;letter-spacing:.5px;">Actions</th>
+                <tr>
+                    <th>#</th>
+                    <th>Mentor</th>
+                    <th>Role / Sphere</th>
+                    <th class="mh-col-skills">Skills</th>
+                    <th>Points</th>
+                    <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="p, i : ${mentorProfiles}"
-                    style="border-bottom:1px solid #f0f2f8;transition:background .15s;"
-                    onmouseover="this.style.background='#f8f9ff'" onmouseout="this.style.background='white'">
-                    <td style="padding:14px 16px;font-family:Montserrat,sans-serif;font-weight:700;color:#aaa;font-size:13px;" th:text="${i.index + 1}">1</td>
-                    <td style="padding:14px 16px;">
-                        <a th:href="@{/profile/{id}(id=${p.user.id})}" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+                <tr th:each="p, i : ${mentorProfiles}" class="mh-tr">
+                    <td class="mh-td mh-td-num" th:text="${i.index + 1}">1</td>
+                    <td class="mh-td">
+                        <a th:href="@{/profile/{id}(id=${p.user.id})}" class="mh-mentor-cell">
                             <img th:src="${p.avatarUrl != null ? p.avatarUrl : '/images/default-avatar.svg'}"
-                                 style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #e8eaf6;flex-shrink:0;" alt="avatar"/>
+                                 class="mh-av" alt="avatar"/>
                             <div>
-                                <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;" th:text="${p.user.fullName}">Name</div>
-                                <div style="font-size:11px;color:#8a91a8;" th:text="${p.user.faculty != null ? p.user.faculty.name : 'Alumni'}">Faculty</div>
+                                <div class="mh-mentor-name" th:text="${p.user.fullName}">Name</div>
+                                <div class="mh-mentor-sub" th:text="${p.user.faculty != null ? p.user.faculty.name : 'Alumni'}">Faculty</div>
                             </div>
                         </a>
                     </td>
-                    <td style="padding:14px 16px;">
-                        <div style="font-size:13px;color:#2c3e50;" th:text="${p.mentorJobTitle != null ? p.mentorJobTitle : p.headline}">Job Title</div>
-                        <div th:if="${p.user.graduationYear != null}" style="font-size:11px;color:#8a91a8;">Class of <span th:text="${p.user.graduationYear}">2020</span></div>
+                    <td class="mh-td">
+                        <div class="mh-role" th:text="${p.mentorJobTitle != null ? p.mentorJobTitle : p.headline}">Job Title</div>
+                        <div th:if="${p.user.graduationYear != null}" class="mh-mentor-sub">Class of <span th:text="${p.user.graduationYear}">2020</span></div>
                     </td>
-                    <td style="padding:14px 16px;">
-                        <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                                <span th:each="s, si : ${p.skills}" th:if="${si.index < 4}"
-                                      style="padding:3px 8px;background:#e8eaf6;color:#1b2a6b;border-radius:20px;font-size:11px;font-weight:600;font-family:Montserrat,sans-serif;"
-                                      th:text="${s}">Skill</span>
-                            <span th:if="${#lists.size(p.skills) > 4}"
-                                  style="padding:3px 8px;background:#f0f2f8;color:#8a91a8;border-radius:20px;font-size:11px;">
-                                    +<span th:text="${#lists.size(p.skills) - 4}">0</span>
-                                </span>
+                    <td class="mh-td mh-col-skills">
+                        <div class="mh-skills">
+                            <span th:each="s, si : ${p.skills}" th:if="${si.index < 4}" class="mh-skill" th:text="${s}">Skill</span>
+                            <span th:if="${#lists.size(p.skills) > 4}" class="mh-skill mh-skill-more">+<span th:text="${#lists.size(p.skills) - 4}">0</span></span>
                         </div>
                     </td>
-                    <td style="padding:14px 16px;">
-                        <span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;" th:text="${p.totalPoints}">0</span>
-                        <span style="font-size:11px;color:#8a91a8;"> pts</span>
+                    <td class="mh-td">
+                        <span class="mh-pts" th:text="${p.totalPoints}">0</span>
+                        <span class="mh-pts-lbl"> pts</span>
                     </td>
-                    <td style="padding:14px 16px;">
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <!-- Chat button -->
-                            <form th:action="@{/chat/direct/{uid}(uid=${p.user.id})}" method="post" style="display:inline;margin:0;">
+                    <td class="mh-td">
+                        <div class="mh-actions">
+                            <form th:action="@{/chat/direct/{uid}(uid=${p.user.id})}" method="post" style="margin:0;">
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <button type="submit" style="padding:6px 12px;background:#1b2a6b;color:white;border:none;border-radius:7px;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">💬 Chat</button>
+                                <button type="submit" class="mh-btn mh-btn-chat">💬 Chat</button>
                             </form>
-                            <!-- Request mentorship (STUDENT only) -->
                             <div sec:authorize="hasRole('STUDENT')">
-                                <button style="padding:6px 12px;background:#c0392b;color:white;border:none;border-radius:7px;font-family:Montserrat,sans-serif;font-weight:700;font-size:11px;cursor:pointer;"
+                                <button class="mh-btn mh-btn-request"
                                         hx-post="/career/mentorship/request"
                                         th:attr="hx-vals=|{&quot;mentorId&quot;: &quot;${p.user.id}&quot;}|"
                                         hx-target="closest td"
@@ -184,16 +170,259 @@
             </table>
         </div>
 
+        <!-- ── MOBILE CARDS ── -->
+        <div th:if="${mentorProfiles != null and !mentorProfiles.isEmpty()}" class="mh-cards">
+            <div th:each="p, i : ${mentorProfiles}" class="mh-card">
+                <a th:href="@{/profile/{id}(id=${p.user.id})}" class="mh-card-top">
+                    <img th:src="${p.avatarUrl != null ? p.avatarUrl : '/images/default-avatar.svg'}"
+                         class="mh-card-av" alt="avatar"/>
+                    <div class="mh-card-info">
+                        <div class="mh-card-name" th:text="${p.user.fullName}">Name</div>
+                        <div class="mh-card-role" th:text="${p.mentorJobTitle != null ? p.mentorJobTitle : p.headline}">Role</div>
+                        <div class="mh-card-sub">
+                            <span th:if="${p.user.faculty != null}" th:text="${p.user.faculty.name}">Faculty</span>
+                            <span th:if="${p.user.graduationYear != null}"> · Class of <span th:text="${p.user.graduationYear}">2020</span></span>
+                        </div>
+                    </div>
+                    <div class="mh-card-pts">🏆 <span th:text="${p.totalPoints}">0</span></div>
+                </a>
+                <div th:if="${not #lists.isEmpty(p.skills)}" class="mh-card-skills">
+                    <span th:each="s, si : ${p.skills}" th:if="${si.index < 5}" class="mh-skill" th:text="${s}">Skill</span>
+                    <span th:if="${#lists.size(p.skills) > 5}" class="mh-skill mh-skill-more">+<span th:text="${#lists.size(p.skills) - 5}">0</span></span>
+                </div>
+                <div class="mh-card-actions">
+                    <form th:action="@{/chat/direct/{uid}(uid=${p.user.id})}" method="post" style="margin:0;flex:1;">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="mh-card-btn mh-card-btn--chat">💬 Chat</button>
+                    </form>
+                    <div sec:authorize="hasRole('STUDENT')" style="flex:1;">
+                        <button class="mh-card-btn mh-card-btn--request"
+                                hx-post="/career/mentorship/request"
+                                th:attr="hx-vals=|{&quot;mentorId&quot;: &quot;${p.user.id}&quot;}|"
+                                hx-target="closest .mh-card-actions"
+                                hx-swap="innerHTML">🤝 Request</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Empty state -->
-        <div th:if="${mentorProfiles == null or mentorProfiles.isEmpty()}"
-             style="padding:60px;text-align:center;color:#8a91a8;">
-            <div style="font-size:48px;margin-bottom:12px;">🤝</div>
-            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;" th:text="#{career.no_mentors}">No Mentors Available Yet</h3>
-            <p>Alumni can enable mentoring in their profile settings to appear here.</p>
+        <div th:if="${mentorProfiles == null or mentorProfiles.isEmpty()}" class="mh-empty">
+            <div class="mh-empty-icon">🤝</div>
+            <h3 class="mh-empty-title" th:text="#{career.no_mentors}">No Mentors Available Yet</h3>
+            <p class="mh-empty-sub">Alumni can enable mentoring in their profile settings to appear here.</p>
         </div>
     </div>
 
 </main>
 <div th:replace="~{fragments/footer :: footer}"></div>
+
+<style>
+    /* ══════════════════════════════════════════════
+       MENTORSHIP PAGE — responsive styles
+    ══════════════════════════════════════════════ */
+
+    /* ── Table header / filter bar ── */
+    .mh-table-header {
+        padding: 16px 20px;
+        border-bottom: 1.5px solid #f0f2f8;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .mh-table-title {
+        font-family: Montserrat, sans-serif;
+        font-weight: 800;
+        font-size: 16px;
+        color: #1b2a6b;
+        white-space: nowrap;
+    }
+    .mh-filter-form {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        flex: 1;
+        justify-content: flex-end;
+    }
+    .mh-filter-input {
+        padding: 8px 12px;
+        border: 1.5px solid #e0e3ef;
+        border-radius: 8px;
+        font-size: 13px;
+        outline: none;
+        width: 180px;
+        min-width: 0;
+        font-family: Montserrat, sans-serif;
+        transition: border-color .15s;
+    }
+    .mh-filter-input:focus { border-color: #1b2a6b; }
+    .mh-filter-select {
+        padding: 8px 12px;
+        border: 1.5px solid #e0e3ef;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: Montserrat, sans-serif;
+        outline: none;
+        cursor: pointer;
+        min-width: 0;
+    }
+    .mh-btn-search {
+        padding: 8px 16px;
+        background: #1b2a6b;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 12px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .13s;
+        flex-shrink: 0;
+    }
+    .mh-btn-search:hover { background: #2d43a6; }
+    .mh-btn-clear {
+        padding: 8px 12px;
+        background: #f0f2f8;
+        color: #1b2a6b;
+        border-radius: 8px;
+        font-size: 12px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background .13s;
+        flex-shrink: 0;
+    }
+    .mh-btn-clear:hover { background: #dde2f0; }
+
+    /* ── Desktop table ── */
+    .mh-table-wrap { overflow-x: auto; }
+    .mh-table { width: 100%; border-collapse: collapse; }
+    .mh-table thead tr { background: #f8f9ff; }
+    .mh-table thead th {
+        padding: 12px 16px;
+        text-align: left;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 11px;
+        color: #8a91a8;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        white-space: nowrap;
+    }
+    .mh-tr { border-bottom: 1px solid #f0f2f8; transition: background .13s; }
+    .mh-tr:hover { background: #f8f9ff; }
+    .mh-td { padding: 14px 16px; vertical-align: middle; }
+    .mh-td-num { font-family: Montserrat, sans-serif; font-weight: 700; color: #aaa; font-size: 13px; }
+    .mh-mentor-cell { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+    .mh-av { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e8eaf6; flex-shrink: 0; }
+    .mh-mentor-name { font-family: Montserrat, sans-serif; font-weight: 700; font-size: 13px; color: #1b2a6b; }
+    .mh-mentor-sub { font-size: 11px; color: #8a91a8; }
+    .mh-role { font-size: 13px; color: #2c3e50; }
+    .mh-skills { display: flex; flex-wrap: wrap; gap: 5px; }
+    .mh-skill { padding: 3px 8px; background: #e8eaf6; color: #1b2a6b; border-radius: 20px; font-size: 11px; font-weight: 600; font-family: Montserrat, sans-serif; }
+    .mh-skill-more { background: #f0f2f8; color: #8a91a8; }
+    .mh-pts { font-family: Montserrat, sans-serif; font-weight: 700; font-size: 13px; color: #1b2a6b; }
+    .mh-pts-lbl { font-size: 11px; color: #8a91a8; }
+    .mh-actions { display: flex; gap: 8px; align-items: center; }
+    .mh-btn { padding: 6px 12px; border: none; border-radius: 7px; font-family: Montserrat, sans-serif; font-weight: 700; font-size: 11px; cursor: pointer; transition: background .13s; white-space: nowrap; }
+    .mh-btn-chat    { background: #1b2a6b; color: white; }
+    .mh-btn-chat:hover { background: #2d43a6; }
+    .mh-btn-request { background: #c0392b; color: white; }
+    .mh-btn-request:hover { background: #a93226; }
+
+    /* ── Mobile cards (hidden on desktop) ── */
+    .mh-cards { display: none; flex-direction: column; gap: 12px; padding: 14px; }
+
+    .mh-card {
+        background: white;
+        border-radius: 16px;
+        border: 1.5px solid #e8eaf6;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(27,42,107,0.07);
+    }
+    .mh-card-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 14px 10px;
+        text-decoration: none;
+        color: inherit;
+    }
+    .mh-card-av { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2.5px solid #e8eaf6; flex-shrink: 0; }
+    .mh-card-info { flex: 1; min-width: 0; }
+    .mh-card-name { font-family: Montserrat, sans-serif; font-weight: 800; font-size: 14px; color: #1b2a6b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mh-card-role { font-size: 12px; color: #374151; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mh-card-sub  { font-size: 11px; color: #8a91a8; margin-top: 1px; }
+    .mh-card-pts  { font-family: Montserrat, sans-serif; font-weight: 800; font-size: 12px; color: #c0392b; flex-shrink: 0; white-space: nowrap; }
+    .mh-card-skills { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 14px 10px; }
+    .mh-card-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-top: 1.5px solid #f0f2f8;
+    }
+    .mh-card-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 12px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        transition: background .13s;
+    }
+    .mh-card-btn--chat {
+        background: transparent;
+        color: #1b2a6b;
+        border-right: 1.5px solid #f0f2f8;
+    }
+    .mh-card-btn--chat:hover { background: #f7f8fc; }
+    .mh-card-btn--request {
+        background: #1b2a6b;
+        color: white;
+    }
+    .mh-card-btn--request:hover { background: #2d43a6; }
+
+    /* ── Empty state ── */
+    .mh-empty { padding: 56px 24px; text-align: center; color: #8a91a8; }
+    .mh-empty-icon  { font-size: 48px; margin-bottom: 12px; }
+    .mh-empty-title { font-family: Montserrat, sans-serif; font-weight: 800; color: #1b2a6b; font-size: 17px; margin: 0 0 8px; }
+    .mh-empty-sub   { font-size: 13px; margin: 0; }
+
+    /* ── Responsive breakpoints ── */
+    @media (max-width: 700px) {
+        /* Switch to cards */
+        .mh-table-wrap { display: none; }
+        .mh-cards { display: flex; }
+
+        /* Filter bar stacks */
+        .mh-table-header { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px; }
+        .mh-filter-form  { justify-content: stretch; gap: 8px; }
+        .mh-filter-input { width: 100%; }
+        .mh-filter-select { flex: 1; }
+        .mh-btn-search, .mh-btn-clear { flex: 1; text-align: center; }
+
+        /* Status toggle card responsive */
+    }
+
+    @media (max-width: 480px) {
+        /* Toggle status card wraps */
+        [style*="display:flex;align-items:center;justify-content:space-between"] {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+        }
+        /* Pending request actions */
+        .mh-card-actions { grid-template-columns: 1fr; }
+        .mh-card-btn--chat { border-right: none; border-bottom: 1.5px solid #f0f2f8; }
+    }
+</style>
 </body>
 </html>

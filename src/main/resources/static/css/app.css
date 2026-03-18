@@ -1208,3 +1208,247 @@ select.form-control { cursor: pointer; }
 @media (max-width: 480px) {
   .posts-grid { grid-template-columns: repeat(2, 1fr); gap: 2px; }
 }
+/* =====================================================================
+   ADAPTIVE / RESPONSIVE OVERRIDES
+   Fixes for: profile, feed, mentors, gamification, leaderboard,
+              competitions, events, mainpage, university-news
+   ===================================================================== */
+
+/* ── MAIN PAGE ─────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .svc-card-grid,
+  [style*="grid-template-columns:repeat(6,1fr)"],
+  [style*="grid-template-columns: repeat(6,1fr)"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+@media (max-width: 600px) {
+  /* hero text */
+  .hero h1 { font-size: 26px !important; }
+  .hero { height: auto !important; min-height: 280px !important; padding-bottom: 0 !important; }
+  [style*="padding:0 48px 60px"] { padding: 0 20px 48px !important; }
+
+  /* service cards row */
+  [style*="grid-template-columns:repeat(6,1fr)"],
+  [style*="grid-template-columns: repeat(6,1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* hero buttons */
+  [style*="display:flex;gap:12px;flex-wrap:wrap"] { flex-direction: column !important; gap: 8px !important; }
+
+  /* hero service cards margin */
+  [style*="margin-top:-50px;padding:0 32px"] {
+    margin-top: -20px !important;
+    padding: 0 14px !important;
+  }
+
+  /* main content two-col */
+  [style*="grid-template-columns:1fr 340px"],
+  [style*="grid-template-columns: 1fr 340px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* latest news inner grid */
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* main content padding */
+  [style*="padding:28px 32px 40px"] { padding: 16px 14px 32px !important; }
+}
+
+/* ── PROFILE PAGE ──────────────────────────────────────────────────── */
+.pv-main { padding: 0 !important; }
+.pv-wrapper { max-width: 100%; }
+
+@media (max-width: 900px) {
+  .pv-tabs-body,
+  .pv-two-col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .pv-hero-info { flex-direction: column !important; gap: 12px !important; }
+  .pv-hero-top { flex-direction: column !important; align-items: flex-start !important; }
+  .pv-name { font-size: 22px !important; }
+  .pv-stats-row { gap: 12px !important; flex-wrap: wrap !important; }
+  .pv-action-btns { flex-wrap: wrap !important; }
+  .posts-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 480px) {
+  .pv-avatar-zone { left: 16px !important; }
+  .pv-hero-info { padding: 8px 16px 16px !important; }
+  .pv-cover { height: 120px !important; }
+  .pv-stats-row .ps-num { font-size: 18px !important; }
+}
+
+/* ── FEED PAGE ─────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .fd-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    padding: 0 !important;
+  }
+  .fd-left {
+    max-height: none !important;
+    overflow: visible !important;
+    order: 1 !important;
+  }
+  .fd-center { order: 0 !important; }
+  .feed-light-mode .main-content { padding: 14px 12px 80px !important; }
+}
+
+@media (max-width: 480px) {
+  .post-actions { flex-wrap: wrap !important; gap: 4px !important; }
+  .post-action-btn { font-size: 12px !important; padding: 6px 10px !important; }
+  .compose-box { padding: 12px 14px !important; }
+  .post-body { padding: 0 14px 12px !important; }
+  .post-header { padding: 12px 14px 10px !important; }
+}
+
+/* ── FEED LAYOUT (3-col on big screen) ────────────────────────────── */
+@media (max-width: 1100px) {
+  .feed-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .feed-left, .feed-right {
+    position: static !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+  }
+  .feed-left .widget, .feed-right .widget {
+    flex: 1 1 220px !important;
+    min-width: 200px !important;
+  }
+}
+
+/* ── MENTORS / CAREER PAGE ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .mentors-grid,
+  [class*="mentor"] [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+  .mentor-card-actions { flex-wrap: wrap !important; }
+}
+
+@media (max-width: 600px) {
+  .job-card-header { flex-direction: column !important; gap: 10px !important; }
+  .job-card { padding: 14px !important; }
+  .company-logo { width: 38px !important; height: 38px !important; }
+}
+
+/* ── GAMIFICATION PAGE ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .games-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+@media (max-width: 600px) {
+  .player-card {
+    flex-direction: column !important;
+    gap: 16px !important;
+    padding: 20px 18px !important;
+    text-align: center !important;
+  }
+  .player-stats { justify-content: center !important; gap: 16px !important; }
+  .games-grid { grid-template-columns: 1fr !important; }
+  .badges-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .player-level-row { justify-content: center !important; }
+  .xp-bar-wrap { max-width: 100% !important; }
+}
+
+/* ── LEADERBOARD PAGE ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .podium-wrap {
+    gap: 8px !important;
+  }
+  .podium-item { width: 90px !important; }
+  .pod-av { width: 52px !important; height: 52px !important; }
+  .pod-av.gold { width: 64px !important; height: 64px !important; }
+  .leaderboard-filter { flex-direction: column !important; align-items: stretch !important; }
+  .f-select { width: 100% !important; }
+}
+
+@media (max-width: 480px) {
+  .podium-wrap { gap: 4px !important; }
+  .podium-item { width: 70px !important; }
+  .pod-platform.gold   { height: 60px !important; width: 60px !important; }
+  .pod-platform.silver { height: 44px !important; width: 60px !important; }
+  .pod-platform.bronze { height: 34px !important; width: 60px !important; }
+  .data-table th, .data-table td { padding: 9px 8px !important; font-size: 12px !important; }
+  /* hide less critical table cols */
+  .data-table .hide-mobile { display: none !important; }
+}
+
+/* ── COMPETITIONS PAGE ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .competitions-grid,
+  [style*="grid-template-columns:repeat(3"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .competitions-grid,
+  [style*="grid-template-columns:repeat(3"] {
+    grid-template-columns: 1fr !important;
+  }
+  .stat-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ── EVENTS PAGE ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .events-grid,
+  .event-list {
+    grid-template-columns: 1fr !important;
+  }
+  .event-detail-layout {
+    flex-direction: column !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .event-hero { min-height: 180px !important; }
+  .event-meta-row { flex-wrap: wrap !important; gap: 8px !important; }
+}
+
+/* ── UNIVERSITY NEWS PAGE ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .news-grid,
+  [style*="grid-template-columns:repeat(3,1fr)"],
+  [style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .news-grid,
+  [style*="grid-template-columns:repeat(3,1fr)"],
+  [style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+  .page-header { flex-direction: column !important; align-items: flex-start !important; }
+}
+
+/* ── SHARED: page padding on mobile ──────────────────────────────── */
+@media (max-width: 480px) {
+  .main-content { padding: 14px 12px 24px !important; }
+  .page-title { font-size: 18px !important; }
+  .section-title { font-size: 14px !important; }
+  .card { padding: 14px !important; }
+  .stat-grid { gap: 10px !important; }
+  .stat-card { padding: 14px 12px !important; }
+  .stat-num { font-size: 18px !important; }
+  .btn { padding: 8px 14px !important; font-size: 12px !important; }
+  .btn-lg { padding: 10px 18px !important; font-size: 13px !important; }
+}
+
+/* ── TWO-COL utility on tablets ──────────────────────────────────── */
+@media (max-width: 960px) {
+  .two-col { grid-template-columns: 1fr !important; }
+}

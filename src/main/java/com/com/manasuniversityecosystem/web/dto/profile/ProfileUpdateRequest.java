@@ -35,6 +35,9 @@ public class ProfileUpdateRequest {
     private List<String>            skills;
     private Map<String, String>     socialLinks;
 
+    // ── Study info ──────────────────────────────────────────────
+    private Integer studyYear;
+
     // ── Mentorship ──────────────────────────────────────────────
     private Boolean canMentor;
     private String  mentorJobTitle;

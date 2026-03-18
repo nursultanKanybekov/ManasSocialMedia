@@ -32,6 +32,15 @@
                             <span class="pv-role-badge" th:text="${profileUser.role}">STUDENT</span>
                             <span class="pv-faculty-badge" th:if="${profileUser.faculty != null}" th:text="${profileUser.faculty.name}">Faculty</span>
                             <span class="pv-grad-badge" th:if="${profileUser.graduationYear != null}" th:text="'Class of ' + ${profileUser.graduationYear}">Class of 2020</span>
+                            <!-- Course year — shown for STUDENT role when studyYear is set -->
+                            <span class="pv-course-badge"
+                                  th:if="${profileUser.role.name() == 'STUDENT' and profile.studyYear != null}">
+                                🎓
+                                <span th:text="${profile.studyYear == 1 ? '1st Year' :
+                                               (profile.studyYear == 2 ? '2nd Year' :
+                                               (profile.studyYear == 3 ? '3rd Year' :
+                                               (profile.studyYear + 'th Year')))}">2nd Year</span>
+                            </span>
                             <!-- University verified badge -->
                             <span th:if="${profileUser.universityVerified}"
                                   style="display:inline-flex;align-items:center;gap:4px;background:#ecfdf5;
@@ -349,6 +358,7 @@
     .pv-role-badge{background:#1b2a6b;color:#fff;padding:3px 10px;border-radius:20px;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;}
     .pv-faculty-badge{background:#eef1fb;color:#1b2a6b;padding:3px 10px;border-radius:20px;font-family:Montserrat,sans-serif;font-size:10px;font-weight:600;}
     .pv-grad-badge{background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:20px;font-family:Montserrat,sans-serif;font-size:10px;font-weight:600;}
+    .pv-course-badge{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#065f46;padding:3px 10px;border-radius:20px;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;border:1.5px solid #6ee7b7;display:inline-flex;align-items:center;gap:4px;}
     .pv-job-line{display:flex;align-items:center;gap:5px;font-size:13px;color:#374151;margin-bottom:5px;}
     .pv-meta-row{display:flex;gap:14px;flex-wrap:wrap;}
     .pv-meta-item{display:flex;align-items:center;gap:4px;font-size:12px;color:#6b7280;}

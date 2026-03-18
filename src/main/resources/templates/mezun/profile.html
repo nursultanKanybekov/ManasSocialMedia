@@ -1,37 +1,328 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/header :: head(${mezun.fullName})}"></head>
+<style>
+    /* ══════════════════════════════════════════════════════
+       ALUMNI PROFILE — Mobile-first redesign
+    ══════════════════════════════════════════════════════ */
+
+    .ap-wrap {
+        max-width: 720px;
+        margin: 0 auto;
+    }
+
+    /* ── Back link ── */
+    .ap-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #1b2a6b;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        text-decoration: none;
+        margin-bottom: 18px;
+        padding: 7px 14px 7px 10px;
+        background: white;
+        border-radius: 10px;
+        border: 1.5px solid #e0e3ef;
+        transition: background .15s, border-color .15s;
+        box-shadow: 0 1px 4px rgba(27,42,107,0.05);
+    }
+    .ap-back:hover { background: #e8ecf8; border-color: #1b2a6b; }
+    .ap-back svg { flex-shrink: 0; }
+
+    /* ── Hero card ── */
+    .ap-hero {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 24px rgba(27,42,107,0.10);
+        border: 1.5px solid #f0f2f8;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .ap-hero-banner {
+        height: 88px;
+        background: linear-gradient(135deg, #1b2a6b 0%, #2d43a6 50%, #4a5fbe 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    .ap-hero-banner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.07)' stroke-width='1'%3E%3Cpolygon points='30,3 57,17 57,43 30,57 3,43 3,17'/%3E%3Cpolygon points='30,13 47,22 47,38 30,47 13,38 13,22'/%3E%3C/g%3E%3C/svg%3E");
+        background-size: 60px 60px;
+    }
+
+    .ap-hero-body {
+        padding: 0 24px 24px;
+        position: relative;
+    }
+
+    /* Avatar overlapping banner */
+    .ap-avatar-wrap {
+        position: relative;
+        display: inline-block;
+        margin-top: -42px;
+        margin-bottom: 12px;
+    }
+    .ap-avatar {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+        display: block;
+        box-shadow: 0 4px 16px rgba(27,42,107,0.18);
+    }
+
+    /* Name + action row */
+    .ap-name-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .ap-name {
+        font-family: Montserrat, sans-serif;
+        font-weight: 900;
+        font-size: 20px;
+        color: #1b2a6b;
+        margin: 0 0 3px;
+        line-height: 1.2;
+    }
+    .ap-headline {
+        font-size: 13px;
+        color: #8a91a8;
+        margin: 0;
+    }
+
+    .ap-message-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 18px;
+        background: #1b2a6b;
+        color: white;
+        border-radius: 11px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: background .15s, transform .12s, box-shadow .15s;
+        box-shadow: 0 3px 12px rgba(27,42,107,0.25);
+    }
+    .ap-message-btn:hover {
+        background: #2d43a6;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 18px rgba(27,42,107,0.3);
+    }
+
+    /* Tag chips */
+    .ap-tags {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .ap-tag {
+        font-size: 12px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .ap-tag--faculty { background: #e8ecf8; color: #1b2a6b; }
+    .ap-tag--year    { background: #fce4ec; color: #c0392b; }
+    .ap-tag--pts     { background: #fff3e0; color: #e65100; }
+
+    /* ── Bio section ── */
+    .ap-section {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(27,42,107,0.07);
+        border: 1.5px solid #f0f2f8;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+    }
+    .ap-section-title {
+        font-family: Montserrat, sans-serif;
+        font-weight: 800;
+        font-size: 13px;
+        color: #1b2a6b;
+        margin: 0 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 12px;
+        border-bottom: 1.5px solid #f0f2f8;
+    }
+    .ap-section-title::before {
+        content: '';
+        width: 4px;
+        height: 16px;
+        background: #c0392b;
+        border-radius: 2px;
+        display: block;
+        flex-shrink: 0;
+    }
+    .ap-bio-text {
+        font-size: 14px;
+        color: #2c3e50;
+        line-height: 1.7;
+        margin: 0;
+    }
+
+    /* ── Mobile bottom action bar ── */
+    .ap-mobile-actions {
+        display: none;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: white;
+        border-top: 1.5px solid #e0e3ef;
+        padding: 12px 16px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        z-index: 100;
+        gap: 10px;
+        box-shadow: 0 -4px 20px rgba(27,42,107,0.10);
+    }
+    .ap-mobile-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 13px;
+        border-radius: 12px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 700;
+        font-size: 14px;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: background .15s, transform .1s;
+    }
+    .ap-mobile-btn--primary {
+        background: #1b2a6b;
+        color: white;
+        box-shadow: 0 3px 12px rgba(27,42,107,0.25);
+    }
+    .ap-mobile-btn--primary:hover  { background: #2d43a6; }
+    .ap-mobile-btn--primary:active { transform: scale(0.98); }
+    .ap-mobile-btn--secondary {
+        background: #f0f2f8;
+        color: #1b2a6b;
+    }
+    .ap-mobile-btn--secondary:hover  { background: #e0e3ef; }
+
+    /* ══ RESPONSIVE ══ */
+    @media (max-width: 600px) {
+        .ap-hero-body { padding: 0 16px 20px; }
+        .ap-name { font-size: 18px; }
+
+        /* Move message btn to fixed bottom bar on mobile */
+        .ap-message-btn { display: none; }
+        .ap-mobile-actions { display: flex; }
+
+        /* Give space for bottom action bar */
+        .main-content { padding-bottom: 90px !important; }
+
+        .ap-section { padding: 16px; }
+        .ap-back { margin-bottom: 14px; }
+    }
+
+    @media (max-width: 420px) {
+        .ap-avatar { width: 72px; height: 72px; }
+        .ap-hero-banner { height: 70px; }
+        .ap-avatar-wrap { margin-top: -36px; }
+        .ap-name { font-size: 17px; }
+        .ap-tags { gap: 6px; }
+        .ap-tag { font-size: 11px; padding: 3px 10px; }
+    }
+</style>
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<!-- layout-body removed: sidebar is now fixed positioned -->
-    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <main class="main-content">
-        <div style="max-width:800px;margin:0 auto;">
-            <!-- Profile Card -->
-            <div style="background:white;border-radius:20px;padding:32px;box-shadow:0 4px 24px rgba(27,42,107,0.1);margin-bottom:24px;">
-                <div style="display:flex;gap:24px;align-items:flex-start;">
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
+    <div class="ap-wrap">
+
+        <!-- Back link -->
+        <a th:href="@{/mezun}" class="ap-back">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            <span th:text="#{mezun.back}">Back to Alumni</span>
+        </a>
+
+        <!-- ── Hero card ── -->
+        <div class="ap-hero">
+            <div class="ap-hero-banner"></div>
+            <div class="ap-hero-body">
+                <div class="ap-avatar-wrap">
                     <img th:src="${mezun.profile != null and mezun.profile.avatarUrl != null ? mezun.profile.avatarUrl : '/images/default-avatar.svg'}"
-                         style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:4px solid #e0e3ef;" alt="avatar"/>
-                    <div style="flex:1;">
-                        <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin-bottom:4px;" th:text="${mezun.fullName}">Name</h1>
-                        <p th:if="${mezun.profile != null and mezun.profile.headline != null}" style="color:#8a91a8;font-size:14px;margin-bottom:8px;" th:text="${mezun.profile.headline}">Headline</p>
-                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                            <span th:if="${mezun.faculty != null}" style="font-size:12px;padding:4px 12px;background:#e8ecf8;color:#1b2a6b;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;" th:text="${mezun.faculty.name}">Faculty</span>
-                            <span th:if="${mezun.graduationYear != null}" style="font-size:12px;padding:4px 12px;background:#fce4ec;color:#c0392b;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;" th:text="'Class of ' + ${mezun.graduationYear}">Class of 2020</span>
-                            <span style="font-size:12px;padding:4px 12px;background:#fff3e0;color:#e65100;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;">🏆 <span th:text="${mezun.profile != null ? mezun.profile.totalPoints : 0}">0</span> pts</span>
-                        </div>
-                    </div>
-                    <a th:href="@{/chat}" style="padding:10px 20px;background:#1b2a6b;color:white;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;" th:text="#{profile.message}">Message</a>
+                         class="ap-avatar" alt="avatar"/>
                 </div>
-                <!-- Bio -->
-                <div th:if="${mezun.profile != null and mezun.profile.bio != null}" style="margin-top:20px;padding-top:20px;border-top:1px solid #f0f2f8;">
-                    <h3 style="font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;color:#1b2a6b;margin-bottom:8px;" th:text="#{profile.about}">About</h3>
-                    <p style="font-size:14px;color:#2c3e50;line-height:1.6;" th:text="${mezun.profile.bio}">Bio</p>
+
+                <div class="ap-name-row">
+                    <div>
+                        <h1 class="ap-name" th:text="${mezun.fullName}">Full Name</h1>
+                        <p th:if="${mezun.profile != null and mezun.profile.headline != null}"
+                           class="ap-headline" th:text="${mezun.profile.headline}">Headline</p>
+                    </div>
+                    <!-- Desktop message button (hidden on mobile) -->
+                    <a th:href="@{/chat}" class="ap-message-btn" th:text="#{profile.message}">
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                        </svg>
+                        Message
+                    </a>
+                </div>
+
+                <div class="ap-tags">
+                    <span th:if="${mezun.faculty != null}" class="ap-tag ap-tag--faculty">
+                        🏛 <span th:text="${mezun.faculty.name}">Faculty</span>
+                    </span>
+                    <span th:if="${mezun.graduationYear != null}" class="ap-tag ap-tag--year">
+                        🎓 <span th:text="'Class of ' + ${mezun.graduationYear}">Class of 2020</span>
+                    </span>
+                    <span class="ap-tag ap-tag--pts">
+                        🏆 <span th:text="${(mezun.profile != null ? mezun.profile.totalPoints : 0) + ' pts'}">0 pts</span>
+                    </span>
                 </div>
             </div>
-            <a th:href="@{/mezun}" style="display:inline-flex;align-items:center;gap:6px;color:#1b2a6b;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">← <span th:text="#{mezun.back}">Back to Alumni</span></a>
         </div>
-    </main>
-</div>
+
+        <!-- ── Bio section ── -->
+        <div th:if="${mezun.profile != null and mezun.profile.bio != null}" class="ap-section">
+            <h3 class="ap-section-title" th:text="#{profile.about}">About</h3>
+            <p class="ap-bio-text" th:text="${mezun.profile.bio}">Bio</p>
+        </div>
+
+    </div><!-- /.ap-wrap -->
+
+    <!-- ── Mobile fixed bottom action bar ── -->
+    <div class="ap-mobile-actions">
+        <a th:href="@{/mezun}" class="ap-mobile-btn ap-mobile-btn--secondary">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Back
+        </a>
+        <a th:href="@{/chat}" class="ap-mobile-btn ap-mobile-btn--primary">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+            <span th:text="#{profile.message}">Message</span>
+        </a>
+    </div>
+
+</main>
 </body>
 </html>

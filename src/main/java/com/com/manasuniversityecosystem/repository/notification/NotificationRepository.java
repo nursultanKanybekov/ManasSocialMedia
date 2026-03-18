@@ -44,4 +44,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.actor.id = :userId")
     void deleteByActorId(@Param("userId") UUID userId);
+
+    /** Used by SuperAdmin dashboard to fetch unread faculty detection alerts */
+    List<Notification> findByTypeAndIsReadFalse(Notification.NotifType type);
 }

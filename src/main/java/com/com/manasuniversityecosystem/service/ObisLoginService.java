@@ -8,6 +8,7 @@ import com.com.manasuniversityecosystem.domain.enums.UserStatus;
 import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.repository.UserRepository;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
+import com.com.manasuniversityecosystem.service.notification.NotificationService;
 import com.com.manasuniversityecosystem.web.dto.auth.ObisStudentInfo;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -34,8 +35,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class ObisLoginService {
 
-    private final UserRepository    userRepo;
-    private final FacultyRepository facultyRepo;
+    private final UserRepository      userRepo;
+    private final FacultyRepository   facultyRepo;
+    private final NotificationService notificationService;
 
     @Transactional
     public AppUser loginOrRegister(ObisStudentInfo info, HttpServletRequest request) {
@@ -60,6 +62,8 @@ public class ObisLoginService {
     private AppUser createNew(String email, ObisStudentInfo info) {
         log.info("OBIS: creating new user email={}", email);
 
+        Faculty faculty = resolveFaculty(info);
+
         AppUser user = AppUser.builder()
                 .email(email)
                 .passwordHash("OBIS_AUTH_ONLY") // no direct password login
@@ -69,6 +73,7 @@ public class ObisLoginService {
                 .studentIdNumber(info.getStudentId())
                 .universityVerified(true)
                 .obisUsername(info.getObisUsername())
+                .faculty(faculty)
                 .build();
 
         // Build profile with OBIS data
@@ -101,6 +106,12 @@ public class ObisLoginService {
             user.setStatus(UserStatus.ACTIVE);
         }
 
+        // Sync faculty from OBIS on every login
+        Faculty faculty = resolveFaculty(info);
+        if (faculty != null) {
+            user.setFaculty(faculty);
+        }
+
         // Update profile
         if (user.getProfile() != null) {
             buildHeadline(user.getProfile(), info);
@@ -111,6 +122,47 @@ public class ObisLoginService {
         }
 
         return userRepo.save(user);
+    }
+
+    // ── Resolve faculty from OBIS name ────────────────────────────────────────
+
+    /**
+     * Tries to match the OBIS faculty name to an existing Faculty in the DB.
+     *
+     * Matching strategy (case-insensitive, trimmed):
+     *  1. Exact name match
+     *  2. Name contains the DB faculty name (handles abbreviations)
+     *  3. DB faculty name contains the OBIS name
+     *
+     * If no match is found:
+     *  - Fires an async superadmin notification (non-blocking)
+     *  - Returns null — student can still log in, just without a faculty set
+     */
+    private Faculty resolveFaculty(ObisStudentInfo info) {
+        String rawName = info.getFacultyName();
+        if (rawName == null || rawName.isBlank()) return null;
+
+        String normalized = rawName.trim().toLowerCase();
+
+        Faculty matched = facultyRepo.findAll().stream()
+                .filter(f -> {
+                    String dbName = f.getName().trim().toLowerCase();
+                    return dbName.equals(normalized)
+                            || normalized.contains(dbName)
+                            || dbName.contains(normalized);
+                })
+                .findFirst()
+                .orElse(null);
+
+        if (matched != null) {
+            log.debug("OBIS: faculty '{}' matched to DB faculty '{}'", rawName, matched.getName());
+            return matched;
+        }
+
+        // No match — fire notification to superadmins (async, won't block login)
+        log.warn("OBIS: unknown faculty '{}' — notifying superadmins", rawName);
+        notificationService.notifyNewFacultyDetected(rawName, info.getFullName());
+        return null;
     }
 
     // ── Build headline from study year ─────────────────────────────────────────

@@ -44,30 +44,98 @@
                id="meet-btn"
                th:data-active="${meetingActive}"
                th:title="${meetingActive} ? 'Join ongoing meeting (' + ${meetingCount} + ' in call)' : 'Start video meeting'"
-               th:style="${meetingActive}
-                   ? 'background:#059669;animation:meetPulse 2s infinite;'
-                   : 'background:rgba(255,255,255,0.18);'"
-               style="border:none;color:#fff;border-radius:10px;padding:0 16px;height:36px;
-                      cursor:pointer;display:flex;align-items:center;gap:7px;
-                      font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;
-                      text-decoration:none;transition:background .15s;flex-shrink:0;"
-               onmouseover="this.style.background=(this.dataset.active==='true'?'#047857':'rgba(255,255,255,0.28)')"
-               onmouseout="this.style.background=(this.dataset.active==='true'?'#059669':'rgba(255,255,255,0.18)')">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                    <polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2"/>
-                </svg>
-                <span id="meet-btn-label" th:text="${meetingActive} ? 'Join Meeting' : 'Meet'">Meet</span>
+               th:class="${meetingActive} ? 'meet-btn meet-btn--live' : 'meet-btn'"
+               style="text-decoration:none; flex-shrink:0;">
+                <span class="meet-btn-icon">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                    </svg>
+                </span>
+                <span id="meet-btn-label" th:text="${meetingActive} ? 'Join Meeting' : 'Start Meet'">Start Meet</span>
                 <span id="chat-meet-badge"
                       th:if="${meetingActive}" th:text="${meetingCount}"
-                      style="background:rgba(255,255,255,.25);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800;"></span>
+                      class="meet-btn-badge"></span>
                 <span id="chat-meet-badge-hidden" th:unless="${meetingActive}"
-                      style="display:none;background:rgba(255,255,255,.25);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800;"></span>
+                      class="meet-btn-badge" style="display:none;"></span>
             </a>
             <style>
+                .meet-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 0 18px;
+                    height: 38px;
+                    border-radius: 12px;
+                    background: rgba(255,255,255,0.15);
+                    border: 1.5px solid rgba(255,255,255,0.25);
+                    color: #fff;
+                    font-family: Montserrat, sans-serif;
+                    font-size: 12px;
+                    font-weight: 700;
+                    letter-spacing: 0.3px;
+                    cursor: pointer;
+                    transition: background 0.18s, border-color 0.18s, transform 0.12s, box-shadow 0.18s;
+                    backdrop-filter: blur(4px);
+                    position: relative;
+                    overflow: hidden;
+                }
+                .meet-btn::before {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
+                    pointer-events: none;
+                }
+                .meet-btn:hover {
+                    background: rgba(255,255,255,0.26);
+                    border-color: rgba(255,255,255,0.45);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+                }
+                .meet-btn:active { transform: translateY(0); }
+                .meet-btn-icon {
+                    width: 26px; height: 26px;
+                    border-radius: 8px;
+                    background: rgba(255,255,255,0.18);
+                    display: flex; align-items: center; justify-content: center;
+                    flex-shrink: 0;
+                    transition: background 0.15s;
+                }
+                .meet-btn:hover .meet-btn-icon { background: rgba(255,255,255,0.28); }
+                .meet-btn--live {
+                    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                    border-color: transparent;
+                    box-shadow: 0 0 0 0 rgba(5,150,105,0.7);
+                    animation: meetPulse 2.2s infinite;
+                }
+                .meet-btn--live:hover {
+                    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+                    box-shadow: 0 4px 20px rgba(5,150,105,0.5);
+                    animation: none;
+                }
+                .meet-btn--live .meet-btn-icon { background: rgba(255,255,255,0.2); }
+                .meet-btn--live .meet-btn-icon svg { animation: videoWiggle 1.8s ease-in-out infinite; }
+                @keyframes videoWiggle {
+                    0%, 100% { transform: scale(1); }
+                    50%       { transform: scale(1.15); }
+                }
+                .meet-btn-badge {
+                    background: rgba(255,255,255,0.25);
+                    border-radius: 20px;
+                    padding: 2px 8px;
+                    font-size: 10px;
+                    font-weight: 800;
+                    line-height: 1.4;
+                }
                 @keyframes meetPulse {
                     0%   { box-shadow: 0 0 0 0   rgba(5,150,105,.7); }
-                    70%  { box-shadow: 0 0 0 10px rgba(5,150,105,0); }
+                    60%  { box-shadow: 0 0 0 10px rgba(5,150,105,0); }
                     100% { box-shadow: 0 0 0 0   rgba(5,150,105,0); }
+                }
+                @media (max-width: 600px) {
+                    .meet-btn { padding: 0 12px; height: 36px; }
+                    .meet-btn span#meet-btn-label { display: none; }
+                    .meet-btn-icon { width: 28px; height: 28px; border-radius: 50%; }
                 }
             </style>
             <!-- Add member (canManage) -->
@@ -282,6 +350,15 @@
     <style>
         @keyframes chPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
         .ch-media-bubble img { display:block; }
+
+        /* ── Channel header responsive ── */
+        @media (max-width: 768px) {
+            #ch-header-actions { gap: 4px !important; }
+            #ch-header-actions .hide-sm { display: none !important; }
+        }
+        @media (max-width: 480px) {
+            #ch-member-btn-label { display: none !important; }
+        }
     </style>
     <!-- Toast -->
     <div id="ch-toast" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(27,42,107,.92);color:#fff;padding:9px 22px;border-radius:30px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none;"></div>
@@ -682,18 +759,16 @@
             btn.dataset.active = active ? 'true' : 'false';
 
             if (active) {
-                btn.style.background = '#059669';
-                btn.style.animation  = 'meetPulse 2s infinite';
+                btn.classList.add('meet-btn--live');
                 btn.title = 'Join ongoing meeting (' + count + ' in call)';
                 if (label) label.textContent = 'Join Meeting';
                 let b = document.getElementById('chat-meet-badge');
                 if (!b) { b = document.getElementById('chat-meet-badge-hidden'); if (b) b.id = 'chat-meet-badge'; }
                 if (b) { b.style.display = ''; b.textContent = count; }
             } else {
-                btn.style.background = 'rgba(255,255,255,0.18)';
-                btn.style.animation  = 'none';
+                btn.classList.remove('meet-btn--live');
                 btn.title = 'Start video meeting';
-                if (label) label.textContent = 'Meet';
+                if (label) label.textContent = 'Start Meet';
                 const b = document.getElementById('chat-meet-badge');
                 if (b) b.style.display = 'none';
             }
