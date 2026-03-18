@@ -67,6 +67,14 @@ public class AppUser {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /** True once the student has successfully verified via the OBIS portal */
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    private boolean universityVerified = false;
+
+    /** OBIS username used for proxy authentication (null for non-OBIS users) */
+    @Column(length = 100)
+    private String obisUsername;
+
     @OneToOne(mappedBy = "user",
             cascade = CascadeType.ALL,
             fetch = FetchType.LAZY,

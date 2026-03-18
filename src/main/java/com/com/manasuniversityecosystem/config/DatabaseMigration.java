@@ -19,6 +19,10 @@ public class DatabaseMigration implements ApplicationRunner {
         log.info("[Migration] Running database migrations...");
 
         String[] migrations = {
+                // ── app_user columns ──────────────────────────────────────────
+                "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS university_verified BOOLEAN NOT NULL DEFAULT FALSE",
+                "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS obis_username VARCHAR(100)",
+
                 // ── chat_message columns ──────────────────────────────────────
                 "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS is_edited BOOLEAN NOT NULL DEFAULT FALSE",
                 "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP",

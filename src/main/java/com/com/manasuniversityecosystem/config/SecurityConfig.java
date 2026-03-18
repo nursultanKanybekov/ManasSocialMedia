@@ -45,7 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**","/css/**","/js/**","/images/**",
                                 "/fonts/**","/favicon.ico","/error","/uploads/**",
                                 "/.well-known/**").permitAll()
-                        .requestMatchers("/ws/**").authenticated()
+                        .requestMatchers("/ws/**", "/university-verify").authenticated()
                         .requestMatchers("/super-admin/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/secretary/**").hasAnyRole("SECRETARY","ADMIN","SUPER_ADMIN")
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN","SUPER_ADMIN")

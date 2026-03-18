@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <div th:if="${successMsg}" class="ep-alert ep-alert-success">&#9989; <span th:text="#{${successMsg}}">Saved.</span></div>
+    <div th:if="${successMsg}" class="ep-alert ep-alert-success">&#9989; <span th:text="${successMsg}">Saved.</span></div>
     <div th:if="${errorMsg}"   class="ep-alert ep-alert-error">&#9888;&#65039; <span th:text="${errorMsg}">Error.</span></div>
 
     <!-- Avatar Hero -->
@@ -163,6 +163,27 @@
         </div>
         <div id="cert-entries"></div>
         <p id="cert-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;" th:text="#{profile.no_certs}">No certifications added yet.</p>
+      </div>
+
+      <!-- UNIVERSITY VERIFICATION -->
+      <div class="ep-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="ep-card-title" style="margin:0 0 4px;">🎓 University Verification</div>
+          <div th:if="${user.universityVerified}"
+               style="font-size:12px;color:#065f46;font-weight:600;">
+            ✅ Verified via OBIS portal
+          </div>
+          <div th:unless="${user.universityVerified}"
+               style="font-size:12px;color:#64748b;">
+            Verify your student status using your OBIS credentials.
+          </div>
+        </div>
+        <a th:href="@{/university-verify}"
+           th:class="${user.universityVerified} ? 'ep-btn-save' : 'ep-add-btn'"
+           style="text-decoration:none;white-space:nowrap;"
+           th:text="${user.universityVerified} ? '🔄 Re-verify' : '🎓 Verify Now'">
+          Verify Now
+        </a>
       </div>
 
       <!-- SAVE -->

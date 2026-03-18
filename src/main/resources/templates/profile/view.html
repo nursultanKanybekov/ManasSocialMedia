@@ -32,6 +32,13 @@
                             <span class="pv-role-badge" th:text="${profileUser.role}">STUDENT</span>
                             <span class="pv-faculty-badge" th:if="${profileUser.faculty != null}" th:text="${profileUser.faculty.name}">Faculty</span>
                             <span class="pv-grad-badge" th:if="${profileUser.graduationYear != null}" th:text="'Class of ' + ${profileUser.graduationYear}">Class of 2020</span>
+                            <!-- University verified badge -->
+                            <span th:if="${profileUser.universityVerified}"
+                                  style="display:inline-flex;align-items:center;gap:4px;background:#ecfdf5;
+                                         color:#065f46;border:1.5px solid #6ee7b7;border-radius:20px;
+                                         padding:3px 10px;font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;">
+                                ✅ University Verified
+                            </span>
                         </div>
                         <div class="pv-job-line" th:if="${profile.currentJobTitle != null or profile.currentCompany != null}">
                             &#128188;

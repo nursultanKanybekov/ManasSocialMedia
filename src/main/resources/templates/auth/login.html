@@ -114,6 +114,23 @@
             <button type="submit" class="btn btn-danger btn-full" th:text="#{auth.login.submit}">Sign In</button>
         </form>
 
+        <!-- OBIS Login option -->
+        <div style="display:flex;align-items:center;gap:10px;margin-top:16px;margin-bottom:4px;">
+            <div style="flex:1;height:1px;background:#e0e3ef;"></div>
+            <span style="font-size:12px;color:#94a3b8;font-family:Montserrat,sans-serif;white-space:nowrap;">or</span>
+            <div style="flex:1;height:1px;background:#e0e3ef;"></div>
+        </div>
+        <a th:href="@{/auth/obis-login}"
+           style="display:flex;align-items:center;justify-content:center;gap:8px;
+                  width:100%;padding:12px;margin-bottom:12px;
+                  background:white;border:1.5px solid #c7d2fe;border-radius:12px;
+                  color:#3730a3;font-family:Montserrat,sans-serif;font-weight:700;
+                  font-size:13px;text-decoration:none;transition:all .2s;box-sizing:border-box;"
+           onmouseover="this.style.background='#f0f4ff'"
+           onmouseout="this.style.background='white'">
+            🎓 Sign in with OBIS (Students)
+        </a>
+
         <div style="text-align:right; margin-top:10px; margin-bottom:4px;">
             <a th:href="@{/auth/forgot-password}"
                style="font-size:12px; color:#1B2A6B; font-weight:600; text-decoration:none;">

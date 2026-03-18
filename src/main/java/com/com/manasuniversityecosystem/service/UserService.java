@@ -228,4 +228,10 @@ public class UserService {
     public List<AppUser> getAllByStatus(UserStatus status) {
         return userRepo.findByStatus(status);
     }
+
+    /** Mark user as verified via the university OBIS portal */
+    public void markUniversityVerified(AppUser user) {
+        user.setUniversityVerified(true);
+        userRepo.save(user);
+    }
 }
