@@ -127,22 +127,24 @@ public class ObisLoginService {
     // ── Resolve faculty from OBIS name ────────────────────────────────────────
 
     /**
-     * Tries to match the OBIS faculty name to an existing Faculty in the DB.
+     * Matches the OBIS faculty name to an existing Faculty in the DB.
      *
      * Matching strategy (case-insensitive, trimmed):
      *  1. Exact name match
-     *  2. Name contains the DB faculty name (handles abbreviations)
-     *  3. DB faculty name contains the OBIS name
+     *  2. OBIS name contains the DB name (handles long variants)
+     *  3. DB name contains the OBIS name (handles abbreviations)
      *
      * If no match is found:
-     *  - Fires an async superadmin notification (non-blocking)
-     *  - Returns null — student can still log in, just without a faculty set
+     *  - AUTO-CREATES the faculty from OBIS data (no superadmin approval needed)
+     *  - Notifies superadmins so they are aware of the new entry
+     *  - Returns the newly created faculty — student is assigned immediately
      */
     private Faculty resolveFaculty(ObisStudentInfo info) {
         String rawName = info.getFacultyName();
         if (rawName == null || rawName.isBlank()) return null;
 
-        String normalized = rawName.trim().toLowerCase();
+        String trimmed    = rawName.trim();
+        String normalized = trimmed.toLowerCase();
 
         Faculty matched = facultyRepo.findAll().stream()
                 .filter(f -> {
@@ -159,10 +161,51 @@ public class ObisLoginService {
             return matched;
         }
 
-        // No match — fire notification to superadmins (async, won't block login)
-        log.warn("OBIS: unknown faculty '{}' — notifying superadmins", rawName);
-        notificationService.notifyNewFacultyDetected(rawName, info.getFullName());
-        return null;
+        // ── Auto-create: OBIS is the authoritative source, no admin gate needed ──
+        String code = generateFacultyCode(trimmed);
+        // Ensure code uniqueness
+        if (facultyRepo.existsByCode(code)) {
+            code = code + "_" + System.currentTimeMillis() % 1000;
+        }
+
+        Faculty created = Faculty.builder()
+                .name(trimmed)
+                .code(code)
+                .build();
+        created = facultyRepo.save(created);
+
+        log.info("OBIS: auto-created new faculty '{}' (code='{}') from OBIS data",
+                trimmed, code);
+
+        // Still notify superadmins so they can review/rename if needed (non-blocking)
+        notificationService.notifyNewFacultyDetected(trimmed, info.getFullName());
+
+        return created;
+    }
+
+    /**
+     * Derives a short uppercase code from a faculty name.
+     * e.g. "Faculty of Engineering and Technology" → "FET"
+     *      "Fen Bilimleri Fakültesi"               → "FBF"
+     *      "Engineering"                            → "ENG"
+     */
+    private String generateFacultyCode(String name) {
+        // Take first letter of each significant word (skip short connectors)
+        String[] words = name.trim().split("\\s+");
+        StringBuilder code = new StringBuilder();
+        for (String word : words) {
+            if (word.length() > 2) {
+                code.append(Character.toUpperCase(word.charAt(0)));
+            }
+        }
+        String result = code.toString();
+        if (result.isBlank()) {
+            // Fallback: first 3–5 chars of the name
+            result = name.replaceAll("[^a-zA-ZА-Яа-яÇçĞğİıÖöŞşÜü]", "")
+                    .toUpperCase();
+            result = result.length() > 5 ? result.substring(0, 5) : result;
+        }
+        return result.isEmpty() ? "FAC" : result;
     }
 
     // ── Build headline from study year ─────────────────────────────────────────
