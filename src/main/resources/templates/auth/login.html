@@ -33,6 +33,10 @@
         .auth-lang { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
         .auth-lang a { color: rgba(255,255,255,0.6); font-size: 12px; font-weight: 700; font-family: 'Montserrat', sans-serif; text-decoration: none; transition: color 0.2s; }
         .auth-lang a:hover { color: white; }
+        .remember-row { display:flex; align-items:center; justify-content:space-between; margin:4px 0 16px; }
+        .remember-label { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:#475569; font-family:'Montserrat',sans-serif; font-weight:600; user-select:none; }
+        .remember-checkbox { width:17px; height:17px; accent-color:#1B2A6B; cursor:pointer; flex-shrink:0; }
+        .remember-label:hover span { color:#1B2A6B; }
     </style>
 </head>
 <body>
@@ -111,6 +115,17 @@
                 <div class="g-recaptcha" data-sitekey="6LexNo4sAAAAADLdotF4eCUaoACx_NAbluY84iR-"></div>
             </div>
 
+            <div class="remember-row">
+                <label class="remember-label">
+                    <input type="checkbox" name="remember-me" class="remember-checkbox" id="rememberMe"/>
+                    <span>Remember me for 3 days</span>
+                </label>
+                <a th:href="@{/auth/forgot-password}"
+                   style="font-size:12px;color:#1B2A6B;font-weight:600;text-decoration:none;">
+                    Forgot password?
+                </a>
+            </div>
+
             <button type="submit" class="btn btn-danger btn-full" th:text="#{auth.login.submit}">Sign In</button>
         </form>
 
@@ -131,12 +146,7 @@
             🎓 Sign in with OBIS (Students)
         </a>
 
-        <div style="text-align:right; margin-top:10px; margin-bottom:4px;">
-            <a th:href="@{/auth/forgot-password}"
-               style="font-size:12px; color:#1B2A6B; font-weight:600; text-decoration:none;">
-                Forgot password?
-            </a>
-        </div>
+
 
         <div class="auth-footer-row">
             <span th:text="#{auth.no_account}">Don't have an account?</span>

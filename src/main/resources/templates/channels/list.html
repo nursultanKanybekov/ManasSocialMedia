@@ -1,53 +1,276 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/header :: head(#{nav.channels})}"></head>
+<style>
+    /* ── Channel List Page ── */
+    .ch-page-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
+    }
+    .ch-page-title {
+        font-family: Montserrat, sans-serif; font-weight: 900;
+        font-size: 22px; color: #1b2a6b; margin: 0;
+    }
+    .ch-create-btn {
+        background: #1b2a6b; color: white; padding: 10px 20px;
+        border-radius: 10px; font-family: Montserrat, sans-serif;
+        font-weight: 700; font-size: 13px; text-decoration: none;
+        white-space: nowrap; transition: background .15s;
+    }
+    .ch-create-btn:hover { background: #2d43a6; }
+
+    /* ── Search bar ── */
+    .ch-search-wrap {
+        margin-bottom: 22px;
+        position: relative;
+    }
+    .ch-search-icon {
+        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+        pointer-events: none; color: #8a91a8;
+    }
+    .ch-search-input {
+        width: 100%; padding: 11px 42px 11px 42px;
+        border: 1.5px solid #e0e3ef; border-radius: 12px;
+        font-family: Montserrat, sans-serif; font-size: 14px;
+        color: #1b2a6b; background: white;
+        box-shadow: 0 2px 8px rgba(27,42,107,0.06);
+        outline: none; transition: border-color .2s, box-shadow .2s;
+        box-sizing: border-box;
+    }
+    .ch-search-input:focus {
+        border-color: #1b2a6b;
+        box-shadow: 0 0 0 3px rgba(27,42,107,0.08);
+    }
+    .ch-search-input::placeholder { color: #b0b5c5; }
+    .ch-search-clear {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        background: none; border: none; cursor: pointer; color: #8a91a8;
+        font-size: 16px; padding: 4px; border-radius: 50%;
+        display: none; align-items: center; justify-content: center;
+        transition: color .15s;
+    }
+    .ch-search-clear:hover { color: #1b2a6b; }
+
+    /* ── Section label ── */
+    .ch-section-label {
+        font-family: Montserrat, sans-serif; font-weight: 800;
+        font-size: 11px; color: #8a91a8; text-transform: uppercase;
+        letter-spacing: 1px; margin-bottom: 14px; margin-top: 8px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .ch-section-count {
+        background: #eef1fb; color: #1b2a6b; border-radius: 20px;
+        padding: 1px 8px; font-size: 10px; font-weight: 700;
+    }
+
+    /* ── Channel grid ── */
+    .ch-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+    .ch-card {
+        background: white; border-radius: 16px; padding: 18px 20px;
+        box-shadow: 0 2px 12px rgba(27,42,107,0.08);
+        text-decoration: none; display: flex; align-items: center;
+        gap: 14px; transition: box-shadow .18s, transform .18s;
+        border: 1.5px solid transparent;
+    }
+    .ch-card:hover {
+        box-shadow: 0 6px 24px rgba(27,42,107,0.14);
+        transform: translateY(-2px);
+        border-color: #e0e3ef;
+    }
+    .ch-card--mine { border-left: 4px solid #1b2a6b; }
+    .ch-icon {
+        width: 46px; height: 46px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 20px; flex-shrink: 0;
+    }
+    .ch-icon--mine    { background: linear-gradient(135deg, #1b2a6b, #c0392b); }
+    .ch-icon--all     { background: linear-gradient(135deg, #2c3e8c, #8e2222); }
+    .ch-card-info     { flex: 1; min-width: 0; }
+    .ch-card-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .ch-card-name {
+        font-family: Montserrat, sans-serif; font-weight: 800;
+        font-size: 14px; color: #1b2a6b;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ch-private-badge {
+        background: #f3e5f5; color: #7c3aed;
+        font-size: 9px; font-family: Montserrat, sans-serif;
+        font-weight: 700; padding: 1px 6px; border-radius: 10px;
+        white-space: nowrap;
+    }
+    .ch-card-meta {
+        font-size: 11px; color: #8a91a8; margin-top: 3px;
+    }
+
+    /* ── No-match state ── */
+    .ch-no-match {
+        display: none; text-align: center; padding: 48px 20px;
+        color: #8a91a8;
+    }
+    .ch-no-match-icon  { font-size: 40px; margin-bottom: 12px; }
+    .ch-no-match-title { font-family: Montserrat, sans-serif; font-weight: 800; font-size: 16px; color: #1b2a6b; margin-bottom: 6px; }
+
+    /* ── Empty state ── */
+    .ch-empty {
+        background: white; border-radius: 16px; padding: 60px;
+        text-align: center; box-shadow: 0 2px 12px rgba(27,42,107,0.08);
+    }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+        .ch-page-header { flex-direction: column; align-items: flex-start; }
+        .ch-create-btn  { width: 100%; text-align: center; }
+        .ch-grid { grid-template-columns: 1fr; }
+    }
+</style>
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<!-- layout-body removed: sidebar is now fixed positioned -->
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 <main class="main-content">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-        <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin:0;">📢 Channels</h1>
-        <a th:href="@{/channels/new}" style="background:#1b2a6b;color:white;padding:10px 20px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">+ Create Channel</a>
+
+    <!-- Header -->
+    <div class="ch-page-header">
+        <h1 class="ch-page-title">📢 Channels</h1>
+        <a th:href="@{/channels/new}" class="ch-create-btn">+ Create Channel</a>
     </div>
 
-    <div th:if="${not #lists.isEmpty(myChannels)}" style="margin-bottom:32px;">
-        <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;color:#8a91a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">My Channels</h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
-            <a th:each="ch : ${myChannels}" th:href="@{/channels/{id}(id=${ch.id})}"
-               style="background:white;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);text-decoration:none;display:flex;align-items:center;gap:16px;border-left:4px solid #1b2a6b;">
-                <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#1b2a6b,#c0392b);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;flex-shrink:0;">📢</div>
-                <div>
-                    <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:#1b2a6b;" th:text="${ch.name}">Channel</div>
-                    <div style="font-size:11px;color:#8a91a8;margin-top:3px;" th:text="${ch.participants.size() + ' members'}">0 members</div>
+    <!-- Search -->
+    <div class="ch-search-wrap">
+        <svg class="ch-search-icon" width="16" height="16" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="chSearch" class="ch-search-input"
+               placeholder="Search channels by name or owner…"
+               oninput="filterChannels(this.value)"
+               autocomplete="off"/>
+        <button id="chSearchClear" class="ch-search-clear"
+                onclick="clearChannelSearch()" title="Clear search"
+                style="display:none;">✕</button>
+    </div>
+
+    <!-- No search match -->
+    <div id="chNoMatch" class="ch-no-match">
+        <div class="ch-no-match-icon">🔍</div>
+        <div class="ch-no-match-title">No channels match "<span id="chNoMatchTerm"></span>"</div>
+        <div style="font-size:13px;">Try a different name or <a href="#" onclick="clearChannelSearch();return false;" style="color:#1b2a6b;font-weight:700;">clear search</a>.</div>
+    </div>
+
+    <!-- My Channels -->
+    <div id="sectionMine" th:if="${not #lists.isEmpty(myChannels)}">
+        <div class="ch-section-label">
+            My Channels
+            <span class="ch-section-count" th:text="${#lists.size(myChannels)}">0</span>
+        </div>
+        <div class="ch-grid" id="gridMine">
+            <a th:each="ch : ${myChannels}"
+               th:href="@{/channels/{id}(id=${ch.id})}"
+               class="ch-card ch-card--mine"
+               th:attr="data-name=${ch.name.toLowerCase()}, data-owner=${ch.createdBy.fullName.toLowerCase()}">
+                <div class="ch-icon ch-icon--mine">📢</div>
+                <div class="ch-card-info">
+                    <div class="ch-card-name-row">
+                        <div class="ch-card-name" th:text="${ch.name}">Channel</div>
+                    </div>
+                    <div class="ch-card-meta"
+                         th:text="${ch.participants.size() + ' members'}">0 members</div>
                 </div>
             </a>
         </div>
     </div>
 
-    <h2 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;color:#8a91a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">All Channels</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;" th:if="${not #lists.isEmpty(channels)}">
-        <a th:each="ch : ${channels}" th:href="@{/channels/{id}(id=${ch.id})}"
-           style="background:white;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);text-decoration:none;display:flex;align-items:center;gap:16px;">
-            <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#2c3e8c,#8e2222);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;flex-shrink:0;">📢</div>
-            <div style="flex:1;min-width:0;">
-                <div style="display:flex;align-items:center;gap:6px;">
-                    <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14px;color:#1b2a6b;" th:text="${ch.name}">Channel</div>
-                    <span th:if="${ch.isPrivate}" style="background:#f3e5f5;color:#7c3aed;font-size:9px;font-family:Montserrat,sans-serif;font-weight:700;padding:1px 6px;border-radius:10px;">🔒</span>
+    <!-- All Channels -->
+    <div id="sectionAll">
+        <div class="ch-section-label">
+            All Channels
+            <span class="ch-section-count" id="allCount"
+                  th:text="${#lists.size(channels)}">0</span>
+        </div>
+
+        <div class="ch-grid" id="gridAll"
+             th:if="${not #lists.isEmpty(channels)}">
+            <a th:each="ch : ${channels}"
+               th:href="@{/channels/{id}(id=${ch.id})}"
+               class="ch-card"
+               th:attr="data-name=${ch.name.toLowerCase()}, data-owner=${ch.createdBy.fullName.toLowerCase()}">
+                <div class="ch-icon ch-icon--all">📢</div>
+                <div class="ch-card-info">
+                    <div class="ch-card-name-row">
+                        <div class="ch-card-name" th:text="${ch.name}">Channel</div>
+                        <span th:if="${ch.isPrivate}" class="ch-private-badge">🔒 Private</span>
+                    </div>
+                    <div class="ch-card-meta">
+                        <span th:text="${ch.participants.size() + ' members'}">members</span>
+                        · <span th:text="${ch.createdBy.fullName}">Owner</span>
+                    </div>
                 </div>
-                <div style="font-size:11px;color:#8a91a8;margin-top:3px;">
-                    <span th:text="${ch.participants.size() + ' members'}">members</span> · <span th:text="${ch.createdBy.fullName}">Owner</span>
-                </div>
-            </div>
-        </a>
+            </a>
+        </div>
+
+        <div th:if="${#lists.isEmpty(channels)}" class="ch-empty">
+            <div style="font-size:48px;margin-bottom:16px;">📢</div>
+            <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;margin-bottom:8px;">No Channels Yet</h3>
+            <p style="color:#8a91a8;margin-bottom:20px;">Be the first to create a channel!</p>
+            <a th:href="@{/channels/new}" class="ch-create-btn">+ Create Channel</a>
+        </div>
     </div>
-    <div th:if="${#lists.isEmpty(channels)}" style="background:white;border-radius:16px;padding:60px;text-align:center;box-shadow:0 2px 12px rgba(27,42,107,0.08);">
-        <div style="font-size:48px;margin-bottom:16px;">📢</div>
-        <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;margin-bottom:8px;">No Channels Yet</h3>
-        <p style="color:#8a91a8;margin-bottom:20px;">Be the first to create a channel!</p>
-        <a th:href="@{/channels/new}" style="background:#1b2a6b;color:white;padding:10px 24px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">+ Create Channel</a>
-    </div>
+
 </main>
-</div>
+
+<script>
+    function filterChannels(query) {
+        const q = query.trim().toLowerCase();
+        const clearBtn = document.getElementById('chSearchClear');
+        const noMatch  = document.getElementById('chNoMatch');
+
+        clearBtn.style.display = q ? 'flex' : 'none';
+
+        // Filter all .ch-card elements in both grids
+        const cards = document.querySelectorAll('.ch-card');
+        let visibleAll = 0, visibleMine = 0;
+
+        cards.forEach(function(card) {
+            const name  = card.dataset.name  || '';
+            const owner = card.dataset.owner || '';
+            const show  = !q || name.includes(q) || owner.includes(q);
+            card.style.display = show ? 'flex' : 'none';
+
+            if (show) {
+                if (card.closest('#gridAll'))  visibleAll++;
+                if (card.closest('#gridMine')) visibleMine++;
+            }
+        });
+
+        // Update section count badges
+        const allCount = document.getElementById('allCount');
+        if (allCount) allCount.textContent = visibleAll;
+
+        // Hide sections if all cards within them are hidden
+        const sectionMine = document.getElementById('sectionMine');
+        if (sectionMine) sectionMine.style.display = (q && visibleMine === 0) ? 'none' : '';
+
+        // Show / hide no-match message
+        const total = visibleAll + visibleMine;
+        noMatch.style.display = (q && total === 0) ? 'block' : 'none';
+        document.getElementById('chNoMatchTerm').textContent = query.trim();
+    }
+
+    function clearChannelSearch() {
+        const input = document.getElementById('chSearch');
+        input.value = '';
+        filterChannels('');
+        input.focus();
+    }
+
+    // Also filter on keyboard Enter
+    document.getElementById('chSearch').addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') clearChannelSearch();
+    });
+</script>
 </body>
 </html>

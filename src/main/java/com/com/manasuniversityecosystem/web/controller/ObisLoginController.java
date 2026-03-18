@@ -6,10 +6,14 @@ import com.com.manasuniversityecosystem.service.UniversityAuthService;
 import com.com.manasuniversityecosystem.service.UniversityAuthService.UniversityAuthException;
 import com.com.manasuniversityecosystem.web.dto.auth.ObisStudentInfo;
 import com.com.manasuniversityecosystem.web.dto.auth.UniversityLoginRequest;
+import com.com.manasuniversityecosystem.config.SecurityConfig;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -29,8 +33,9 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class ObisLoginController {
 
-    private final UniversityAuthService universityAuthService;
-    private final ObisLoginService      obisLoginService;
+    private final UniversityAuthService    universityAuthService;
+    private final ObisLoginService         obisLoginService;
+    private final TokenBasedRememberMeServices rememberMeServices;
 
     @GetMapping
     public String showForm(Model model) {
@@ -42,6 +47,7 @@ public class ObisLoginController {
     public String login(@Valid @ModelAttribute("loginRequest") UniversityLoginRequest req,
                         BindingResult bindingResult,
                         HttpServletRequest  request,
+                        HttpServletResponse response,
                         Model model) {
 
         if (bindingResult.hasErrors()) {
@@ -58,6 +64,21 @@ public class ObisLoginController {
 
             log.info("OBIS login success: user={} name='{}' year={}",
                     user.getId(), user.getFullName(), info.getStudyYear());
+
+            // Set remember-me cookie if user ticked the checkbox
+            String rememberParam = request.getParameter("remember-me");
+            if ("on".equals(rememberParam) || "true".equals(rememberParam)) {
+                // Build a remember-me cookie manually — same format as Spring Security
+                // but we call loginSuccess() on our shared RememberMeServices bean.
+                // We need to rebuild an Authentication object for it.
+                org.springframework.security.core.Authentication auth =
+                        org.springframework.security.core.context.SecurityContextHolder
+                                .getContext().getAuthentication();
+                if (auth != null) {
+                    rememberMeServices.loginSuccess(request, response, auth);
+                    log.debug("OBIS remember-me cookie set for user={}", user.getId());
+                }
+            }
 
             return "redirect:/main";
 

@@ -19,6 +19,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices.RememberMeTokenAlgorithm;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
 @Configuration
@@ -32,6 +34,11 @@ public class SecurityConfig {
     private final LoginSuccessHandler loginSuccessHandler;
     private final LoginFailureHandler loginFailureHandler;
     private final CaptchaLoginFilter captchaLoginFilter;
+
+    /** Secret key for hash-based remember-me tokens */
+    static final String REMEMBER_ME_KEY = "manas-mezun-rmb-secret-2025!";
+    /** 3 days in seconds */
+    static final int    REMEMBER_ME_TTL = 3 * 24 * 60 * 60;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -70,10 +77,13 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
                         .logoutSuccessUrl("/auth/login?logout=true")
-                        .deleteCookies("manas_token","JSESSIONID")
+                        .deleteCookies("manas_token","JSESSIONID","remember-me")
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                         .permitAll()
+                )
+                .rememberMe(rm -> rm
+                        .rememberMeServices(rememberMeServices())
                 )
                 .addFilterBefore(captchaLoginFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -98,5 +108,21 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg)
             throws Exception {
         return cfg.getAuthenticationManager();
+    }
+
+    /**
+     * Hash-based remember-me: stores a signed token in cookie "remember-me".
+     * Token = md5(username + ":" + expiry + ":" + passwordHash + ":" + key)
+     * 3-day TTL — cookie survives browser close.
+     */
+    @Bean
+    public TokenBasedRememberMeServices rememberMeServices() {
+        TokenBasedRememberMeServices svc = new TokenBasedRememberMeServices(
+                REMEMBER_ME_KEY, userDetailsService, RememberMeTokenAlgorithm.SHA256);
+        svc.setTokenValiditySeconds(REMEMBER_ME_TTL);
+        svc.setAlwaysRemember(false);           // only when checkbox is ticked
+        svc.setParameter("remember-me");         // matches form field name
+        svc.setCookieName("remember-me");
+        return svc;
     }
 }
