@@ -596,10 +596,9 @@
                 </div>
 
                 <div th:if="${initialNextPage > -1}"
-                     th:attr="hx-get=${'/feed/posts?page=' + initialNextPage}"
-                     hx-trigger="intersect once"
-                     hx-swap="outerHTML"
-                     class="load-more-trigger">
+                     th:attr="data-next-page=${initialNextPage}"
+                     class="load-more-trigger fd-load-more"
+                     style="display:flex;align-items:center;justify-content:center;padding:28px;">
                     <div class="fd-spinner"></div>
                 </div>
             </div>
@@ -616,10 +615,60 @@
     const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
-    document.addEventListener('htmx:afterSwap', function(evt) {
-        const feedList = document.getElementById('feed-list');
-        if (feedList && window.htmx) feedList.querySelectorAll('.load-more-trigger[hx-get]').forEach(t => htmx.process(t));
-    });
+    // ── Infinite scroll via IntersectionObserver (more reliable than hx-trigger) ──
+    const _feedObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (!entry.isIntersecting) return;
+            const trigger = entry.target;
+            const page = parseInt(trigger.dataset.nextPage, 10);
+            if (isNaN(page) || trigger.dataset.loading === 'true') return;
+
+            trigger.dataset.loading = 'true';
+            _feedObserver.unobserve(trigger);   // stop watching this one
+
+            const type = trigger.dataset.type || '';
+            const url  = '/feed/posts?page=' + page + (type ? '&type=' + type : '');
+
+            fetch(url)
+                .then(function(r) { return r.text(); })
+                .then(function(html) {
+                    const feedList = document.getElementById('feed-list');
+                    if (!feedList) return;
+
+                    // Parse and insert each child of the fragment
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = html;
+                    // fragment is wrapped in a <th:block> which becomes nothing;
+                    // Thymeleaf returns children directly
+                    const nodes = Array.from(tmp.childNodes);
+                    trigger.remove();   // remove spinner FIRST
+
+                    nodes.forEach(function(node) {
+                        if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) {
+                            feedList.appendChild(node);
+                        }
+                    });
+
+                    // Observe any new load-more trigger that appeared
+                    _observeLoadMore();
+                })
+                .catch(function() {
+                    trigger.dataset.loading = 'false';
+                    _feedObserver.observe(trigger); // retry on next intersect
+                });
+        });
+    }, { rootMargin: '200px' });
+
+    function _observeLoadMore() {
+        document.querySelectorAll('.fd-load-more[data-next-page]').forEach(function(el) {
+            if (!el.dataset.loading) {
+                _feedObserver.observe(el);
+            }
+        });
+    }
+
+    // Start observing on page load
+    _observeLoadMore();
     function expandPostBox() {
         document.getElementById('postExpanded').style.display = 'block';
         document.getElementById('postContent').style.minHeight = '80px';
@@ -651,13 +700,32 @@
     async function loadFeedTab(btn, type) {
         setActiveTab(btn);
         const list = document.getElementById('feed-list');
-        list.innerHTML = '<div class="load-more-trigger"><div class="fd-spinner"></div></div>';
+        // Show spinner while loading
+        list.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;padding:48px;"><div class="fd-spinner"></div></div>';
+
         const url = '/feed/posts?page=0' + (type ? '&type=' + type : '');
         try {
             const res = await fetch(url);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
             const html = await res.text();
-            list.innerHTML = html;
-            if (window.htmx) htmx.process(list);
+
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+
+            // Clear and re-populate feed-list with new nodes
+            list.innerHTML = '';
+            Array.from(tmp.childNodes).forEach(function(node) {
+                if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) {
+                    // Tag load-more triggers with the current type so next pages stay filtered
+                    if (node.nodeType === Node.ELEMENT_NODE && node.classList && node.classList.contains('fd-load-more')) {
+                        if (type) node.dataset.type = type;
+                    }
+                    list.appendChild(node);
+                }
+            });
+
+            // Start observing any load-more triggers in the new content
+            _observeLoadMore();
         } catch(e) {
             list.innerHTML = '<div class="fd-empty"><div class="fd-empty-icon">⚠️</div><div class="fd-empty-title">Failed to load posts</div></div>';
         }
