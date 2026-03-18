@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body { background: linear-gradient(135deg, #1B2A6B 0%, #111c4e 60%, #8b1a1a 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
         body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'%3E%3Cpolygon points='30,3 57,17 57,43 30,57 3,43 3,17'/%3E%3C/g%3E%3C/svg%3E"); background-size: 60px 60px; pointer-events: none; }
@@ -53,10 +54,10 @@
         <div class="auth-subtitle">Welcome back! Please enter your credentials.</div>
 
         <!-- Alerts -->
-        <div th:if="${param.error}"      class="alert alert-error"   th:text="#{auth.error.invalid_credentials}">Invalid credentials</div>
+        <div th:if="${param.error != null and (captchaRequired == null or captchaRequired == false)}"
+             class="alert alert-error" th:text="#{auth.error.invalid_credentials}">Invalid credentials</div>
         <div th:if="${param.logout}"     class="alert alert-success" th:text="#{auth.logout.success}">Logged out</div>
         <div th:if="${param.registered}" class="alert alert-info"    th:text="#{auth.register.pending_validation}">Pending validation</div>
-        <div th:if="${errorMsg}"         class="alert alert-error"   th:text="${errorMsg}"></div>
         <div th:if="${infoMsg}"          class="alert alert-info"    th:text="#{${infoMsg}}"></div>
 
         <!-- Form -->
@@ -82,6 +83,32 @@
                         <span id="eyeLogin">👁</span>
                     </button>
                 </div>
+            </div>
+
+            <!-- Brute-force warning: shown after 1+ failed attempts -->
+            <div th:if="${loginAttempts != null and loginAttempts > 0 and (captchaRequired == null or captchaRequired == false)}"
+                 style="background:#fff8e1;border:1.5px solid #f59e0b;border-radius:10px;padding:10px 14px;
+                        font-size:12px;color:#92400e;font-family:Montserrat,sans-serif;font-weight:600;margin-bottom:14px;">
+                ⚠️ <span th:text="'Failed attempts: ' + ${loginAttempts}">Failed attempts</span>
+                — CAPTCHA required after 5 failures.
+            </div>
+
+            <!-- CAPTCHA error message -->
+            <div th:if="${param.captchaError != null}"
+                 class="alert alert-error"
+                 style="margin-bottom:12px;">
+                🤖 Please complete the CAPTCHA to continue.
+            </div>
+
+            <!-- CAPTCHA widget: shown when IP has 3+ failed attempts -->
+            <div th:if="${captchaRequired != null and captchaRequired == true}"
+                 style="margin-bottom:16px;">
+                <div style="background:#fff3cd;border:1.5px solid #f59e0b;border-radius:10px;
+                            padding:10px 14px;font-size:12px;color:#92400e;
+                            font-family:Montserrat,sans-serif;font-weight:600;margin-bottom:10px;">
+                    🔒 Too many failed attempts. Please verify you are human.
+                </div>
+                <div class="g-recaptcha" data-sitekey="6LexNo4sAAAAADLdotF4eCUaoACx_NAbluY84iR-"></div>
             </div>
 
             <button type="submit" class="btn btn-danger btn-full" th:text="#{auth.login.submit}">Sign In</button>

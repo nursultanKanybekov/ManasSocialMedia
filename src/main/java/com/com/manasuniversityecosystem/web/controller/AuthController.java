@@ -3,6 +3,8 @@ package com.com.manasuniversityecosystem.web.controller;
 
 import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.service.AuthService;
+import com.com.manasuniversityecosystem.service.LoginAttemptService;
+import com.com.manasuniversityecosystem.service.RecaptchaService;
 import com.com.manasuniversityecosystem.service.notification.NotificationService;
 import com.com.manasuniversityecosystem.service.EmailService;
 import com.com.manasuniversityecosystem.repository.UserRepository;
@@ -11,6 +13,7 @@ import com.com.manasuniversityecosystem.service.UserService;
 import com.com.manasuniversityecosystem.web.dto.auth.JwtResponse;
 import com.com.manasuniversityecosystem.web.dto.auth.LoginRequest;
 import com.com.manasuniversityecosystem.web.dto.auth.RegisterRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
@@ -31,7 +34,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Slf4j
 public class AuthController {
 
+    @org.springframework.beans.factory.annotation.Value("${app.recaptcha.site-key}")
+    private String recaptchaSiteKey;
+
     private final AuthService authService;
+    private final RecaptchaService recaptchaService;
+    private final LoginAttemptService loginAttemptService;
     private final UserService userService;
     private final FacultyRepository facultyRepo;
     private final CloudinaryService cloudinaryService;
@@ -44,10 +52,24 @@ public class AuthController {
     public String loginPage(@RequestParam(required = false) String error,
                             @RequestParam(required = false) String logout,
                             @RequestParam(required = false) String registered,
+                            jakarta.servlet.http.HttpServletRequest request,
                             Model model) {
-        if (error      != null) model.addAttribute("errorMsg", "auth.error.invalid_credentials");
-        if (logout     != null) model.addAttribute("logoutMsg", "auth.logout.success");
-        if (registered != null) model.addAttribute("infoMsg", "auth.register.pending_validation");
+        if (logout     != null) model.addAttribute("logoutMsg",  "auth.logout.success");
+        if (registered != null) model.addAttribute("infoMsg",    "auth.register.pending_validation");
+        // error message — only from param.error, not errorMsg, to avoid duplication
+
+        // Read brute-force state from session
+        jakarta.servlet.http.HttpSession session = request.getSession(false);
+        if (session != null) {
+            Object attempts = session.getAttribute(
+                    com.com.manasuniversityecosystem.service.LoginAttemptService.SESSION_KEY_ATTEMPTS);
+            Object captcha  = session.getAttribute(
+                    com.com.manasuniversityecosystem.service.LoginAttemptService.SESSION_KEY_CAPTCHA);
+            if (attempts != null) model.addAttribute("loginAttempts",   attempts);
+            if (captcha  != null) model.addAttribute("captchaRequired", captcha);
+        }
+
+        model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
         return "auth/login";
     }
 
@@ -56,6 +78,7 @@ public class AuthController {
     public String registerPage(Model model) {
         model.addAttribute("registerRequest", new RegisterRequest());
         model.addAttribute("faculties", facultyRepo.findAllByOrderByNameAsc());
+        model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
         return "auth/register";
     }
 
@@ -63,10 +86,19 @@ public class AuthController {
     @PostMapping("/register")
     public String register(@Valid @ModelAttribute("registerRequest") RegisterRequest req,
                            BindingResult result,
+                           @RequestParam(value = "g-recaptcha-response", required = false) String captchaToken,
                            Model model,
                            RedirectAttributes redirectAttributes) {
+        // Verify reCAPTCHA first
+        if (!recaptchaService.verify(captchaToken)) {
+            model.addAttribute("errorMsg", "Please complete the CAPTCHA verification.");
+            model.addAttribute("faculties", facultyRepo.findAllByOrderByNameAsc());
+            model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
+            return "auth/register";
+        }
         if (result.hasErrors()) {
             model.addAttribute("faculties", facultyRepo.findAllByOrderByNameAsc());
+            model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
             return "auth/register";
         }
         try {
@@ -76,6 +108,7 @@ public class AuthController {
         } catch (IllegalArgumentException e) {
             model.addAttribute("errorMsg", e.getMessage());
             model.addAttribute("faculties", facultyRepo.findAllByOrderByNameAsc());
+            model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
             return "auth/register";
         }
     }

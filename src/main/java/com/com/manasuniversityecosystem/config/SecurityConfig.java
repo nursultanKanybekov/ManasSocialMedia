@@ -1,6 +1,8 @@
 package com.com.manasuniversityecosystem.config;
 
+import com.com.manasuniversityecosystem.security.CaptchaLoginFilter;
 import com.com.manasuniversityecosystem.security.JwtAuthFilter;
+import com.com.manasuniversityecosystem.security.LoginFailureHandler;
 import com.com.manasuniversityecosystem.security.LoginSuccessHandler;
 import com.com.manasuniversityecosystem.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,8 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
     private final LoginSuccessHandler loginSuccessHandler;
+    private final LoginFailureHandler loginFailureHandler;
+    private final CaptchaLoginFilter captchaLoginFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -59,7 +63,7 @@ public class SecurityConfig {
                         .usernameParameter("email")
                         .passwordParameter("password")
                         .defaultSuccessUrl("/main", true)
-                        .failureUrl("/auth/login?error=true")
+                        .failureHandler(loginFailureHandler)
                         .successHandler(loginSuccessHandler)
                         .permitAll()
                 )
@@ -71,6 +75,7 @@ public class SecurityConfig {
                         .clearAuthentication(true)
                         .permitAll()
                 )
+                .addFilterBefore(captchaLoginFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

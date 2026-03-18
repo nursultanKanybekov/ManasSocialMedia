@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head th:replace="~{fragments/header :: head(#{auth.register.title})}"></head>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <body class="auth-page">
 <div class="auth-container auth-container--wide">
 
@@ -137,6 +138,9 @@
                 <div th:if="${#fields.hasErrors('confirmPassword')}" class="field-error"
                      th:errors="*{confirmPassword}"></div>
             </div>
+
+            <!-- reCAPTCHA widget -->
+            <div class="g-recaptcha" data-sitekey="6LexNo4sAAAAADLdotF4eCUaoACx_NAbluY84iR-" style="margin-bottom: 16px;"></div>
 
             <button type="submit" class="btn btn-primary btn-full" th:text="#{auth.register.submit}">
                 Create Account
