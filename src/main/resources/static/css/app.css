@@ -549,8 +549,8 @@ select.form-control { cursor: pointer; }
   .navbar-brand { width: 56px !important; min-width: 56px !important; border-right: none; }
   .brand-name { display: none; }
   .sidebar { left: calc(-1 * var(--sidebar-w)); width: var(--sidebar-w) !important; box-shadow: 4px 0 24px rgba(0,0,0,0.2); transition: left var(--tr); }
-  .sidebar.mobile-open { left: 0; }
-  .sidebar-overlay { z-index: 170; }
+  .sidebar.mobile-open { left: 0; z-index: 200; }
+  .sidebar-overlay { z-index: 180; }
   .sidebar-collapse-btn { display: none; }
   .main-content { margin-left: 0 !important; padding: 16px; }
   .footer { margin-left: 0 !important; padding: 20px; flex-direction: column; align-items: flex-start; }
