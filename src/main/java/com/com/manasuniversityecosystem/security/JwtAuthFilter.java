@@ -21,7 +21,7 @@ import java.io.IOException;
 @Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtTokenProvider     tokenProvider;
+    private final JwtTokenProvider      tokenProvider;
     private final UserDetailsServiceImpl userDetailsService;
 
     @Override
@@ -55,6 +55,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 || p.startsWith("/js/")
                 || p.startsWith("/images/")
                 || p.startsWith("/fonts/")
-                || p.equals("/favicon.ico");
+                || p.equals("/favicon.ico")
+                // Swagger / OpenAPI — skip JWT filter so docs load without a token
+                || p.startsWith("/swagger-ui")
+                || p.startsWith("/v3/api-docs")
+                || p.startsWith("/api-docs")
+                || p.startsWith("/webjars/");
     }
 }

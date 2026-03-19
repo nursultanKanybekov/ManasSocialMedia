@@ -7,10 +7,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-@ControllerAdvice
+@ControllerAdvice("webGlobalExceptionHandler")
 @Slf4j
 public class GlobalExceptionHandler {
 
@@ -62,15 +61,13 @@ public class GlobalExceptionHandler {
                                 jakarta.servlet.http.HttpServletRequest request,
                                 Model model) {
         log.error("Unexpected error on [{}]: {}", request.getRequestURI(), ex.getMessage(), ex);
-        // For HTMX partial requests return an inline error snippet instead of
-        // redirecting to the full 500 page (which breaks fragment swaps).
         String htmxHeader = request.getHeader("HX-Request");
         if ("true".equals(htmxHeader)) {
             return org.springframework.http.ResponseEntity
                     .status(500)
                     .body("<div class='alert alert-error' style='margin:1rem'>" +
-                          "Something went wrong loading this section. " +
-                          "Error: " + ex.getMessage() + "</div>");
+                            "Something went wrong loading this section. " +
+                            "Error: " + ex.getMessage() + "</div>");
         }
         model.addAttribute("errorMessage", "An unexpected error occurred. Please try again.");
         model.addAttribute("statusCode", 500);
