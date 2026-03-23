@@ -241,86 +241,37 @@
          Google Translate — hidden widget container
          Placed outside nav so it never leaks into it
     ═══════════════════════════════════════════════ -->
-    <div id="google_translate_element" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
 
-    <script>
-        /* Language switcher using Google Translate cookie method
-           All 4 languages: EN / RU / TR / KY
-           Cookie /en/XX tells Google Translate what language to render */
+    <!-- Language switcher — uses Spring SessionLocaleResolver via ?lang= param -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
         (function () {
+            var currentLang = /*[[${#locale.language}]]*/ 'en';
+            // Map locale code → button id suffix
+            var codeMap = { 'en': 'en', 'ru': 'ru', 'tr': 'tr', 'ky': 'kg' };
+            var activeCode = codeMap[currentLang] || 'en';
 
-            var LANGS = ['en', 'ru', 'tr', 'kg'];
-            var GT    = { en: null, ru: 'ru', tr: 'tr', kg: 'ky' };
-
-            /* Read active language from cookie, fallback to 'en' */
-            function getActiveLang() {
-                var m = document.cookie.match(/googtrans=\/en\/([a-z]+)/);
-                var code = m ? m[1] : 'en'; return code === 'ky' ? 'kg' : code;
-            }
-
-            /* Write or clear the googtrans cookie */
-            function setCookie(langCode) {
-                var val = langCode ? '/en/' + langCode : '/en/en';
-                var exp = langCode ? '' : '; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-                var host = location.hostname;
-                ['; path=/', '; path=/; domain=' + host, '; path=/; domain=.' + host].forEach(function (suffix) {
-                    document.cookie = 'googtrans=' + val + suffix + exp;
-                });
-            }
-
-            /* Highlight the correct button */
-            function highlight(lang) {
-                LANGS.forEach(function (l) {
+            function highlightActive() {
+                ['en','ru','tr','kg'].forEach(function(l) {
                     var btn = document.getElementById('lb-' + l);
-                    if (btn) btn.classList.toggle('active', l === lang);
+                    if (btn) btn.classList.toggle('active', l === activeCode);
                 });
             }
 
-            /* Called by each button */
-            window.setLang = function (lang) {
-                if (lang === 'en') {
-                    setCookie(null);   /* clear cookie → English */
-                } else {
-                    setCookie(GT[lang]);
-                }
-                highlight(lang);
-                location.reload();     /* reload so GT applies on fresh page */
+            window.setLang = function(lang) {
+                // lang is 'en','ru','tr','kg'
+                var paramCode = (lang === 'kg') ? 'ky' : lang;
+                // Add ?lang= to current URL, preserving existing path/query
+                var url = new URL(window.location.href);
+                url.searchParams.set('lang', paramCode);
+                window.location.href = url.toString();
             };
 
-            /* On every page load: highlight whichever lang is active */
-            document.addEventListener('DOMContentLoaded', function () {
-                highlight(getActiveLang());
-            });
-
+            document.addEventListener('DOMContentLoaded', highlightActive);
         })();
+        /*]]>*/
     </script>
 
-    <!-- Google Translate widget (free, no API key) -->
-    <script src="//translate.google.com/translate_a/element.js?cb=gtInit"></script>
-    <script>
-        function gtInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'ru,tr,ky',
-                autoDisplay: false
-            }, 'google_translate_element');
-        }
-    </script>
-
-    <style>
-        /* ── Hide every bit of Google Translate's own visible UI ── */
-        .goog-te-banner-frame,
-        #goog-gt-tt,
-        .goog-te-balloon-frame,
-        .goog-tooltip                    { display: none !important; }
-        .goog-text-highlight             { background: none !important; box-shadow: none !important; }
-        body                             { top: 0 !important; }
-        /* GT injects a <span class=skiptranslate> directly in <body> — hide it */
-        body > .skiptranslate            { display: none !important; }
-        /* Never let anything inside our container bleed out */
-        #google_translate_element,
-        #google_translate_element *      { display: none !important; }
-    </style>
 </nav>
 </body>
 </html>

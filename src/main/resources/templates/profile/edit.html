@@ -62,17 +62,17 @@
           </div>
           <!-- Course year — only visible for STUDENT role -->
           <div class="ep-form-group" sec:authorize="hasRole('STUDENT')">
-            <label class="ep-label">🎓 Course Year</label>
+            <label class="ep-label">🎓 <span th:text="#{profile.course_year}">Course Year</span></label>
             <select class="ep-input" th:field="*{studyYear}">
-              <option value="">— Select year —</option>
-              <option value="1" th:selected="${profile.studyYear == 1}">1st Year</option>
-              <option value="2" th:selected="${profile.studyYear == 2}">2nd Year</option>
-              <option value="3" th:selected="${profile.studyYear == 3}">3rd Year</option>
-              <option value="4" th:selected="${profile.studyYear == 4}">4th Year</option>
-              <option value="5" th:selected="${profile.studyYear == 5}">5th Year</option>
-              <option value="6" th:selected="${profile.studyYear == 6}">6th Year</option>
+              <option value="" th:text="#{profile.year.select}">— Select year —</option>
+              <option value="1" th:selected="${profile.studyYear == 1}" th:text="#{profile.year.1}">1st Year</option>
+              <option value="2" th:selected="${profile.studyYear == 2}" th:text="#{profile.year.2}">2nd Year</option>
+              <option value="3" th:selected="${profile.studyYear == 3}" th:text="#{profile.year.3}">3rd Year</option>
+              <option value="4" th:selected="${profile.studyYear == 4}" th:text="#{profile.year.4}">4th Year</option>
+              <option value="5" th:selected="${profile.studyYear == 5}" th:text="#{profile.year.5}">5th Year</option>
+              <option value="6" th:selected="${profile.studyYear == 6}" th:text="#{profile.year.6}">6th Year</option>
             </select>
-            <span class="ep-hint">Automatically synced from OBIS. You can also set it manually.</span>
+            <span class="ep-hint" th:text="#{profile.course_year_hint}">Automatically synced from OBIS.</span>
           </div>
           <div class="ep-form-group">
             <label class="ep-label" th:text="#{profile.job_title}">Current Job Title</label>
@@ -95,7 +95,7 @@
             <input type="url" class="ep-input" th:field="*{website}" th:value="${profile.website}" th:placeholder="#{profile.website_ph}"/>
           </div>
           <div class="ep-form-group">
-            <label class="ep-label">&#127874; Date of Birth <small style="color:#94a3b8;">(for CV)</small></label>
+            <label class="ep-label">&#127874; <span th:text="#{profile.dob}">Date of Birth</span> <small style="color:#94a3b8;">(for CV)</small></label>
             <input type="date" class="ep-input" th:field="*{dateOfBirth}" th:value="${profile.dateOfBirth}"/>
           </div>
           <div class="ep-form-group">
@@ -129,8 +129,8 @@
       <!-- 3. WORK EXPERIENCE -->
       <div id="sec-work" class="ep-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-          <div class="ep-card-title" style="margin:0;">&#128188; Work Experience</div>
-          <button type="button" class="ep-add-btn" onclick="addEntry('work')">+ Add Position</button>
+          <div class="ep-card-title" style="margin:0;">&#128188; <span th:text="#{profile.work.title}">Work Experience</span></div>
+          <button type="button" class="ep-add-btn" onclick="addEntry('work')" th:text="#{profile.work.add}">+ Add Position</button>
         </div>
         <div id="work-entries"></div>
         <p id="work-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;" th:text="#{profile.no_work}">No work experience yet.</p>
@@ -139,8 +139,8 @@
       <!-- 4. EDUCATION -->
       <div id="sec-edu" class="ep-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-          <div class="ep-card-title" style="margin:0;">&#127891; Education</div>
-          <button type="button" class="ep-add-btn" onclick="addEntry('edu')">+ Add Education</button>
+          <div class="ep-card-title" style="margin:0;">&#127891; <span th:text="#{profile.edu.title}">Education</span></div>
+          <button type="button" class="ep-add-btn" onclick="addEntry('edu')" th:text="#{profile.edu.add}">+ Add Education</button>
         </div>
         <div id="edu-entries"></div>
         <p id="edu-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;" th:text="#{profile.no_edu}">No education added yet.</p>
@@ -162,8 +162,8 @@
       <!-- 6. LANGUAGES -->
       <div id="sec-langs" class="ep-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-          <div class="ep-card-title" style="margin:0;">&#127757; Languages</div>
-          <button type="button" class="ep-add-btn" onclick="addEntry('lang')">+ Add Language</button>
+          <div class="ep-card-title" style="margin:0;">&#127757; <span th:text="#{profile.lang.title}">Languages</span></div>
+          <button type="button" class="ep-add-btn" onclick="addEntry('lang')" th:text="#{profile.lang.add}">+ Add Language</button>
         </div>
         <div id="lang-entries"></div>
         <p id="lang-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;" th:text="#{profile.no_langs}">No languages added yet.</p>
@@ -172,8 +172,8 @@
       <!-- 7. CERTIFICATIONS -->
       <div id="sec-certs" class="ep-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-          <div class="ep-card-title" style="margin:0;">&#127885; Certifications</div>
-          <button type="button" class="ep-add-btn" onclick="addEntry('cert')">+ Add Certification</button>
+          <div class="ep-card-title" style="margin:0;">&#127885; <span th:text="#{profile.cert.title}">Certifications</span></div>
+          <button type="button" class="ep-add-btn" onclick="addEntry('cert')" th:text="#{profile.cert.add}">+ Add Certification</button>
         </div>
         <div id="cert-entries"></div>
         <p id="cert-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:16px 0;" th:text="#{profile.no_certs}">No certifications added yet.</p>
@@ -182,20 +182,20 @@
       <!-- UNIVERSITY VERIFICATION -->
       <div class="ep-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
         <div>
-          <div class="ep-card-title" style="margin:0 0 4px;">🎓 University Verification</div>
+          <div class="ep-card-title" style="margin:0 0 4px;">🎓 <span th:text="#{profile.univ.title}">University Verification</span></div>
           <div th:if="${user.universityVerified}"
                style="font-size:12px;color:#065f46;font-weight:600;">
-            ✅ Verified via OBIS portal
+            <span th:text="#{profile.univ.verified}">Verified via OBIS portal</span>
           </div>
           <div th:unless="${user.universityVerified}"
                style="font-size:12px;color:#64748b;">
-            Verify your student status using your OBIS credentials.
+            <span th:text="#{profile.univ.unverified}">Verify your student status using your OBIS credentials.</span>
           </div>
         </div>
         <a th:href="@{/university-verify}"
            th:class="${user.universityVerified} ? 'ep-btn-save' : 'ep-add-btn'"
            style="text-decoration:none;white-space:nowrap;"
-           th:text="${user.universityVerified} ? '🔄 Re-verify' : '🎓 Verify Now'">
+           th:text="${user.universityVerified} ? #{profile.univ.reverify} : #{profile.univ.verify}">
           Verify Now
         </a>
       </div>
@@ -213,7 +213,7 @@
     <!-- MENTORSHIP (MEZUN only) -->
     <th:block sec:authorize="hasRole('MEZUN')">
       <div class="ep-card">
-        <div class="ep-card-title">&#129309; Mentorship Settings</div>
+        <div class="ep-card-title">&#129309; <span th:text="#{profile.mentor.title}">Mentorship Settings</span></div>
         <form th:action="@{/profile/me/edit}" method="post" th:object="${profileUpdateRequest}">
           <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
           <input type="hidden" name="workExperienceJson" value="[]"/>
@@ -226,17 +226,17 @@
               <span class="ep-toggle-slider"></span>
             </label>
             <div class="ep-toggle-text">
-              <strong>Be a Mentor</strong>
-              <span>Allow students to find and contact you</span>
+              <strong th:text="#{profile.mentor.be}">Be a Mentor</strong>
+              <span th:text="#{profile.mentor.sub}">Allow students to find and contact you</span>
             </div>
           </div>
           <div class="ep-form-group">
-            <label class="ep-label">Job Title (shown in mentor directory)</label>
+            <label class="ep-label" th:text="#{profile.mentor.job_title}">Job Title (shown in mentor directory)</label>
             <input type="text" class="ep-input" name="mentorJobTitle" th:value="${profile.mentorJobTitle}"
-                   placeholder="e.g. Senior Software Engineer at Google"/>
+                   th:placeholder="#{profile.mentor.job_title_ph}"/>
           </div>
           <div class="ep-actions" style="margin-top:16px;">
-            <button type="submit" class="ep-btn-save">&#128190; Save Mentorship</button>
+            <button type="submit" class="ep-btn-save">&#128190; <span th:text="#{profile.mentor.save}">Save Mentorship</span></button>
           </div>
         </form>
       </div>

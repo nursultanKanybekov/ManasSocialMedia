@@ -334,7 +334,7 @@
     <div class="tu-filters">
         <form th:action="@{/edu}" method="get" class="tu-filter-row">
             <div class="tu-filter-group grow">
-                <label class="tu-filter-label">Search</label>
+                <label class="tu-filter-label" th:text="#{career.search}">Search</label>
                 <input type="text" name="q" th:value="${q}"
                        th:placeholder="#{navbar.search.placeholder}"
                        class="tu-filter-input"/>
@@ -348,7 +348,7 @@
                 </select>
             </div>
             <div class="tu-filter-actions">
-                <button type="submit" class="tu-btn-search" th:text="#{common.search_en}">Search</button>
+                <button type="submit" class="tu-btn-search" th:text="#{career.search}">Search</button>
                 <a th:href="@{/edu}" class="tu-btn-reset">Reset</a>
             </div>
         </form>

@@ -77,7 +77,7 @@
             <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
                 <button th:data-post-id="${post.id}"
                         onclick="cancelEditPost(this.dataset.postId)"
-                        class="fd-cancel-btn">Cancel</button>
+                        class="fd-cancel-btn" th:text="#{common.cancel}">Cancel</button>
                 <button th:data-post-id="${post.id}"
                         onclick="saveEditPost(this.dataset.postId)"
                         class="fd-submit-btn" style="padding:8px 20px;">💾 Save</button>

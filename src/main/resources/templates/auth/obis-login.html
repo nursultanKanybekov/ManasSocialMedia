@@ -39,7 +39,7 @@
     .auth-footer-row a { color: #1B2A6B; font-weight: 700; text-decoration: none; }
     .auth-lang { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
     .auth-lang a { color: rgba(255,255,255,0.6); font-size: 12px; font-weight: 700; font-family: 'Montserrat', sans-serif; text-decoration: none; }
-    .auth-lang a:hover { color: white; }
+    .auth-lang a:hover, .auth-lang a.active { color: white; font-weight:900; }
   </style>
 </head>
 <body>
@@ -51,20 +51,19 @@
            onerror="this.style.display='none'"/>
       <div class="auth-brand-name">Manas<span>Mezun</span></div>
     </div>
-    <div class="auth-brand-sub">University Alumni &amp; Student Ecosystem</div>
+    <div class="auth-brand-sub" th:text="#{auth.obis.ecosystem}">University Alumni &amp; Student Ecosystem</div>
   </div>
 
   <div class="auth-card">
-    <div class="auth-title">🎓 Sign in with OBIS</div>
+    <div class="auth-title">🎓 <span th:text="#{auth.obis.title}">Sign in with OBIS</span></div>
     <div class="auth-subtitle">
-      Use your <strong>Manas OBIS</strong> student portal credentials.
-      Your account will be created automatically with verified information.
+<span th:text="#{auth.obis.subtitle}">Use your Manas OBIS student portal credentials.</span>
     </div>
 
     <!-- What OBIS login provides -->
     <div class="info-box">
-      <div>✅ <strong>Auto-verified:</strong> Your name, faculty and study year are taken directly from OBIS — no manual entry needed.</div>
-      <div style="margin-top:4px;">🔒 <strong>Secure:</strong> Your password is never stored in ManasApp.</div>
+<div>✅ <span th:text="#{auth.obis.verified_note}">Auto-verified: Your name, faculty and study year are taken directly from OBIS.</span></div>
+<div style="margin-top:4px;">🔒 <span th:text="#{auth.obis.secure_note}">Secure: Your password is never stored in ManasApp.</span></div>
     </div>
 
     <!-- Error -->
@@ -75,18 +74,18 @@
       <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
       <div class="form-group">
-        <label>OBIS USERNAME</label>
+<label th:text="#{auth.obis.username}">OBIS USERNAME</label>
         <input type="text" th:field="*{username}" class="form-control"
-               placeholder="Your OBIS username or student ID"
+               th:placeholder="#{auth.obis.username_ph}"
                autocomplete="username" required/>
         <div th:if="${#fields.hasErrors('username')}" style="color:#dc2626;font-size:12px;margin-top:4px;" th:errors="*{username}"></div>
       </div>
 
       <div class="form-group">
-        <label>OBIS PASSWORD</label>
+<label th:text="#{auth.obis.password}">OBIS PASSWORD</label>
         <div style="position:relative;">
           <input type="password" id="obisPassword" th:field="*{password}" class="form-control"
-                 placeholder="Your OBIS password"
+                 th:placeholder="#{auth.obis.password_ph}"
                  style="padding-right:42px;"
                  autocomplete="current-password" required/>
           <button type="button"
@@ -97,7 +96,7 @@
       </div>
 
       <button type="submit" class="btn-obis">
-        🎓 Sign in with OBIS
+        🎓 <span th:text="#{auth.obis.submit}">Sign in with OBIS</span>
       </button>
     </form>
 
@@ -105,20 +104,20 @@
 
     <!-- Link to regular login -->
     <a th:href="@{/auth/login}" class="btn-secondary">
-      Sign in with ManasApp account
+      <span th:text="#{auth.login.manasapp}">Sign in with ManasApp account</span>
     </a>
 
     <div class="auth-footer-row" style="margin-top:14px;">
-      <span>Don't have an OBIS account?</span>
-      <a th:href="@{/auth/register}">Register manually</a>
+      <span th:text="#{auth.obis.no_account}">Don't have an OBIS account?</span>
+      <a th:href="@{/auth/register}" th:text="#{auth.register.manually}">Register manually</a>
     </div>
   </div>
 
   <div class="auth-lang">
-    <a th:href="@{/auth/obis-login(lang='ky')}">KY</a>
-    <a th:href="@{/auth/obis-login(lang='ru')}">RU</a>
-    <a th:href="@{/auth/obis-login(lang='tr')}">TR</a>
-    <a th:href="@{/auth/obis-login(lang='en')}">EN</a>
+    <a th:href="@{/auth/obis-login(lang='ky')}" th:classappend="${#locale.language == 'ky'} ? 'active'">KG</a>
+    <a th:href="@{/auth/obis-login(lang='ru')}" th:classappend="${#locale.language == 'ru'} ? 'active'">RU</a>
+    <a th:href="@{/auth/obis-login(lang='tr')}" th:classappend="${#locale.language == 'tr'} ? 'active'">TR</a>
+    <a th:href="@{/auth/obis-login(lang='en')}" th:classappend="${#locale.language == 'en'} ? 'active'">EN</a>
   </div>
 </div>
 </body>

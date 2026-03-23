@@ -22,7 +22,7 @@
                     <div class="pv-avatar-hover-overlay" th:if="${isOwn}">
                         <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
                             <span style="font-size:22px;">📷</span>
-                            <span style="font-size:10px;font-family:Montserrat,sans-serif;font-weight:700;letter-spacing:.5px;opacity:.9;">CHANGE</span>
+                            <span style="font-size:10px;font-family:Montserrat,sans-serif;font-weight:700;letter-spacing:.5px;opacity:.9;" th:text="#{profile.change_avatar}">CHANGE</span>
                         </div>
                     </div>
                     <div class="pv-avatar-hover-overlay" th:unless="${isOwn}">
@@ -73,8 +73,8 @@
 
                     <div class="pv-actions">
                         <th:block th:if="${isOwn}">
-                            <a th:href="@{/profile/me/edit}" class="pv-btn pv-btn-outline">&#9999;&#65039; Edit Profile</a>
-                            <button onclick="openCvModal()" class="pv-btn pv-btn-primary">&#11015; Download CV</button>
+                            <a th:href="@{/profile/me/edit}" class="pv-btn pv-btn-outline">&#9999;&#65039; <span th:text="#{profile.edit}">Edit Profile</span></a>
+                            <button onclick="openCvModal()" class="pv-btn pv-btn-primary">&#11015; <span th:text="#{profile.download_resume}">Download CV</span></button>
                         </th:block>
                         <th:block th:if="${!isOwn}">
                             <form th:action="@{/chat/direct/{id}(id=${profileUser.id})}" method="post" style="display:inline">
@@ -113,12 +113,12 @@
             <div class="pv-left">
 
                 <div class="pv-card" th:if="${profile.bio != null and !profile.bio.isEmpty()}">
-                    <div class="pv-card-title">&#128100; About</div>
+                    <div class="pv-card-title">&#128100; <span th:text="#{profile.about}">About</span></div>
                     <p class="pv-bio" th:text="${profile.bio}">Bio</p>
                 </div>
 
                 <div class="pv-card" th:if="${profile.workExperience != null and !profile.workExperience.isEmpty()}">
-                    <div class="pv-card-title">&#128188; Work Experience</div>
+                    <div class="pv-card-title">&#128188; <span th:text="#{profile.work.title}">Work Experience</span></div>
                     <div class="pv-timeline">
                         <div th:each="job : ${profile.workExperience}" class="pv-tl-item">
                             <div class="pv-tl-dot"></div>
@@ -127,7 +127,7 @@
                                 <div class="pv-tl-sub"><span th:text="${job['company']}">Co</span><span th:if="${job['location'] != null and !job['location'].isEmpty()}"> &bull; <span th:text="${job['location']}">Loc</span></span></div>
                                 <div class="pv-tl-date">
                                     <span th:text="${job['startDate']}">S</span>
-                                    <span th:if="${job['current'] == 'true'}"> &#8212; Present</span>
+                                    <span th:if="${job['current'] == 'true'}"> &#8212; <span th:text="#{profile.view.present}">Present</span></span>
                                     <span th:if="${job['current'] != 'true' and job['endDate'] != null and !job['endDate'].isEmpty()}"> &#8212; <span th:text="${job['endDate']}">E</span></span>
                                 </div>
                                 <p class="pv-tl-desc" th:if="${job['description'] != null and !job['description'].isEmpty()}" th:text="${job['description']}">Desc</p>
@@ -137,12 +137,12 @@
                 </div>
 
                 <div class="pv-card" th:if="${profile.educationList != null and !profile.educationList.isEmpty()}">
-                    <div class="pv-card-title">&#127891; Education</div>
+                    <div class="pv-card-title">&#127891; <span th:text="#{profile.edu.title}">Education</span></div>
                     <div class="pv-timeline">
                         <div th:each="edu : ${profile.educationList}" class="pv-tl-item">
                             <div class="pv-tl-dot" style="background:#7c3aed;box-shadow:0 0 0 2px #7c3aed;"></div>
                             <div class="pv-tl-body">
-                                <div class="pv-tl-title"><span th:text="${edu['degree']}">Degree</span><span th:if="${edu['field'] != null and !edu['field'].isEmpty()}"> in <span th:text="${edu['field']}">Field</span></span></div>
+                                <div class="pv-tl-title"><span th:text="${edu['degree']}">Degree</span><span th:if="${edu['field'] != null and !edu['field'].isEmpty()}"> · <span th:text="${edu['field']}">Field</span></span></div>
                                 <div class="pv-tl-sub" th:text="${edu['institution']}">Institution</div>
                                 <div class="pv-tl-date">
                                     <span th:text="${edu['startDate']}">S</span>
@@ -155,7 +155,7 @@
                 </div>
 
                 <div class="pv-card" th:if="${profile.certifications != null and !profile.certifications.isEmpty()}">
-                    <div class="pv-card-title">&#127885; Certifications</div>
+                    <div class="pv-card-title">&#127885; <span th:text="#{profile.cert.title}">Certifications</span></div>
                     <div class="pv-cert-list">
                         <div th:each="cert : ${profile.certifications}" class="pv-cert-item">
                             <div class="pv-cert-icon">&#127885;</div>
@@ -171,7 +171,7 @@
                     <div class="pv-card-title">&#128247; Posts <span class="pv-posts-badge" th:text="${postCount}">0</span>
                         <a th:href="@{/profile/{id}/posts(id=${profileUser.id})}"
                            style="margin-left:auto;font-size:12px;font-weight:600;color:#1b2a6b;text-decoration:none;
-                    background:#eef1fb;padding:4px 12px;border-radius:20px;">See all →</a>
+                    background:#eef1fb;padding:4px 12px;border-radius:20px;" th:text="#{main.see_all}">See all →</a>
                     </div>
                     <div class="pv-posts-grid" th:if="${!#lists.isEmpty(recentPosts)}">
                         <a th:each="post : ${recentPosts}" th:href="@{/profile/{id}/posts(id=${profileUser.id})}"
@@ -271,7 +271,7 @@
                                style="display:flex;align-items:center;justify-content:space-between;
                       background:#1b2a6b;color:#fff;padding:8px 12px;border-radius:8px;
                       text-decoration:none;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;">
-                                <span>&#128100; View Applicants</span>
+                                <span>&#128100; <span th:text="#{career.view_job}">View Applicants</span></span>
                                 <span style="background:rgba(255,255,255,0.2);border-radius:20px;padding:1px 9px;font-size:12px;"
                                       th:text="${#lists.size(job.applications)}">0</span>
                             </a>

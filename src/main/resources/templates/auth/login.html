@@ -32,7 +32,7 @@
         .auth-footer-row a { color: var(--navy); font-weight: 700; text-decoration: none; }
         .auth-lang { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
         .auth-lang a { color: rgba(255,255,255,0.6); font-size: 12px; font-weight: 700; font-family: 'Montserrat', sans-serif; text-decoration: none; transition: color 0.2s; }
-        .auth-lang a:hover { color: white; }
+        .auth-lang a:hover, .auth-lang a.active { color: white; font-weight:900; }
         .remember-row { display:flex; align-items:center; justify-content:space-between; margin:4px 0 16px; }
         .remember-label { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:#475569; font-family:'Montserrat',sans-serif; font-weight:600; user-select:none; }
         .remember-checkbox { width:17px; height:17px; accent-color:#1B2A6B; cursor:pointer; flex-shrink:0; }
@@ -55,7 +55,7 @@
     <!-- Card -->
     <div class="auth-card">
         <div class="auth-title" th:text="#{auth.login.title}">Sign In</div>
-        <div class="auth-subtitle">Welcome back! Please enter your credentials.</div>
+        <div class="auth-subtitle" th:text="#{auth.login.welcome}">Welcome back!</div>
 
         <!-- Alerts -->
         <div th:if="${param.error != null and (captchaRequired == null or captchaRequired == false)}"
@@ -80,7 +80,7 @@
                 <div style="position:relative;">
                     <input type="password" id="password" name="password" class="form-control"
                            required autocomplete="current-password"
-                           style="padding-right: 42px;"
+                           style="padding-right: 42px; box-sizing: border-box;"
                            th:placeholder="#{auth.field.password_placeholder}"/>
                     <button type="button" onclick="togglePwd('password','eyeLogin')"
                             style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;color:#94a3b8;font-size:16px;">
@@ -94,14 +94,14 @@
                  style="background:#fff8e1;border:1.5px solid #f59e0b;border-radius:10px;padding:10px 14px;
                         font-size:12px;color:#92400e;font-family:Montserrat,sans-serif;font-weight:600;margin-bottom:14px;">
                 ⚠️ <span th:text="'Failed attempts: ' + ${loginAttempts}">Failed attempts</span>
-                — CAPTCHA required after 5 failures.
+                &#8212; <span th:text="#{auth.login.captcha_after}">CAPTCHA required after 5 failures.</span>
             </div>
 
             <!-- CAPTCHA error message -->
             <div th:if="${param.captchaError != null}"
                  class="alert alert-error"
                  style="margin-bottom:12px;">
-                🤖 Please complete the CAPTCHA to continue.
+                🤖 <span th:text="#{auth.captcha.complete}">Please complete the CAPTCHA to continue.</span>
             </div>
 
             <!-- CAPTCHA widget: shown when IP has 3+ failed attempts -->
@@ -110,7 +110,7 @@
                 <div style="background:#fff3cd;border:1.5px solid #f59e0b;border-radius:10px;
                             padding:10px 14px;font-size:12px;color:#92400e;
                             font-family:Montserrat,sans-serif;font-weight:600;margin-bottom:10px;">
-                    🔒 Too many failed attempts. Please verify you are human.
+                    🔒 <span th:text="#{auth.captcha.too_many}">Too many failed attempts.</span>
                 </div>
                 <div class="g-recaptcha" data-sitekey="6LexNo4sAAAAADLdotF4eCUaoACx_NAbluY84iR-"></div>
             </div>
@@ -118,11 +118,11 @@
             <div class="remember-row">
                 <label class="remember-label">
                     <input type="checkbox" name="remember-me" class="remember-checkbox" id="rememberMe"/>
-                    <span>Remember me for 3 days</span>
+                    <span th:text="#{auth.remember_me}">Remember me for 3 days</span>
                 </label>
                 <a th:href="@{/auth/forgot-password}"
                    style="font-size:12px;color:#1B2A6B;font-weight:600;text-decoration:none;">
-                    Forgot password?
+                    <span th:text="#{auth.forgot_password}">Forgot password?</span>
                 </a>
             </div>
 
@@ -132,7 +132,7 @@
         <!-- OBIS Login option -->
         <div style="display:flex;align-items:center;gap:10px;margin-top:16px;margin-bottom:4px;">
             <div style="flex:1;height:1px;background:#e0e3ef;"></div>
-            <span style="font-size:12px;color:#94a3b8;font-family:Montserrat,sans-serif;white-space:nowrap;">or</span>
+<span style="font-size:12px;color:#94a3b8;font-family:Montserrat,sans-serif;white-space:nowrap;" th:text="#{common.or}">or</span>
             <div style="flex:1;height:1px;background:#e0e3ef;"></div>
         </div>
         <a th:href="@{/auth/obis-login}"
@@ -143,7 +143,7 @@
                   font-size:13px;text-decoration:none;transition:all .2s;box-sizing:border-box;"
            onmouseover="this.style.background='#f0f4ff'"
            onmouseout="this.style.background='white'">
-            🎓 Sign in with OBIS (Students)
+            🎓 <span th:text="#{auth.obis.submit}">Sign in with OBIS</span>
         </a>
 
 
@@ -156,10 +156,10 @@
 
     <!-- Language switcher -->
     <div class="auth-lang">
-        <a th:href="@{/auth/login(lang='ky')}">KY</a>
-        <a th:href="@{/auth/login(lang='ru')}">RU</a>
-        <a th:href="@{/auth/login(lang='tr')}">TR</a>
-        <a th:href="@{/auth/login(lang='en')}">EN</a>
+        <a th:href="@{/auth/login(lang='ky')}" th:classappend="${#locale.language == 'ky'} ? 'active'" >KG</a>
+        <a th:href="@{/auth/login(lang='ru')}" th:classappend="${#locale.language == 'ru'} ? 'active'">RU</a>
+        <a th:href="@{/auth/login(lang='tr')}" th:classappend="${#locale.language == 'tr'} ? 'active'">TR</a>
+        <a th:href="@{/auth/login(lang='en')}" th:classappend="${#locale.language == 'en'} ? 'active'">EN</a>
     </div>
 </div>
 <script>
