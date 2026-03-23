@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:replace="~{fragments/header :: head('Timetable')}"></head>
+
+<body>
+<div class="app-shell" id="app-shell">
+  <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+  <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+  <main class="main-content">
+
+    <style>
+      :root{--crimson:#8B0000;--navy:#002366;--border:#E8E4DC;--muted:#8A867E;--ivory:#FAF9F6;}
+      .tt-page{font-family:'DM Sans',system-ui,sans-serif;background:#F2F0EB;color:#1C1C2E;}
+      @keyframes livePulse{0%,100%{box-shadow:0 0 0 0 rgba(139,0,0,.35)}50%{box-shadow:0 0 0 5px rgba(139,0,0,0)}}
+      @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+      @keyframes rowGlow{0%,100%{background-color:rgba(139,0,0,.04)}50%{background-color:rgba(139,0,0,.06)}}
+      @keyframes dotBlink{0%,100%{opacity:1}50%{opacity:.3}}
+      @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+      .tt-fade-up{animation:fadeUp .38s cubic-bezier(.22,.68,0,1.1) both}
+      .tt-live-dot{animation:dotBlink 1.6s ease-in-out infinite}
+      .tt-live-glow{animation:livePulse 1.8s ease-in-out infinite}
+      .tt-row-live{animation:rowGlow 2.4s ease-in-out infinite}
+      .tt-drop-in{animation:slideDown .22s ease-out both}
+      .tt-lesson-card{transition:transform .15s ease,box-shadow .15s ease;cursor:pointer}
+      .tt-lesson-card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.10)!important}
+      .tt-sched-grid{display:grid;grid-template-columns:84px repeat(6,minmax(0,1fr))}
+      .tt-form-input{background:var(--ivory);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:13.5px;color:#1C1C2E;outline:none;transition:border-color .18s,box-shadow .18s;width:100%;}
+      .tt-form-input:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,35,102,.08)}
+      select.tt-form-input{appearance:none;cursor:pointer}
+      .tt-grain-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");background-repeat:repeat;background-size:256px;opacity:.6;}
+      .tt-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,35,102,.07);color:var(--navy);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:10px;}
+      @media(max-width:767px){.tt-sched-grid{grid-template-columns:62px 1fr}}
+    </style>
+
+    <div style="padding:18px 28px 0;position:relative;z-index:2;">
+      <div class="tt-badge">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span th:text="#{timetable.breadcrumb}">Smart Timetable</span>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px;">
+        timetable.manas.edu.kg &nbsp;(<a href="http://timetable.manas.edu.kg/teacher" target="_blank" style="color:var(--navy)">/teacher</a> &middot; <a href="http://timetable.manas.edu.kg/department" target="_blank" style="color:var(--navy)">/department</a> &middot; <a href="http://timetable.manas.edu.kg/room" target="_blank" style="color:var(--navy)">/room</a>)
+        &nbsp;&middot;&nbsp;
+        <strong th:text="${lessonCount}">0</strong> lessons loaded
+      </p>
+    </div>
+
+    <div class="tt-page" id="tt-root" style="position:relative;z-index:1;min-height:400px;">
+      <div style="display:flex;align-items:center;justify-content:center;padding:60px;color:#9CA3AF;font-family:'DM Sans',sans-serif;font-size:14px;">
+        Loading timetable&#8230;
+      </div>
+    </div>
+    <div class="tt-grain-bg"></div>
+  </main>
+</div>
+
+<!-- ALL DATA injected by server — real parsed values -->
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  window.__TIMETABLE_DATA__   = /*[[${lessonsJson}]]*/ "[]";
+  window.__FACULTIES_DATA__   = /*[[${facultiesJson}]]*/ "[]";
+  window.__GROUPS_DATA__      = /*[[${groupsJson}]]*/ "[]";
+  window.__PROFESSORS_DATA__  = /*[[${professorsJson}]]*/ "[]";
+  window.__ROOMS_DATA__       = /*[[${roomsJson}]]*/ "[]";
+  /*]]>*/
+</script>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&amp;display=swap" rel="stylesheet"/>
+<script th:src="@{/js/timetable.js}"></script>
+
+</body>
+</html>
