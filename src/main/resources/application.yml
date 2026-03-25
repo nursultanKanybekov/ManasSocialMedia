@@ -49,6 +49,14 @@ spring:
             required: true
         debug: false
 
+  cache:
+    caffeine:
+      spec: maximumSize=100,expireAfterWrite=6h
+    cache-names:
+      - timetable
+      - food-today
+      - food-weekly
+
 app:
   mail:
     from: ${MAIL_USERNAME:noreply@manas.edu}

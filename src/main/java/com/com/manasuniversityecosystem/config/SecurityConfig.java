@@ -89,6 +89,7 @@ public class SecurityConfig {
                         .requestMatchers("/events/new").hasAnyRole("SECRETARY", "ADMIN", "MEZUN")
                         .requestMatchers("/edu/new").hasAnyRole("MEZUN", "ADMIN")
                         .requestMatchers("/timetable/**").hasAnyRole("STUDENT", "MEZUN", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/food/**").hasAnyRole("STUDENT", "MEZUN", "ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
