@@ -140,7 +140,7 @@
             </div>
 
             <!-- reCAPTCHA widget -->
-            <div class="g-recaptcha" data-sitekey="6LexNo4sAAAAADLdotF4eCUaoACx_NAbluY84iR-" style="margin-bottom: 16px;"></div>
+            <div class="g-recaptcha" th:attr="data-sitekey=${recaptchaSiteKey}" style="margin-bottom: 16px;"></div>
 
             <button type="submit" class="btn btn-primary btn-full" th:text="#{auth.register.submit}">
                 Create Account

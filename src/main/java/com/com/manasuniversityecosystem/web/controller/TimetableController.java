@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/timetable")
-@PreAuthorize("hasAnyRole('STUDENT','MEZUN','ADMIN','SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('STUDENT','MEZUN','TEACHER','ADMIN','SUPER_ADMIN')")
 @RequiredArgsConstructor
 public class TimetableController {
 

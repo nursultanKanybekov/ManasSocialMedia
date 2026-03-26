@@ -19,8 +19,8 @@
         </div>
     </div>
 
-    <!-- MEZUN: Toggle own mentorship availability -->
-    <div sec:authorize="hasRole('MEZUN')" style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+    <!-- MEZUN/TEACHER: Toggle own mentorship availability -->
+    <div sec:authorize="hasAnyRole('MEZUN','TEACHER')" style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
         <div>
             <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;color:#1b2a6b;">🌟 <span th:text="#{mentorship.status.title}">Your Mentorship Status</span></div>
             <div style="font-size:13px;color:#8a91a8;margin-top:2px;" th:text="#{mentorship.status.sub}">Enable this to appear in the mentor table</div>
@@ -39,8 +39,8 @@
         </div>
     </div>
 
-    <!-- MEZUN: Pending requests -->
-    <div sec:authorize="hasRole('MEZUN')" th:if="${pendingRequests != null and !pendingRequests.isEmpty()}"
+    <!-- MEZUN/TEACHER: Pending requests -->
+    <div sec:authorize="hasAnyRole('MEZUN','TEACHER')" th:if="${pendingRequests != null and !pendingRequests.isEmpty()}"
          style="background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(27,42,107,0.08);margin-bottom:20px;">
         <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#1b2a6b;margin-bottom:14px;">📬 <span th:text="#{mentorship.pending.title}">Pending Requests</span> (<span th:text="${#lists.size(pendingRequests)}">0</span>)</div>
         <div th:each="req : ${pendingRequests}" style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f0f2f8;">

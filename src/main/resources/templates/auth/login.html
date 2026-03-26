@@ -37,6 +37,26 @@
         .remember-label { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:#475569; font-family:'Montserrat',sans-serif; font-weight:600; user-select:none; }
         .remember-checkbox { width:17px; height:17px; accent-color:#1B2A6B; cursor:pointer; flex-shrink:0; }
         .remember-label:hover span { color:#1B2A6B; }
+        /* Unified OBIS/MABIS button */
+        .btn-obis-mabis {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 12px; margin-bottom: 8px;
+            background: white; border: 1.5px solid #c7d2fe; border-radius: 12px;
+            color: #3730a3; font-family: Montserrat, sans-serif; font-weight: 700;
+            font-size: 13px; text-decoration: none; transition: all .2s; box-sizing: border-box;
+            cursor: pointer;
+        }
+        .btn-obis-mabis:hover { background: #f0f4ff; border-color: #818cf8; color: #3730a3; }
+        /* MABIS teacher button */
+        .btn-mabis {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 12px; margin-bottom: 12px;
+            background: white; border: 1.5px solid #bbf7d0; border-radius: 12px;
+            color: #166534; font-family: Montserrat, sans-serif; font-weight: 700;
+            font-size: 13px; text-decoration: none; transition: all .2s; box-sizing: border-box;
+            cursor: pointer;
+        }
+        .btn-mabis:hover { background: #f0fdf4; border-color: #4ade80; color: #166534; }
     </style>
 </head>
 <body>
@@ -89,7 +109,7 @@
                 </div>
             </div>
 
-            <!-- Brute-force warning: shown after 1+ failed attempts -->
+            <!-- Brute-force warning -->
             <div th:if="${loginAttempts != null and loginAttempts > 0 and (captchaRequired == null or captchaRequired == false)}"
                  style="background:#fff8e1;border:1.5px solid #f59e0b;border-radius:10px;padding:10px 14px;
                         font-size:12px;color:#92400e;font-family:Montserrat,sans-serif;font-weight:600;margin-bottom:14px;">
@@ -97,16 +117,13 @@
                 &#8212; <span th:text="#{auth.login.captcha_after}">CAPTCHA required after 5 failures.</span>
             </div>
 
-            <!-- CAPTCHA error message -->
-            <div th:if="${param.captchaError != null}"
-                 class="alert alert-error"
-                 style="margin-bottom:12px;">
+            <!-- CAPTCHA error -->
+            <div th:if="${param.captchaError != null}" class="alert alert-error" style="margin-bottom:12px;">
                 🤖 <span th:text="#{auth.captcha.complete}">Please complete the CAPTCHA to continue.</span>
             </div>
 
-            <!-- CAPTCHA widget: shown when IP has 3+ failed attempts -->
-            <div th:if="${captchaRequired != null and captchaRequired == true}"
-                 style="margin-bottom:16px;">
+            <!-- CAPTCHA widget -->
+            <div th:if="${captchaRequired != null and captchaRequired == true}" style="margin-bottom:16px;">
                 <div style="background:#fff3cd;border:1.5px solid #f59e0b;border-radius:10px;
                             padding:10px 14px;font-size:12px;color:#92400e;
                             font-family:Montserrat,sans-serif;font-weight:600;margin-bottom:10px;">
@@ -129,24 +146,17 @@
             <button type="submit" class="btn btn-danger btn-full" th:text="#{auth.login.submit}">Sign In</button>
         </form>
 
-        <!-- OBIS Login option -->
-        <div style="display:flex;align-items:center;gap:10px;margin-top:16px;margin-bottom:4px;">
+        <!-- University SSO options -->
+        <div style="display:flex;align-items:center;gap:10px;margin-top:16px;margin-bottom:10px;">
             <div style="flex:1;height:1px;background:#e0e3ef;"></div>
-<span style="font-size:12px;color:#94a3b8;font-family:Montserrat,sans-serif;white-space:nowrap;" th:text="#{common.or}">or</span>
+            <span style="font-size:12px;color:#94a3b8;font-family:Montserrat,sans-serif;white-space:nowrap;" th:text="#{common.or}">or</span>
             <div style="flex:1;height:1px;background:#e0e3ef;"></div>
         </div>
-        <a th:href="@{/auth/obis-login}"
-           style="display:flex;align-items:center;justify-content:center;gap:8px;
-                  width:100%;padding:12px;margin-bottom:12px;
-                  background:white;border:1.5px solid #c7d2fe;border-radius:12px;
-                  color:#3730a3;font-family:Montserrat,sans-serif;font-weight:700;
-                  font-size:13px;text-decoration:none;transition:all .2s;box-sizing:border-box;"
-           onmouseover="this.style.background='#f0f4ff'"
-           onmouseout="this.style.background='white'">
-            🎓 <span th:text="#{auth.obis.submit}">Sign in with OBIS</span>
+
+        <!-- OBIS login — Students -->
+        <a th:href="@{/auth/obis-login}" class="btn-obis-mabis">
+            🎓 Sign in with OBIS / MABIS
         </a>
-
-
 
         <div class="auth-footer-row">
             <span th:text="#{auth.no_account}">Don't have an account?</span>

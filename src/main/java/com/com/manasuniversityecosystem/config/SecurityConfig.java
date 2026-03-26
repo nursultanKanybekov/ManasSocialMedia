@@ -83,13 +83,13 @@ public class SecurityConfig {
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(
                                 "/career/jobs/new", "/career/jobs/*/edit",
-                                "/career/jobs/*/delete").hasAnyRole("EMPLOYER", "ADMIN", "MEZUN")
-                        .requestMatchers("/career/mentorship/respond/**").hasAnyRole("MEZUN", "ADMIN")
-                        .requestMatchers("/competitions/new").hasAnyRole("SECRETARY", "ADMIN", "MEZUN")
-                        .requestMatchers("/events/new").hasAnyRole("SECRETARY", "ADMIN", "MEZUN")
-                        .requestMatchers("/edu/new").hasAnyRole("MEZUN", "ADMIN")
-                        .requestMatchers("/timetable/**").hasAnyRole("STUDENT", "MEZUN", "ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/food/**").hasAnyRole("STUDENT", "MEZUN", "ADMIN", "SUPER_ADMIN")
+                                "/career/jobs/*/delete").hasAnyRole("EMPLOYER", "ADMIN", "MEZUN", "TEACHER")
+                        .requestMatchers("/career/mentorship/respond/**").hasAnyRole("MEZUN", "TEACHER", "ADMIN")
+                        .requestMatchers("/competitions/new").hasAnyRole("SECRETARY", "ADMIN", "MEZUN", "TEACHER")
+                        .requestMatchers("/events/new").hasAnyRole("SECRETARY", "ADMIN", "MEZUN", "TEACHER")
+                        .requestMatchers("/edu/new").hasAnyRole("MEZUN", "TEACHER", "ADMIN")
+                        .requestMatchers("/timetable/**").hasAnyRole("STUDENT", "MEZUN", "TEACHER", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/food/**").hasAnyRole("STUDENT", "MEZUN", "TEACHER", "ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

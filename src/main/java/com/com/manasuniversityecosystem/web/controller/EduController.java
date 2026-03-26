@@ -50,7 +50,7 @@ public class EduController {
 
     // GET /edu/new  — add tutorial form (MEZUN + ADMIN)
     @GetMapping("/new")
-    @PreAuthorize("hasAnyRole('MEZUN','ADMIN')")
+    @PreAuthorize("hasAnyRole('MEZUN','TEACHER','ADMIN')")
     public String newTutorialForm(@AuthenticationPrincipal UserDetailsImpl principal, Model model) {
         model.addAttribute("categories", eduService.getAllCategories());
         model.addAttribute("mediaTypes", Tutorial.MediaType.values());
@@ -59,15 +59,15 @@ public class EduController {
 
     // POST /edu/new  — save tutorial
     @PostMapping("/new")
-    @PreAuthorize("hasAnyRole('MEZUN','ADMIN')")
+    @PreAuthorize("hasAnyRole('MEZUN','TEACHER','ADMIN')")
     public String createTutorial(@RequestParam String title,
-                                  @RequestParam(required = false) String content,
-                                  @RequestParam(required = false) String category,
-                                  @RequestParam(required = false) String mediaUrl,
-                                  @RequestParam(defaultValue = "TEXT") String mediaType,
-                                  @RequestParam(required = false) String description,
-                                  @AuthenticationPrincipal UserDetailsImpl principal,
-                                  RedirectAttributes ra) {
+                                 @RequestParam(required = false) String content,
+                                 @RequestParam(required = false) String category,
+                                 @RequestParam(required = false) String mediaUrl,
+                                 @RequestParam(defaultValue = "TEXT") String mediaType,
+                                 @RequestParam(required = false) String description,
+                                 @AuthenticationPrincipal UserDetailsImpl principal,
+                                 RedirectAttributes ra) {
         AppUser author = userService.getById(principal.getId());
         Tutorial.MediaType mt;
         try { mt = Tutorial.MediaType.valueOf(mediaType.toUpperCase()); }

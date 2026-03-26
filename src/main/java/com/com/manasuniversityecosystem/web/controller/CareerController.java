@@ -85,7 +85,7 @@ public class CareerController {
 
     // GET /career/jobs/new
     @GetMapping("/jobs/new")
-    @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN')")
+    @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN','TEACHER')")
     public String newJobPage(Model model) {
         model.addAttribute("createJobRequest", new CreateJobRequest());
         model.addAttribute("jobTypes", JobType.values());
@@ -94,7 +94,7 @@ public class CareerController {
 
     // POST /career/jobs/new
     @PostMapping("/jobs/new")
-    @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN')")
+    @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN','TEACHER')")
     public String createJob(@Valid @ModelAttribute CreateJobRequest req,
                             BindingResult result,
                             @AuthenticationPrincipal UserDetailsImpl principal,
@@ -129,7 +129,7 @@ public class CareerController {
 
     // POST /career/jobs/{id}/close
     @PostMapping("/jobs/{id}/close")
-    @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN')")
+    @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN','TEACHER')")
     public String closeJob(@PathVariable UUID id,
                            @AuthenticationPrincipal UserDetailsImpl principal,
                            RedirectAttributes redirectAttributes) {
@@ -177,7 +177,7 @@ public class CareerController {
 
     // POST /career/applications/{id}/status
     @PostMapping("/applications/{id}/status")
-    @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN')")
+    @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN','TEACHER')")
     public String updateApplicationStatus(
             @PathVariable UUID id,
             @RequestParam String status,
@@ -244,10 +244,9 @@ public class CareerController {
         if (user.getRole().name().equals("STUDENT")) {
             model.addAttribute("myRequests", mentorshipService.getStudentRequests(user));
         }
-        if (user.getRole().name().equals("MEZUN")) {
+        if (user.getRole().name().equals("MEZUN") || user.getRole().name().equals("TEACHER")) {
             model.addAttribute("pendingRequests", mentorshipService.getPendingForMentor(user));
             model.addAttribute("activeRequests", mentorshipService.getActiveForMentor(user));
-            // Own profile - check if they have mentor enabled
             try {
                 com.com.manasuniversityecosystem.domain.entity.Profile myProfile = profileService.getByUserId(user.getId());
                 model.addAttribute("myProfile", myProfile);
@@ -278,7 +277,7 @@ public class CareerController {
 
     // POST /career/mentorship/respond/{id}
     @PostMapping("/mentorship/respond/{id}")
-    @PreAuthorize("hasAnyRole('MEZUN','ADMIN')")
+    @PreAuthorize("hasAnyRole('MEZUN','TEACHER','ADMIN')")
     public String respondToMentorship(@PathVariable UUID id,
                                       @RequestParam boolean accept,
                                       @AuthenticationPrincipal UserDetailsImpl principal,
@@ -301,9 +300,8 @@ public class CareerController {
         return "redirect:/career/mentorship";
     }
 
-    // POST /career/mentorship/toggle-availability  (MEZUN only)
     @PostMapping("/mentorship/toggle-availability")
-    @PreAuthorize("hasRole('MEZUN')")
+    @PreAuthorize("hasAnyRole('MEZUN','TEACHER')")
     public String toggleMentorAvailability(@AuthenticationPrincipal UserDetailsImpl principal,
                                            RedirectAttributes redirectAttributes) {
         boolean enabled = profileService.toggleMentorAvailability(principal.getId());

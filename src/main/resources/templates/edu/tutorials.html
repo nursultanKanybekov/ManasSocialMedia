@@ -325,7 +325,7 @@
             <h1>📚 <span th:text="#{page.education}">Tutorials &amp; Resources</span></h1>
             <p th:text="#{edu.subtitle}">Learn, watch, and listen to alumni knowledge</p>
         </div>
-        <a sec:authorize="hasAnyRole('MEZUN','ADMIN')" th:href="@{/edu/new}" class="tu-add-btn">
+        <a sec:authorize="hasAnyRole('MEZUN','TEACHER','ADMIN')" th:href="@{/edu/new}" class="tu-add-btn">
             + Add Tutorial
         </a>
     </div>
@@ -423,7 +423,7 @@
         <div class="tu-empty-icon">📚</div>
         <h3 class="tu-empty-title" th:text="#{edu.no_tutorials_title}">No tutorials found</h3>
         <p class="tu-empty-sub">Try a different search or be the first to add one!</p>
-        <a sec:authorize="hasAnyRole('MEZUN','ADMIN')" th:href="@{/edu/new}"
+        <a sec:authorize="hasAnyRole('MEZUN','TEACHER','ADMIN')" th:href="@{/edu/new}"
            style="display:inline-block;background:#1b2a6b;color:white;padding:10px 24px;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;">
             + Add Tutorial
         </a>

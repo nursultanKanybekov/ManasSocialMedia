@@ -49,8 +49,8 @@
                 <span class="nav-label" th:text="#{nav.university_news}">University News</span>
             </a>
 
-            <!-- TIMETABLE — visible to STUDENT and MEZUN -->
-            <a sec:authorize="hasAnyRole('ROLE_STUDENT','ROLE_MEZUN','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
+            <!-- TIMETABLE — visible to STUDENT, TEACHER and MEZUN -->
+            <a sec:authorize="hasAnyRole('ROLE_STUDENT','ROLE_TEACHER','ROLE_MEZUN','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
                th:href="@{/timetable}" class="sidebar-link" data-label="Timetable"
                th:classappend="${currentURI != null and currentURI.startsWith('/timetable')} ? ' active'">
     <span class="nav-icon">
@@ -64,8 +64,8 @@
                 <span class="nav-label" th:text="#{nav.timetable}">Timetable</span>
             </a>
 
-            <!-- FOOD — visible to STUDENT, MEZUN, ADMIN, SUPER_ADMIN -->
-            <a sec:authorize="hasAnyRole('ROLE_STUDENT','ROLE_MEZUN','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
+            <!-- FOOD — visible to STUDENT, TEACHER, MEZUN, ADMIN, SUPER_ADMIN -->
+            <a sec:authorize="hasAnyRole('ROLE_STUDENT','ROLE_TEACHER','ROLE_MEZUN','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
                th:href="@{/food}" class="sidebar-link" data-label="Food"
                th:classappend="${currentURI != null and currentURI.startsWith('/food')} ? ' active'">
     <span class="nav-icon">

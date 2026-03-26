@@ -4,6 +4,7 @@ package com.com.manasuniversityecosystem.domain.entity.chat;
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.domain.entity.Faculty;
 import com.com.manasuniversityecosystem.domain.enums.RoomType;
+import com.com.manasuniversityecosystem.domain.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
@@ -66,11 +67,18 @@ public class ChatRoom {
     @Builder.Default
     private List<ChatMessage> messages = new ArrayList<>();
 
-    /** Helper: add a participant */
+    /**
+     * Helper: add a participant.
+     * Teachers, Admins and Super-Admins are automatically given channel-admin rights.
+     */
     public void addParticipant(AppUser user) {
+        boolean autoAdmin = user.getRole() == UserRole.TEACHER
+                || user.getRole() == UserRole.ADMIN
+                || user.getRole() == UserRole.SUPER_ADMIN;
         ChatParticipant p = ChatParticipant.builder()
                 .room(this)
                 .user(user)
+                .isChannelAdmin(autoAdmin)
                 .build();
         this.participants.add(p);
     }

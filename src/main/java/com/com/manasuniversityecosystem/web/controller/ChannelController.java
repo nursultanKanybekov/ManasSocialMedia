@@ -81,6 +81,7 @@ public class ChannelController {
                 .isPrivate(isPrivate)
                 .build();
         channel.addParticipant(creator);
+        // Creator is always channel admin regardless of role
         channel.getParticipants().get(0).setIsChannelAdmin(true);
         if (memberIds != null) {
             for (UUID uid : memberIds) {
@@ -324,10 +325,16 @@ public class ChannelController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /**
+     * TEACHER role gets the same channel-management rights as ADMIN / SUPER_ADMIN.
+     */
     private boolean isAdmin(UserDetailsImpl p) {
         return p.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
-                        || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+                        || a.getAuthority().equals("ROLE_SUPER_ADMIN")
+                        || a.getAuthority().equals("ROLE_TEACHER"));
     }
 
     private boolean canManageRoom(ChatRoom room, UserDetailsImpl principal) {

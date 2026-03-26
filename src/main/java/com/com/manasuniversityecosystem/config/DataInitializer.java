@@ -49,8 +49,8 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     /**
-     * Drop and recreate the role CHECK constraint to include SUPER_ADMIN.
-     * Safe to run multiple times — uses IF EXISTS.
+     * Drop and recreate the role CHECK constraint to include ALL roles from UserRole enum.
+     * Safe to run multiple times — uses IF EXISTS / DROP before re-add.
      */
     private void fixRoleConstraint() {
         try {
@@ -59,11 +59,11 @@ public class DataInitializer implements CommandLineRunner {
             ).executeUpdate();
             entityManager.createNativeQuery(
                     "ALTER TABLE app_user ADD CONSTRAINT app_user_role_check " +
-                            "CHECK (role IN ('STUDENT','MEZUN','EMPLOYER','ADMIN','SECRETARY','SUPER_ADMIN'))"
+                            "CHECK (role IN ('STUDENT','TEACHER','MEZUN','EMPLOYER','ADMIN','SECRETARY','SUPER_ADMIN'))"
             ).executeUpdate();
-            log.info("✅ Role constraint updated to include SUPER_ADMIN");
+            log.info("✅ Role constraint updated to include TEACHER and all roles");
         } catch (Exception e) {
-            log.warn("Could not update role constraint (may already be correct): {}", e.getMessage());
+            log.warn("Could not update role constraint: {}", e.getMessage());
         }
     }
 
@@ -282,7 +282,7 @@ public class DataInitializer implements CommandLineRunner {
         AppUser admin = userRepository.findByEmail("admin@manas.edu").orElse(null);
         AppUser mezun = userRepository.findByEmail("mezun1@manas.edu").orElse(admin);
 
-        java.util.Map<String,String> c1 = new java.util.HashMap<>();
+        java.util.Map<String, String> c1 = new java.util.HashMap<>();
         c1.put("en", "Manas University ranks top in Central Asia in 2026 QS Rankings!");
         c1.put("ru", "Университет Манас занял первое место в рейтинге QS по Центральной Азии 2026!");
         c1.put("ky", "Манас Университети 2026-жылдагы QS рейтингинде Борбордук Азияда биринчи орунду ээледи!");
@@ -295,7 +295,7 @@ public class DataInitializer implements CommandLineRunner {
                 .isPinned(true)
                 .build();
 
-        java.util.Map<String,String> c2 = new java.util.HashMap<>();
+        java.util.Map<String, String> c2 = new java.util.HashMap<>();
         c2.put("en", "Just got promoted to Senior Engineer at EPAM Systems! Thanks to all my Manas professors!");
         c2.put("ru", "Только что получил повышение до Senior Engineer в EPAM Systems! Спасибо всем преподавателям Манаса!");
         c2.put("ky", "EPAM Systemsде Senior Engineer болуп жогорулатылдым! Манас окутуучуларыма чоң рахмат!");
@@ -307,7 +307,7 @@ public class DataInitializer implements CommandLineRunner {
                 .contentI18n(c2)
                 .build();
 
-        java.util.Map<String,String> c3 = new java.util.HashMap<>();
+        java.util.Map<String, String> c3 = new java.util.HashMap<>();
         c3.put("en", "Registration for Spring 2026 semester courses is now open. Visit the student portal.");
         c3.put("ru", "Регистрация на курсы весеннего семестра 2026 открыта. Посетите студенческий портал.");
         c3.put("ky", "2026-жылдын жазгы семестрине жазылуу ачык. Студенттик порталга кириңиз.");

@@ -39,9 +39,13 @@ public class MentorshipService {
         UUID facultyId = student.getFaculty() != null
                 ? student.getFaculty().getId() : null;
 
-        // Fetch active MEZUN from same faculty first
+        // Fetch active MEZUN/TEACHER from same faculty first
         List<AppUser> mentors = userRepo.findMentorsByFacultyAndSkills(
                 facultyId, UserRole.MEZUN);
+        List<AppUser> teacherMentors = userRepo.findMentorsByFacultyAndSkills(
+                facultyId, UserRole.TEACHER);
+        mentors = new java.util.ArrayList<>(mentors);
+        mentors.addAll(teacherMentors);
 
         // Filter by skill overlap in Java
         if (!studentSkills.isEmpty()) {
@@ -58,7 +62,9 @@ public class MentorshipService {
         if (!mentors.isEmpty()) return mentors;
 
         // Fallback: cross-faculty
-        return userRepo.findMentorsByFacultyAndSkills(null, UserRole.MEZUN);
+        List<AppUser> fallback = new java.util.ArrayList<>(userRepo.findMentorsByFacultyAndSkills(null, UserRole.MEZUN));
+        fallback.addAll(userRepo.findMentorsByFacultyAndSkills(null, UserRole.TEACHER));
+        return fallback;
     }
 
     @Transactional
@@ -73,8 +79,8 @@ public class MentorshipService {
         AppUser mentor = userRepo.findByIdWithProfile(mentorId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found."));
 
-        if (mentor.getRole() != UserRole.MEZUN) {
-            throw new IllegalStateException("Only MEZUN alumni can be mentors.");
+        if (mentor.getRole() != UserRole.MEZUN && mentor.getRole() != UserRole.TEACHER) {
+            throw new IllegalStateException("Only MEZUN alumni or TEACHERs can be mentors.");
         }
 
         boolean alreadyPending = mentorshipRepo.existsByStudentAndMentorAndStatus(

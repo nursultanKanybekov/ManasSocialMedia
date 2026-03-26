@@ -25,7 +25,7 @@
 
     <div class="page-header">
         <h2 th:text="#{career.jobs.title}">Job Board</h2>
-        <div sec:authorize="hasAnyRole('EMPLOYER','ADMIN','MEZUN')">
+        <div sec:authorize="hasAnyRole('EMPLOYER','ADMIN','MEZUN','TEACHER')">
             <a th:href="@{/career/jobs/new}" class="btn btn-primary" th:text="#{career.post_job}">Post a Job</a>
         </div>
     </div>

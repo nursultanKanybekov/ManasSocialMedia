@@ -76,8 +76,8 @@ app:
     api-key: AIzaSyDIa8ULZ0jWsLilRXNkEJo_P_kGgJtTLmk
   base-url: ${APP_BASE_URL:http://localhost:8081}
   recaptcha:
-    site-key: 6LexNo4sAAAAADLdotF4eCUaoACx_NAbluY84iR-
-    secret-key: 6LexNo4sAAAAAAdNBMFLskfe7EsI4rksgcO3Rga1
+    site-key: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
+    secret-key: 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
     verify-url: https://www.google.com/recaptcha/api/siteverify
 
 server:
