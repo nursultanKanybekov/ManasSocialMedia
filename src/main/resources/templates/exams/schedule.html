@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:replace="~{fragments/header :: head('Exam Schedule')}"></head>
+
+<body>
+<div class="app-shell" id="app-shell">
+  <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+  <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+  <main class="main-content">
+
+    <style>
+      /* ── Design tokens (matches app palette) ── */
+      :root {
+        --navy:        #002366;
+        --crimson:     #8B0000;
+        --gold:        #D4A017;
+        --ivory:       #FAF9F6;
+        --border:      #E8E4DC;
+        --muted:       #8A867E;
+        --card-radius: 14px;
+        --success-bg:  #F0FDF4;
+        --success-border: #86EFAC;
+        --warn-bg:     #FFFBEB;
+        --warn-border: #FCD34D;
+        --danger-bg:   #FEF2F2;
+        --danger-border: #FCA5A5;
+      }
+
+      /* ── Page shell ── */
+      .exams-page { background: #F2F0EB; min-height: 100vh; padding: 0 0 60px; }
+
+      /* ── Hero banner ── */
+      .exams-hero {
+        background: linear-gradient(135deg, var(--navy) 0%, #003a99 100%);
+        color: #fff;
+        padding: 36px 32px 28px;
+        position: relative;
+        overflow: hidden;
+      }
+      .exams-hero::before {
+        content: '';
+        position: absolute; inset: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+        pointer-events: none;
+      }
+      .exams-hero-inner { position: relative; max-width: 1100px; margin: 0 auto; }
+      .exams-hero h1 { font-size: 1.75rem; font-weight: 700; margin: 0 0 6px; }
+      .exams-hero p  { font-size: 0.95rem; color: rgba(255,255,255,0.75); margin: 0; }
+      .exams-hero-meta { display: flex; gap: 20px; margin-top: 16px; flex-wrap: wrap; }
+      .hero-badge {
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.25);
+        border-radius: 20px;
+        padding: 4px 14px;
+        font-size: 0.82rem;
+        font-weight: 500;
+      }
+
+      /* ── Content wrapper ── */
+      .exams-body { max-width: 1100px; margin: 0 auto; padding: 28px 20px 0; }
+
+      /* ── Flash messages ── */
+      .flash { border-radius: 10px; padding: 14px 18px; font-size: 0.9rem;
+        display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+      .flash-success { background: var(--success-bg); border: 1px solid var(--success-border); color: #15803d; }
+      .flash-error   { background: var(--danger-bg);  border: 1px solid var(--danger-border);  color: #b91c1c; }
+
+      /* ── Today's exam alert ── */
+      .today-alert {
+        background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+        border: 1px solid var(--warn-border);
+        border-radius: var(--card-radius);
+        padding: 18px 22px;
+        margin-bottom: 24px;
+        display: flex; gap: 16px; align-items: flex-start;
+      }
+      .today-alert-icon { font-size: 1.6rem; flex-shrink: 0; margin-top: 2px; }
+      .today-alert h3 { margin: 0 0 8px; color: #92400e; font-size: 1rem; font-weight: 700; }
+      .today-exam-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+      .today-exam-item {
+        background: rgba(255,255,255,0.7);
+        border-radius: 8px;
+        padding: 8px 14px;
+        font-size: 0.875rem;
+        display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+        color: #78350f;
+      }
+      .today-exam-item .tag {
+        background: var(--gold);
+        color: #fff;
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .today-exam-item .room-tag {
+        background: var(--navy);
+        color: #fff;
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 0.75rem;
+      }
+
+      /* ── Controls row ── */
+      .controls-row {
+        display: flex; gap: 12px; flex-wrap: wrap;
+        align-items: flex-end;
+        margin-bottom: 22px;
+      }
+      .search-wrap { flex: 1; min-width: 220px; }
+      .search-wrap label { display: block; font-size: 0.78rem; font-weight: 600;
+        color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+      .search-input {
+        width: 100%;
+        border: 1.5px solid var(--border);
+        border-radius: 9px;
+        padding: 9px 14px 9px 38px;
+        font-size: 0.9rem;
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%238A867E' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") no-repeat 12px center;
+        transition: border-color .2s;
+        box-sizing: border-box;
+      }
+      .search-input:focus { outline: none; border-color: var(--navy); }
+
+      .filter-wrap { min-width: 200px; }
+      .filter-wrap label { display: block; font-size: 0.78rem; font-weight: 600;
+        color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+      .filter-select {
+        width: 100%;
+        border: 1.5px solid var(--border);
+        border-radius: 9px;
+        padding: 9px 14px;
+        font-size: 0.9rem;
+        background: #fff;
+        cursor: pointer;
+        transition: border-color .2s;
+        box-sizing: border-box;
+      }
+      .filter-select:focus { outline: none; border-color: var(--navy); }
+
+      .btn-search {
+        background: var(--navy); color: #fff;
+        border: none; border-radius: 9px;
+        padding: 9px 22px;
+        font-size: 0.9rem; font-weight: 600;
+        cursor: pointer; transition: opacity .2s;
+        white-space: nowrap; align-self: flex-end;
+      }
+      .btn-search:hover { opacity: 0.88; }
+      .btn-reset {
+        background: #fff; color: var(--muted);
+        border: 1.5px solid var(--border);
+        border-radius: 9px; padding: 9px 16px;
+        font-size: 0.9rem; cursor: pointer; align-self: flex-end;
+        text-decoration: none; display: inline-block; transition: border-color .2s;
+      }
+      .btn-reset:hover { border-color: var(--navy); color: var(--navy); }
+
+      /* ── Import panel (managers only) ── */
+      .import-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--card-radius);
+        padding: 22px 24px;
+        margin-bottom: 24px;
+      }
+      .import-card-header {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 16px; cursor: pointer; user-select: none;
+      }
+      .import-card-header h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--navy); }
+      .import-toggle-icon { margin-left: auto; transition: transform .25s; }
+      .import-toggle-icon.open { transform: rotate(180deg); }
+      .import-body { display: none; }
+      .import-body.open { display: block; }
+      .import-form-grid {
+        display: grid; grid-template-columns: 1fr 1fr 1fr auto;
+        gap: 14px; align-items: end;
+      }
+      @media (max-width: 768px) {
+        .import-form-grid { grid-template-columns: 1fr; }
+      }
+      .form-group label {
+        display: block; font-size: 0.78rem; font-weight: 600;
+        color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em;
+      }
+      .form-control {
+        width: 100%; border: 1.5px solid var(--border); border-radius: 9px;
+        padding: 9px 14px; font-size: 0.9rem; background: #fff;
+        box-sizing: border-box; transition: border-color .2s;
+      }
+      .form-control:focus { outline: none; border-color: var(--navy); }
+      .btn-import {
+        background: var(--crimson); color: #fff;
+        border: none; border-radius: 9px;
+        padding: 10px 24px; font-size: 0.9rem; font-weight: 600;
+        cursor: pointer; white-space: nowrap; transition: opacity .2s;
+      }
+      .btn-import:hover { opacity: 0.88; }
+      .import-hint {
+        font-size: 0.8rem; color: var(--muted);
+        margin-top: 12px; line-height: 1.5;
+      }
+
+      /* ── Stats strip ── */
+      .stats-strip {
+        display: flex; gap: 10px; flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      .stat-chip {
+        background: #fff; border: 1px solid var(--border);
+        border-radius: 20px; padding: 5px 14px;
+        font-size: 0.82rem; color: var(--muted);
+        display: flex; align-items: center; gap: 6px;
+      }
+      .stat-chip strong { color: var(--navy); }
+
+      /* ── Table card ── */
+      .table-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--card-radius);
+        overflow: hidden;
+      }
+      .table-card table {
+        width: 100%; border-collapse: collapse; font-size: 0.875rem;
+      }
+      .table-card thead th {
+        background: var(--navy);
+        color: #fff;
+        padding: 12px 14px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        white-space: nowrap;
+      }
+      .table-card tbody tr { border-bottom: 1px solid var(--border); }
+      .table-card tbody tr:last-child { border-bottom: none; }
+      .table-card tbody tr:hover { background: #F8F7F4; }
+      .table-card tbody tr.today-row { background: #FFFBEB; }
+      .table-card tbody tr.today-row:hover { background: #FEF3C7; }
+      .table-card td { padding: 11px 14px; vertical-align: top; color: #2d2d2d; }
+
+      /* ── Cell styles ── */
+      .date-cell { white-space: nowrap; font-weight: 600; color: var(--navy); }
+      .date-cell .dow { font-size: 0.72rem; color: var(--muted); font-weight: 400; display: block; }
+      .time-cell { white-space: nowrap; color: #374151; }
+      .code-badge {
+        background: #EEF2FF; color: #3730A3;
+        border-radius: 5px; padding: 2px 8px;
+        font-size: 0.78rem; font-weight: 600;
+        white-space: nowrap; display: inline-block;
+      }
+      .course-name { font-weight: 500; }
+      .program-name { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+      .room-pill {
+        background: #F0FDF4; color: #166534;
+        border-radius: 5px; padding: 2px 8px;
+        font-size: 0.8rem; font-weight: 500;
+        white-space: nowrap; display: inline-block;
+      }
+      .room-pill.online {
+        background: #EFF6FF; color: #1D4ED8;
+      }
+      .faculty-chip {
+        font-size: 0.75rem; color: var(--muted);
+        border: 1px solid var(--border); border-radius: 4px;
+        padding: 1px 7px; display: inline-block;
+      }
+      .today-badge {
+        background: var(--gold); color: #fff;
+        border-radius: 4px; padding: 1px 8px;
+        font-size: 0.7rem; font-weight: 700;
+        display: inline-block; margin-left: 6px;
+        vertical-align: middle;
+      }
+
+      /* ── Delete button ── */
+      .btn-del {
+        background: transparent; border: 1px solid #FCA5A5;
+        color: #B91C1C; border-radius: 6px;
+        padding: 4px 10px; font-size: 0.75rem;
+        cursor: pointer; transition: background .15s;
+      }
+      .btn-del:hover { background: #FEF2F2; }
+
+      /* ── Empty state ── */
+      .empty-state {
+        text-align: center; padding: 60px 20px; color: var(--muted);
+      }
+      .empty-state svg { opacity: .3; margin-bottom: 16px; }
+      .empty-state h3 { margin: 0 0 8px; color: #374151; font-size: 1.05rem; }
+      .empty-state p  { margin: 0; font-size: 0.875rem; }
+
+      /* ── Mobile responsiveness ── */
+      @media (max-width: 640px) {
+        .table-card { overflow-x: auto; }
+        .exams-hero { padding: 24px 18px 20px; }
+        .exams-hero h1 { font-size: 1.35rem; }
+        th.hide-sm, td.hide-sm { display: none; }
+      }
+    </style>
+
+    <div class="exams-page">
+
+      <!-- ── Hero ── -->
+      <div class="exams-hero">
+        <div class="exams-hero-inner">
+          <h1>📅 Exam Schedule</h1>
+          <p th:if="${userFaculty != null}"
+             th:text="'Showing exams for: ' + ${userFaculty.name}">Faculty exams</p>
+          <p th:if="${userFaculty == null}">All faculties — use the filter to narrow results</p>
+          <div class="exams-hero-meta">
+            <span class="hero-badge" th:text="${exams.size()} + ' exams listed'">0 exams listed</span>
+            <span class="hero-badge" th:if="${todayExams != null and !todayExams.isEmpty()}"
+                  th:text="${todayExams.size()} + ' exam(s) today'">0 today</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="exams-body">
+
+        <!-- ── Flash messages ── -->
+        <div class="flash flash-success" th:if="${success}" th:text="${success}"></div>
+        <div class="flash flash-error"   th:if="${error}"   th:text="${error}"></div>
+
+        <!-- ── Today's exams alert banner ── -->
+        <div class="today-alert" th:if="${todayExams != null and !todayExams.isEmpty()}">
+          <div class="today-alert-icon">🔔</div>
+          <div>
+            <h3>You have exam(s) scheduled for today!</h3>
+            <ul class="today-exam-list">
+              <li class="today-exam-item" th:each="e : ${todayExams}">
+                <span class="tag" th:text="${e.courseCode != null and !e.courseCode.isBlank() ? e.courseCode : '—'}">BLG-102</span>
+                <span th:text="${e.courseName}">Course Name</span>
+                <span>⏰ <strong th:text="${e.examTime}">9:50–12:00</strong></span>
+                <span class="room-tag" th:text="${e.examRoom}">MYO-135</span>
+                <span th:if="${e.teacherName != null}" style="color:#92400e; font-size:.8rem;"
+                      th:text="'👤 ' + ${e.teacherName}"></span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- ── Import panel — SECRETARY / ADMIN / SUPER_ADMIN only ── -->
+        <div class="import-card" sec:authorize="hasAnyRole('ROLE_SECRETARY','ROLE_ADMIN','ROLE_SUPER_ADMIN')">
+          <div class="import-card-header" onclick="toggleImport()">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17,8 12,3 7,8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <h3>Import Exam Schedule (Excel)</h3>
+            <svg class="import-toggle-icon" id="importToggleIcon"
+                 width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6,9 12,15 18,9"/>
+            </svg>
+          </div>
+          <div class="import-body" id="importBody">
+            <form action="/exams/import" method="post" enctype="multipart/form-data">
+              <div class="import-form-grid">
+                <div class="form-group">
+                  <label>Excel File (.xlsx)</label>
+                  <input type="file" name="file" accept=".xlsx" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label>Faculty (optional)</label>
+                  <select name="facultyId" class="form-control">
+                    <option value="">— All / Detect from file —</option>
+                    <option th:each="f : ${allFaculties}"
+                            th:value="${f.id}"
+                            th:text="${f.name}"
+                            th:selected="${selectedFacultyId != null and selectedFacultyId == f.id}">Faculty</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Semester Label</label>
+                  <input type="text" name="semester" class="form-control"
+                         value="2025-2026 BAHAR" placeholder="e.g. 2025-2026 BAHAR">
+                </div>
+                <div>
+                  <button type="submit" class="btn-import">⬆ Import</button>
+                </div>
+              </div>
+              <p class="import-hint">
+                ℹ️ Uploading will <strong>replace</strong> all existing exams for the selected faculty.
+                Leave faculty blank to import without clearing. The file must follow the standard
+                Manas exam schedule Excel format (columns: Course, Teacher, Date, Time, Proctor, Room).
+              </p>
+            </form>
+
+            <!-- Clear faculty button -->
+            <form action="/exams/clear" method="post" style="margin-top:12px;"
+                  onsubmit="return confirm('Delete ALL exams for this faculty?')">
+              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <select name="facultyId" class="form-control" style="max-width:260px;" required>
+                  <option value="">— Select faculty to clear —</option>
+                  <option th:each="f : ${allFaculties}" th:value="${f.id}" th:text="${f.name}">Faculty</option>
+                </select>
+                <button type="submit" class="btn-del" style="padding:8px 16px; font-size:.875rem;">
+                  🗑 Clear Faculty Schedule
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ── Search & filter controls ── -->
+        <form method="get" action="/exams">
+          <div class="controls-row">
+            <div class="search-wrap">
+              <label>Search</label>
+              <input type="text" name="q" class="search-input"
+                     placeholder="Course, teacher, room, code…"
+                     th:value="${query}">
+            </div>
+            <div class="filter-wrap">
+              <label>Faculty</label>
+              <select name="facultyId" class="filter-select">
+                <option value="">All Faculties</option>
+                <option th:each="f : ${allFaculties}"
+                        th:value="${f.id}"
+                        th:text="${f.name}"
+                        th:selected="${selectedFacultyId != null and selectedFacultyId == f.id}">Faculty</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-search">Search</button>
+            <a href="/exams" class="btn-reset">Reset</a>
+          </div>
+        </form>
+
+        <!-- ── Stats ── -->
+        <div class="stats-strip" th:if="${!exams.isEmpty()}">
+          <div class="stat-chip">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <strong th:text="${exams.size()}">0</strong> total exams
+          </div>
+          <div class="stat-chip" th:if="${todayExams != null and !todayExams.isEmpty()}">
+            🔔 <strong th:text="${todayExams.size()}">0</strong> today
+          </div>
+          <div class="stat-chip" th:if="${query != null and !query.isBlank()}">
+            🔍 Results for: <strong th:text="${query}"></strong>
+          </div>
+        </div>
+
+        <!-- ── Exam table ── -->
+        <div class="table-card">
+          <table th:if="${!exams.isEmpty()}">
+            <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Course</th>
+              <th class="hide-sm">Teacher</th>
+              <th class="hide-sm">Proctor</th>
+              <th>Room</th>
+              <th class="hide-sm">Faculty</th>
+              <th sec:authorize="hasAnyRole('ROLE_SECRETARY','ROLE_ADMIN','ROLE_SUPER_ADMIN')"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="exam : ${exams}"
+                th:classappend="${exam.examDate != null and exam.examDate.isEqual(T(java.time.LocalDate).now())} ? 'today-row'">
+
+              <!-- Date -->
+              <td class="date-cell">
+                <span th:text="${exam.examDate != null} ? ${#temporals.format(exam.examDate, 'dd MMM yyyy')} : '—'">01 Mar 2026</span>
+                <span class="dow"
+                      th:text="${exam.examDate != null} ? ${#temporals.format(exam.examDate, 'EEEE')} : ''">Monday</span>
+                <span class="today-badge"
+                      th:if="${exam.examDate != null and exam.examDate.isEqual(T(java.time.LocalDate).now())}">TODAY</span>
+              </td>
+
+              <!-- Time -->
+              <td class="time-cell" th:text="${exam.examTime != null ? exam.examTime : '—'}">9:50–12:00</td>
+
+              <!-- Course -->
+              <td>
+                  <span class="code-badge"
+                        th:if="${exam.courseCode != null and !exam.courseCode.isBlank()}"
+                        th:text="${exam.courseCode}">BLG-102</span>
+                <span class="course-name" th:text="${exam.courseName}">Course Name</span>
+                <div class="program-name" th:if="${exam.programName != null}"
+                     th:text="${exam.programName}">Program</div>
+              </td>
+
+              <!-- Teacher -->
+              <td class="hide-sm" th:text="${exam.teacherName != null ? exam.teacherName : '—'}">Instructor</td>
+
+              <!-- Proctor -->
+              <td class="hide-sm" th:text="${exam.proctorName != null ? exam.proctorName : '—'}">Proctor</td>
+
+              <!-- Room -->
+              <td>
+                  <span th:classappend="${exam.examRoom != null and exam.examRoom.toUpperCase().contains('ONL')} ? 'room-pill online' : 'room-pill'"
+                        th:text="${exam.examRoom != null ? exam.examRoom : '—'}">MYO-135</span>
+              </td>
+
+              <!-- Faculty -->
+              <td class="hide-sm">
+                  <span class="faculty-chip"
+                        th:if="${exam.faculty != null}"
+                        th:text="${exam.faculty.code}">MYO</span>
+                <span th:if="${exam.faculty == null}" style="color:var(--muted);">—</span>
+              </td>
+
+              <!-- Delete (managers only) -->
+              <td sec:authorize="hasAnyRole('ROLE_SECRETARY','ROLE_ADMIN','ROLE_SUPER_ADMIN')">
+                <form th:action="@{/exams/{id}/delete(id=${exam.id})}" method="post"
+                      onsubmit="return confirm('Delete this exam record?')">
+                  <button type="submit" class="btn-del" title="Delete">✕</button>
+                </form>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+
+          <!-- Empty state -->
+          <div class="empty-state" th:if="${exams.isEmpty()}">
+            <svg width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <h3 th:if="${query != null and !query.isBlank()}">No exams match your search</h3>
+            <h3 th:if="${query == null or query.isBlank()}">No exam schedule uploaded yet</h3>
+            <p th:if="${query != null and !query.isBlank()}">Try a different keyword or reset the filter.</p>
+            <p sec:authorize="hasAnyRole('ROLE_SECRETARY','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
+               th:if="${query == null or query.isBlank()}">
+              Use the Import panel above to upload an Excel (.xlsx) schedule.
+            </p>
+            <p sec:authorize="!hasAnyRole('ROLE_SECRETARY','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
+               th:if="${query == null or query.isBlank()}">
+              Please check back later — the secretary will upload the schedule soon.
+            </p>
+          </div>
+        </div>
+
+      </div><!-- /exams-body -->
+    </div><!-- /exams-page -->
+
+    <script>
+      function toggleImport() {
+        const body = document.getElementById('importBody');
+        const icon = document.getElementById('importToggleIcon');
+        body.classList.toggle('open');
+        icon.classList.toggle('open');
+      }
+    </script>
+
+  </main>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,4 +48,8 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
 
     /** Used by SuperAdmin dashboard to fetch unread faculty detection alerts */
     List<Notification> findByTypeAndIsReadFalse(Notification.NotifType type);
+
+    /** Used by exam scheduler to avoid duplicate today-exam notifications */
+    boolean existsByRecipientIdAndTypeAndCreatedAtAfter(
+            UUID recipientId, Notification.NotifType type, LocalDateTime after);
 }

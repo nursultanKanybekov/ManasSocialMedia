@@ -13,7 +13,7 @@
             <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;" th:text="#{competition.list.title}">Competitions</h1>
             <p style="color:#8a91a8;font-size:13px;" th:text="#{competition.list.subtitle}">Compete and win with fellow students</p>
         </div>
-        <a sec:authorize="hasAnyRole('SECRETARY','ADMIN','MEZUN','TEACHER')" th:href="@{/competitions/new}"
+        <a sec:authorize="hasAnyRole('SECRETARY','ADMIN','MEZUN','TEACHER','EMPLOYER')" th:href="@{/competitions/new}"
            style="padding:10px 20px;background:#c0392b;color:white;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;" th:text="#{competition.create}">+ New Competition</a>
     </div>
 

@@ -162,11 +162,22 @@
         const role = document.querySelector('input[name="role"]:checked')?.value;
         const isEmployer = role === 'EMPLOYER';
         const isMezun = role === 'MEZUN';
-        document.getElementById('studentIdGroup').style.display    = isEmployer ? 'none' : 'block';
-        document.getElementById('facultyGroup').style.display      = isEmployer ? 'none' : 'block';
-        document.getElementById('graduationYearGroup').style.display = isMezun   ? 'block' : 'none';
-        document.getElementById('companyNameGroup').style.display  = isEmployer ? 'block' : 'none';
-        document.getElementById('companyDocGroup').style.display   = isEmployer ? 'block' : 'none';
+
+        // Faculty — hide for EMPLOYER and remove required so browser validation doesn't block submit
+        const facultyGroup  = document.getElementById('facultyGroup');
+        const facultySelect = document.getElementById('facultyId');
+        facultyGroup.style.display = isEmployer ? 'none' : 'block';
+        facultySelect.required     = !isEmployer;
+
+        // Student ID — hide for EMPLOYER
+        document.getElementById('studentIdGroup').style.display = isEmployer ? 'none' : 'block';
+
+        // Graduation year — only for MEZUN
+        document.getElementById('graduationYearGroup').style.display = isMezun ? 'block' : 'none';
+
+        // Employer-only fields
+        document.getElementById('companyNameGroup').style.display = isEmployer ? 'block' : 'none';
+        document.getElementById('companyDocGroup').style.display  = isEmployer ? 'block' : 'none';
     }
     document.querySelectorAll('input[name="role"]').forEach(r => r.addEventListener('change', updateRoleFields));
     updateRoleFields();

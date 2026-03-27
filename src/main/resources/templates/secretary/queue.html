@@ -55,7 +55,7 @@
            style="color:#7c3aed;font-size:12px;font-weight:700;">📄 View Employment Proof</a>
         <span th:if="${val.user.role.name() == 'EMPLOYER' and val.user.companyDocumentUrl == null}"
               style="color:#f59e0b;font-size:11px;">⚠ No document uploaded</span>
-        th:text="#{secretary.submitted} + ': ' + ${#temporals.format(val.submittedAt, 'dd MMM yyyy HH:mm')}">Submitted</span>
+        <span th:text="#{secretary.submitted} + ': ' + ${#temporals.format(val.submittedAt, 'dd MMM yyyy HH:mm')}">Submitted</span>
       </div>
       <div class="validation-actions">
         <form th:action="@{/secretary/approve/{id}(id=${val.id})}" method="post" style="display:inline">

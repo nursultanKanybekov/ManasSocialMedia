@@ -17,7 +17,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/food")
-@PreAuthorize("hasAnyRole('STUDENT','MEZUN','TEACHER','ADMIN','SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('STUDENT','TEACHER','ADMIN','SUPER_ADMIN','SECRETARY')")
 @RequiredArgsConstructor
 @Tag(name = "Food Menu", description = "Manas University cafeteria daily and weekly menus")
 public class FoodController {

@@ -49,7 +49,10 @@ public class Notification {
         PASSWORD_RESET_REQUEST,
 
         // Faculty
-        NEW_FACULTY_DETECTED   // superadmin notified when OBIS returns unknown faculty name
+        NEW_FACULTY_DETECTED,   // superadmin notified when OBIS returns unknown faculty name
+
+        // Exam schedule
+        EXAM_TODAY              // student/teacher notified when they have an exam today
     }
 
     @Id

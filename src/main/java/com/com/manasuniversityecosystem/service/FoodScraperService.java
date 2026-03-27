@@ -65,10 +65,14 @@ public class FoodScraperService {
 
             // The home page has one day section: section#features4-18
             Element section = doc.selectFirst("section#features4-18");
-            if (section == null) section = doc;
+            if (section == null) section = doc.body();
 
-            String dateLabel = extractDateLabel(section);
-            List<FoodItem> items = extractItems(section.select(".item.features-image"));
+            // Navigate into .container where the actual content lives
+            Element container = section.selectFirst(".container");
+            Element parseRoot = container != null ? container : section;
+
+            String dateLabel = extractDateLabel(parseRoot);
+            List<FoodItem> items = extractItems(parseRoot.select(".item.features-image"));
 
             return DailyMenu.builder()
                     .dateLabel(dateLabel)
@@ -96,6 +100,10 @@ public class FoodScraperService {
 
             Element section = doc.selectFirst("section#features4-18");
             if (section == null) section = doc.body();
+
+            // The real content lives inside .container, not directly in the section
+            Element container = section.selectFirst(".container");
+            if (container != null) section = container;
 
             return parseWeeklySection(section);
 
@@ -129,11 +137,12 @@ public class FoodScraperService {
         DailyMenu current = null;
 
         for (Element child : section.children()) {
-            // Day header block
+            // Day header block — date labels look like "27.03.2026 Cuma"
             Element subtitle = child.selectFirst("h5.mbr-section-subtitle");
             if (subtitle != null) {
                 String label = subtitle.text().trim();
-                if (!label.isBlank()) {
+                // Only treat as a day header if it contains a date pattern (dd.MM.yyyy)
+                if (!label.isBlank() && label.matches("\\d{2}\\.\\d{2}\\.\\d{4}.*")) {
                     current = DailyMenu.builder()
                             .dateLabel(label)
                             .date(parseDatePart(label))

@@ -4,6 +4,9 @@ import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.domain.entity.chat.ChatMessage;
 import com.com.manasuniversityecosystem.domain.entity.chat.ChatRoom;
 import com.com.manasuniversityecosystem.domain.enums.RoomType;
+import com.com.manasuniversityecosystem.domain.enums.UserRole;
+import com.com.manasuniversityecosystem.domain.enums.UserStatus;
+import com.com.manasuniversityecosystem.repository.UserRepository;
 import com.com.manasuniversityecosystem.repository.chat.ChatMessageRepository;
 import com.com.manasuniversityecosystem.repository.chat.ChatParticipantRepository;
 import com.com.manasuniversityecosystem.repository.chat.ChatRoomRepository;
@@ -31,6 +34,7 @@ public class ChatService {
     private final ChatMessageRepository messageRepo;
     private final ChatParticipantRepository participantRepo;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepo;
 
     // ── SEND ─────────────────────────────────────────────────
 
@@ -49,9 +53,11 @@ public class ChatService {
         boolean isMember = room.getParticipants().stream()
                 .anyMatch(p -> p.getUser().getId().equals(sender.getId()));
         if (!isMember) {
-            if (room.getRoomType() == RoomType.GLOBAL || room.getRoomType() == RoomType.FACULTY) {
+            if (room.getRoomType() == RoomType.GLOBAL) {
+                // Global room — anyone can auto-join on first message
                 joinRoom(sender, roomId);
             } else {
+                // FACULTY rooms are private — only pre-enrolled members can send
                 throw new SecurityException("User is not a member of this chat room.");
             }
         }
@@ -195,6 +201,21 @@ public class ChatService {
             throw new IllegalStateException("User has no faculty assigned.");
         }
         UUID facultyId = user.getFaculty().getId();
+
+        // If room already exists, auto-enroll this STUDENT/TEACHER if not yet a member
+        roomRepo.findByFacultyIdAndRoomType(facultyId, RoomType.FACULTY).ifPresent(existing -> {
+            boolean isMember = existing.getParticipants().stream()
+                    .anyMatch(p -> p.getUser().getId().equals(user.getId()));
+            boolean eligible = user.getRole() == UserRole.STUDENT
+                    || user.getRole() == UserRole.TEACHER;
+            if (!isMember && eligible) {
+                existing.addParticipant(user);
+                roomRepo.save(existing);
+                log.info("Auto-enrolled {} ({}) into existing faculty channel {}",
+                        user.getEmail(), user.getRole(), existing.getName());
+            }
+        });
+
         return roomRepo.findByFacultyIdAndRoomType(facultyId, RoomType.FACULTY)
                 .orElseGet(() -> {
                     ChatRoom room = ChatRoom.builder()
@@ -202,8 +223,23 @@ public class ChatService {
                             .roomType(RoomType.FACULTY)
                             .faculty(user.getFaculty())
                             .createdBy(user)
+                            .isPrivate(true)   // Faculty channels are always private
                             .build();
-                    room.addParticipant(user);
+
+                    // Auto-enroll all ACTIVE students of this faculty
+                    userRepo.findActiveByFacultyAndRole(facultyId, UserRole.STUDENT)
+                            .forEach(room::addParticipant);
+
+                    // Auto-enroll all ACTIVE teachers of this faculty
+                    userRepo.findActiveByFacultyAndRole(facultyId, UserRole.TEACHER)
+                            .forEach(u -> {
+                                boolean already = room.getParticipants().stream()
+                                        .anyMatch(p -> p.getUser().getId().equals(u.getId()));
+                                if (!already) room.addParticipant(u);
+                            });
+
+                    log.info("Faculty channel created for faculty={} with {} members",
+                            user.getFaculty().getName(), room.getParticipants().size());
                     return roomRepo.save(room);
                 });
     }

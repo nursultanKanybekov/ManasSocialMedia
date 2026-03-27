@@ -1,7 +1,10 @@
 package com.com.manasuniversityecosystem.config;
 
+import com.com.manasuniversityecosystem.service.TranslationService;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -15,7 +18,6 @@ public class LocaleConfig implements WebMvcConfigurer {
 
     @Bean
     public LocaleResolver localeResolver() {
-        // SessionLocaleResolver запоминает выбор пользователя в рамках сессии
         SessionLocaleResolver slr = new SessionLocaleResolver();
         slr.setDefaultLocale(new Locale("en"));
         return slr;
@@ -31,5 +33,15 @@ public class LocaleConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(localeChangeInterceptor());
+    }
+
+    /**
+     * Primary MessageSource: reads from DB first, falls back to .properties files.
+     * Marked @Primary so Spring Boot and Thymeleaf use this over the auto-configured one.
+     */
+    @Bean
+    @Primary
+    public MessageSource messageSource(TranslationService translationService) {
+        return new DbMessageSource(translationService);
     }
 }

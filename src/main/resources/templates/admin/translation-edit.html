@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head th:replace="~{fragments/header :: head('Edit Translation')}"></head>
+<style>
+  .edit-card      { background:#fff; border-radius:16px; padding:32px; box-shadow:0 2px 16px rgba(27,42,107,.08); max-width:860px; }
+  .edit-card h2   { margin:0 0 6px; color:#1b2a6b; font-size:22px; }
+  .key-display    { font-family:monospace; font-size:14px; color:#7c3aed; background:#f5f0ff; padding:6px 14px; border-radius:6px; display:inline-block; margin-bottom:28px; }
+  .locale-block   { margin-bottom:22px; }
+  .locale-label   { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .locale-flag    { font-size:20px; }
+  .locale-name    { font-weight:700; color:#1b2a6b; font-size:15px; }
+  .locale-sub     { font-size:12px; color:#94a3b8; }
+  .locale-block textarea {
+    width:100%; padding:12px 16px; border:1.5px solid #dde3f0; border-radius:10px;
+    font-size:14px; font-family:inherit; resize:vertical; min-height:68px;
+    transition:border .2s; box-sizing:border-box;
+  }
+  .locale-block textarea:focus { outline:none; border-color:#7c3aed; }
+  .locale-en textarea { border-left:4px solid #1d4ed8; }
+  .locale-ru textarea { border-left:4px solid #db2777; }
+  .locale-ky textarea { border-left:4px solid #059669; }
+  .locale-tr textarea { border-left:4px solid #d97706; }
+  .btn-row  { display:flex; gap:12px; margin-top:28px; }
+  .btn-save { padding:11px 28px; background:#1b2a6b; color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+  .btn-save:hover { background:#2d3fa3; }
+  .btn-back { padding:11px 22px; background:#f1f5f9; color:#475569; border:none; border-radius:10px; font-size:15px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; }
+  .btn-back:hover { background:#e2e8f0; }
+  .tip      { font-size:12px; color:#94a3b8; margin-top:6px; }
+</style>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<main class="main-content">
+  <div class="edit-card">
+    <h2>✏️ Edit Translation</h2>
+    <p style="color:#64748b;margin:0 0 12px;font-size:14px;">
+      Edit the translated text for each language. Leave blank to keep existing value.
+    </p>
+    <div class="key-display" th:text="${key}">nav.feed</div>
+
+    <div th:if="${successMsg}" class="alert alert-success" style="margin-bottom:20px;"
+         th:text="${successMsg}"></div>
+
+    <form method="post" action="/admin/translations/edit">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <input type="hidden" name="key" th:value="${key}"/>
+
+      <!-- English -->
+      <div class="locale-block locale-en">
+        <div class="locale-label">
+          <span class="locale-flag">🇬🇧</span>
+          <span class="locale-name">English</span>
+          <span class="locale-sub">en</span>
+        </div>
+        <textarea name="locale_en" rows="2"
+                  th:text="${values['en'] ?: ''}"
+                  placeholder="English translation..."></textarea>
+      </div>
+
+      <!-- Russian -->
+      <div class="locale-block locale-ru">
+        <div class="locale-label">
+          <span class="locale-flag">🇷🇺</span>
+          <span class="locale-name">Russian</span>
+          <span class="locale-sub">ru — Русский</span>
+        </div>
+        <textarea name="locale_ru" rows="2"
+                  th:text="${values['ru'] ?: ''}"
+                  placeholder="Русский перевод..."></textarea>
+      </div>
+
+      <!-- Kyrgyz -->
+      <div class="locale-block locale-ky">
+        <div class="locale-label">
+          <span class="locale-flag">🇰🇬</span>
+          <span class="locale-name">Kyrgyz</span>
+          <span class="locale-sub">ky — Кыргызча</span>
+        </div>
+        <textarea name="locale_ky" rows="2"
+                  th:text="${values['ky'] ?: ''}"
+                  placeholder="Кыргызча котормо..."></textarea>
+      </div>
+
+      <!-- Turkish -->
+      <div class="locale-block locale-tr">
+        <div class="locale-label">
+          <span class="locale-flag">🇹🇷</span>
+          <span class="locale-name">Turkish</span>
+          <span class="locale-sub">tr — Türkçe</span>
+        </div>
+        <textarea name="locale_tr" rows="2"
+                  th:text="${values['tr'] ?: ''}"
+                  placeholder="Türkçe çeviri..."></textarea>
+      </div>
+
+      <p class="tip">💡 Tip: Use {0}, {1} for dynamic values — e.g. "Hello, {0}!"</p>
+
+      <div class="btn-row">
+        <button type="submit" class="btn-save">💾 Save Changes</button>
+        <a href="/admin/translations" class="btn-back">← Back to List</a>
+      </div>
+    </form>
+  </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

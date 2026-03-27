@@ -24,6 +24,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.com.manasuniversityecosystem.service.TranslationService;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -41,6 +44,7 @@ public class AdminController {
     private final ExcelImportService excelImportService;
     private final PostService postService;
     private final OnlineUserTracker onlineUserTracker;
+    private final TranslationService translationService;
 
     @GetMapping
     public String dashboard(Model model) {
@@ -319,5 +323,83 @@ public class AdminController {
         ra.addFlashAttribute("successMsg", "admin.news.deleted");
         return "redirect:/admin/news";
     }
+
+
+    // ─────────────────────────── TRANSLATIONS ──────────────────────────
+
+    /** GET /admin/translations — list all keys with search/filter */
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SECRETARY')")
+    @GetMapping("/translations")
+    public String translationsList(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String locale,
+            Model model) {
+
+        List<String> allKeys = translationService.getAllKeys();
+
+        // Filter by search query
+        if (q != null && !q.isBlank()) {
+            String lower = q.toLowerCase();
+            allKeys = allKeys.stream()
+                    .filter(k -> k.toLowerCase().contains(lower))
+                    .toList();
+        }
+
+        model.addAttribute("keys",             allKeys);
+        model.addAttribute("q",                q);
+        model.addAttribute("filterLocale",     locale);
+        model.addAttribute("supportedLocales", translationService.getSupportedLocales());
+        model.addAttribute("countByLocale",    translationService.getCountByLocale());
+        model.addAttribute("totalKeys",        translationService.getTotalKeys());
+        return "admin/translations";
+    }
+
+    /** GET /admin/translations/edit?key=nav.feed — edit all locales for one key */
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SECRETARY')")
+    @GetMapping("/translations/edit")
+    public String editTranslationForm(
+            @RequestParam String key,
+            Model model) {
+        model.addAttribute("key",              key);
+        model.addAttribute("values",           translationService.getByKey(key));
+        model.addAttribute("supportedLocales", translationService.getSupportedLocales());
+        return "admin/translation-edit";
+    }
+
+    /** POST /admin/translations/edit — save all locales for one key */
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SECRETARY')")
+    @PostMapping("/translations/edit")
+    public String saveTranslation(
+            @RequestParam String key,
+            @RequestParam Map<String, String> allParams,
+            RedirectAttributes ra) {
+
+        // Extract locale values from params (locale_en, locale_ru, locale_ky, locale_tr)
+        Map<String, String> localeValues = new java.util.LinkedHashMap<>();
+        for (String locale : translationService.getSupportedLocales()) {
+            String paramKey = "locale_" + locale;
+            if (allParams.containsKey(paramKey)) {
+                localeValues.put(locale, allParams.get(paramKey));
+            }
+        }
+        translationService.saveAllLocalesForKey(key, localeValues);
+        ra.addFlashAttribute("successMsg", "Translation updated for key: " + key);
+        return "redirect:/admin/translations";
+    }
+
+    /** POST /admin/translations/new — add a completely new key */
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SECRETARY')")
+    @PostMapping("/translations/new")
+    public String addNewKey(
+            @RequestParam String newKey,
+            RedirectAttributes ra) {
+        if (newKey == null || newKey.isBlank()) {
+            ra.addFlashAttribute("errorMsg", "Key cannot be empty.");
+            return "redirect:/admin/translations";
+        }
+        ra.addFlashAttribute("newKey", newKey.trim());
+        return "redirect:/admin/translations/edit?key=" + newKey.trim();
+    }
+
 
 }

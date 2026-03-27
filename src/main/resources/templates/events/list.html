@@ -12,7 +12,7 @@
             <h1 style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;" th:text="#{event.list.title}">Events &amp; Meetings</h1>
             <p style="color:#8a91a8;font-size:13px;" th:text="#{event.list.subtitle}">Connect with alumni at events</p>
         </div>
-        <a sec:authorize="hasAnyRole('SECRETARY','ADMIN','MEZUN','TEACHER')" th:href="@{/events/new}"
+        <a sec:authorize="hasAnyRole('SECRETARY','ADMIN','MEZUN','TEACHER','EMPLOYER')" th:href="@{/events/new}"
            style="padding:10px 20px;background:#c0392b;color:white;border-radius:10px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;" th:text="#{event.create}">+ New Event</a>
     </div>
 

@@ -9,11 +9,10 @@ import com.com.manasuniversityecosystem.repository.*;
 import com.com.manasuniversityecosystem.repository.competition.CompetitionRepository;
 import com.com.manasuniversityecosystem.repository.event.MeetingEventRepository;
 import com.com.manasuniversityecosystem.repository.social.PostRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
+@Order(2)
 @RequiredArgsConstructor
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
@@ -33,38 +33,16 @@ public class DataInitializer implements CommandLineRunner {
     private final CompetitionRepository competitionRepository;
     private final MeetingEventRepository eventRepository;
     private final PostRepository postRepository;
-
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final ConstraintHelper constraintHelper;
 
     @Override
-    @Transactional
     public void run(String... args) {
-        fixRoleConstraint();
+        constraintHelper.fixRoleConstraint(); // runs in its own independent transaction
         createFaculties();
         createUsers();
         createSampleCompetitions();
         createSampleEvents();
         createSamplePosts();
-    }
-
-    /**
-     * Drop and recreate the role CHECK constraint to include ALL roles from UserRole enum.
-     * Safe to run multiple times — uses IF EXISTS / DROP before re-add.
-     */
-    private void fixRoleConstraint() {
-        try {
-            entityManager.createNativeQuery(
-                    "ALTER TABLE app_user DROP CONSTRAINT IF EXISTS app_user_role_check"
-            ).executeUpdate();
-            entityManager.createNativeQuery(
-                    "ALTER TABLE app_user ADD CONSTRAINT app_user_role_check " +
-                            "CHECK (role IN ('STUDENT','TEACHER','MEZUN','EMPLOYER','ADMIN','SECRETARY','SUPER_ADMIN'))"
-            ).executeUpdate();
-            log.info("✅ Role constraint updated to include TEACHER and all roles");
-        } catch (Exception e) {
-            log.warn("Could not update role constraint: {}", e.getMessage());
-        }
     }
 
     private void createFaculties() {
@@ -282,7 +260,7 @@ public class DataInitializer implements CommandLineRunner {
         AppUser admin = userRepository.findByEmail("admin@manas.edu").orElse(null);
         AppUser mezun = userRepository.findByEmail("mezun1@manas.edu").orElse(admin);
 
-        java.util.Map<String, String> c1 = new java.util.HashMap<>();
+        java.util.Map<String,String> c1 = new java.util.HashMap<>();
         c1.put("en", "Manas University ranks top in Central Asia in 2026 QS Rankings!");
         c1.put("ru", "Университет Манас занял первое место в рейтинге QS по Центральной Азии 2026!");
         c1.put("ky", "Манас Университети 2026-жылдагы QS рейтингинде Борбордук Азияда биринчи орунду ээледи!");
@@ -295,7 +273,7 @@ public class DataInitializer implements CommandLineRunner {
                 .isPinned(true)
                 .build();
 
-        java.util.Map<String, String> c2 = new java.util.HashMap<>();
+        java.util.Map<String,String> c2 = new java.util.HashMap<>();
         c2.put("en", "Just got promoted to Senior Engineer at EPAM Systems! Thanks to all my Manas professors!");
         c2.put("ru", "Только что получил повышение до Senior Engineer в EPAM Systems! Спасибо всем преподавателям Манаса!");
         c2.put("ky", "EPAM Systemsде Senior Engineer болуп жогорулатылдым! Манас окутуучуларыма чоң рахмат!");
@@ -307,7 +285,7 @@ public class DataInitializer implements CommandLineRunner {
                 .contentI18n(c2)
                 .build();
 
-        java.util.Map<String, String> c3 = new java.util.HashMap<>();
+        java.util.Map<String,String> c3 = new java.util.HashMap<>();
         c3.put("en", "Registration for Spring 2026 semester courses is now open. Visit the student portal.");
         c3.put("ru", "Регистрация на курсы весеннего семестра 2026 открыта. Посетите студенческий портал.");
         c3.put("ky", "2026-жылдын жазгы семестрине жазылуу ачык. Студенттик порталга кириңиз.");
