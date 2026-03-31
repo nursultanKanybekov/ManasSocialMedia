@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('Assignments')}"></head>
+<body>
+<div class="app-shell" id="app-shell">
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <style>
+            .as-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
+            .as-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:32px 28px 24px}
+            .as-hero-inner{max-width:1000px;margin:0 auto}
+            .as-body{max-width:1000px;margin:0 auto;padding:24px 18px}
+            .flash{border-radius:10px;padding:12px 16px;font-size:.875rem;margin-bottom:18px}
+            .flash-ok{background:#f0fdf4;border:1px solid #86efac;color:#166534}
+            .flash-err{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c}
+            .card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;margin-bottom:14px;transition:box-shadow .15s}
+            .card:hover{box-shadow:0 4px 16px rgba(0,35,102,.08)}
+            .card-row{display:flex;align-items:flex-start;gap:16px;padding:16px 18px}
+            .type-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+            .icon-hw{background:#dbeafe}.icon-proj{background:#dcfce7}.icon-quiz{background:#fef9c3}.icon-lab{background:#f3e8ff}.icon-essay{background:#fee2e2}
+            .asgn-main{flex:1;min-width:0}
+            .asgn-title{font-size:.975rem;font-weight:700;color:#1a1a1a;margin:0 0 4px}
+            .asgn-meta{font-size:.78rem;color:#666;display:flex;gap:10px;flex-wrap:wrap}
+            .chip{font-size:.72rem;padding:2px 8px;border-radius:4px;font-weight:500}
+            .chip-blue{background:#dbeafe;color:#1e40af}
+            .chip-gray{background:#f1f5f9;color:#475569}
+            .chip-red{background:#fee2e2;color:#b91c1c}
+            .chip-green{background:#dcfce7;color:#15803d}
+            .chip-yellow{background:#fef9c3;color:#92400e}
+            .deadline-badge{font-size:.82rem;font-weight:600;padding:4px 12px;border-radius:6px;white-space:nowrap;flex-shrink:0}
+            .dl-urgent{background:#fee2e2;color:#b91c1c}
+            .dl-soon{background:#fef9c3;color:#92400e}
+            .dl-ok{background:#f1f5f9;color:#475569}
+            .dl-past{background:#f3f4f6;color:#9ca3af;text-decoration:line-through}
+            .submission-badge{font-size:.75rem;padding:3px 10px;border-radius:5px;font-weight:600}
+            .sb-graded{background:#dcfce7;color:#15803d}
+            .sb-submitted{background:#dbeafe;color:#1e40af}
+            .sb-late{background:#fef9c3;color:#92400e}
+            .sb-none{background:#fee2e2;color:#b91c1c}
+            .btn{border:none;border-radius:8px;padding:8px 18px;font-size:.875rem;font-weight:600;cursor:pointer}
+            .btn-navy{background:#002366;color:#fff}.btn-navy:hover{opacity:.88}
+            .btn-sm{padding:5px 12px;font-size:.78rem;font-weight:600;border:none;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-block}
+            .btn-outline-sm{background:#fff;border:1.5px solid #e8e4dc;color:#555;border-radius:6px;padding:4px 12px;font-size:.78rem;cursor:pointer;text-decoration:none;display:inline-block}
+            .btn-outline-sm:hover{border-color:#002366;color:#002366}
+            .section-label{font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin:20px 0 10px}
+            .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+            .modal-overlay.open{display:flex}
+            .modal{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto}
+            .modal h2{margin:0 0 18px;font-size:1.1rem;font-weight:700}
+            .form-group{margin-bottom:14px}
+            .form-group label{display:block;font-size:.78rem;font-weight:600;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+            .form-control{width:100%;border:1.5px solid #e8e4dc;border-radius:8px;padding:8px 12px;font-size:.875rem;box-sizing:border-box}
+            .form-control:focus{outline:none;border-color:#002366}
+            .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+            .empty-state{text-align:center;padding:50px 20px;color:#888}
+            .empty-state h3{margin:0 0 8px;color:#555}
+        </style>
+
+        <div class="as-page">
+            <div class="as-hero">
+                <div class="as-hero-inner">
+                    <h1>📝 Assignments</h1>
+                    <p sec:authorize="hasRole('ROLE_STUDENT')">Your pending and past assignments across all enrolled courses</p>
+                    <p sec:authorize="hasRole('ROLE_TEACHER')">Assignments you've created — manage and grade submissions</p>
+                    <p sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_SUPER_ADMIN','ROLE_SECRETARY')">All assignments across all courses</p>
+                </div>
+            </div>
+
+            <div class="as-body">
+                <div class="flash flash-ok" th:if="${success}" th:text="${success}"></div>
+                <div class="flash flash-err" th:if="${error}"   th:text="${error}"></div>
+
+                <!-- Teacher: new assignment button -->
+                <div sec:authorize="hasAnyRole('ROLE_TEACHER','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
+                     style="margin-bottom:18px;display:flex;justify-content:flex-end">
+                    <button class="btn btn-navy" onclick="document.getElementById('createModal').classList.add('open')">+ New Assignment</button>
+                </div>
+
+                <!-- Assignments list -->
+                <div th:if="${!assignments.isEmpty()}">
+                    <div th:each="a : ${assignments}">
+                        <div class="card">
+                            <div class="card-row">
+                                <!-- Type icon -->
+                                <div class="type-icon"
+                                     th:classappend="${a.type.name()=='HOMEWORK'}?'icon-hw':
+                                    (${a.type.name()=='PROJECT'}?'icon-proj':
+                                    (${a.type.name()=='QUIZ'}?'icon-quiz':
+                                    (${a.type.name()=='LAB'}?'icon-lab':'icon-essay')))">
+                <span th:text="${a.type.name()=='HOMEWORK'}?'📋':
+                               (${a.type.name()=='PROJECT'}?'🗂':
+                               (${a.type.name()=='QUIZ'}?'📊':
+                               (${a.type.name()=='LAB'}?'🔬':'✍')))">📋</span>
+                                </div>
+
+                                <div class="asgn-main">
+                                    <div class="asgn-title">
+                                        <a th:href="@{/academic/assignments/{id}(id=${a.id})}"
+                                           style="color:#1a1a1a;text-decoration:none" th:text="${a.title}">Title</a>
+                                    </div>
+                                    <div class="asgn-meta">
+                                        <span th:text="${a.course.code + ' ' + a.course.name}" style="font-weight:500;color:#002366"></span>
+                                        <span class="chip chip-gray" th:text="${a.type}">HOMEWORK</span>
+                                        <span class="chip chip-blue" th:text="${a.maxScore} + ' pts'">100 pts</span>
+                                        <span style="color:#555">by <span th:text="${a.createdBy.fullName}">Teacher</span></span>
+                                    </div>
+                                </div>
+
+                                <!-- Right side: deadline + submission status -->
+                                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                <span class="deadline-badge"
+                      th:classappend="${a.deadline.isBefore(now)}?'dl-past':
+                                       (${a.deadline.isBefore(now.plusHours(24))}?'dl-urgent':
+                                       (${a.deadline.isBefore(now.plusHours(72))}?'dl-soon':'dl-ok'))">
+                  <span th:text="${a.deadline.isBefore(now)}?'Expired: ':'Due: '"></span>
+                  <span th:text="${#temporals.format(a.deadline,'dd MMM HH:mm')}">01 Mar 09:00</span>
+                </span>
+
+                                    <!-- Student: submission status -->
+                                    <span sec:authorize="hasRole('ROLE_STUDENT')"
+                                          th:with="sub=${mySubmissions[a.id]}"
+                                          class="submission-badge"
+                                          th:classappend="${sub == null}?'sb-none':
+                                       (${sub.status.name()=='GRADED'}?'sb-graded':
+                                       (${sub.status.name()=='LATE'}?'sb-late':'sb-submitted'))">
+                  <span th:if="${sub == null}">Not submitted</span>
+                  <span th:if="${sub != null}" th:text="${sub.status}">SUBMITTED</span>
+                  <span th:if="${sub != null and sub.score != null}"> · <span th:text="${sub.score}">85</span>pts</span>
+                </span>
+
+                                    <a th:href="@{/academic/assignments/{id}(id=${a.id})}"
+                                       class="btn-outline-sm">
+                                        <span sec:authorize="hasRole('ROLE_STUDENT')">View / Submit</span>
+                                        <span sec:authorize="hasAnyRole('ROLE_TEACHER','ROLE_ADMIN','ROLE_SUPER_ADMIN')">Manage</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="empty-state" th:if="${assignments.isEmpty()}">
+                    <h3>No assignments yet</h3>
+                    <p sec:authorize="hasRole('ROLE_STUDENT')">Assignments will appear here once your teachers post them.</p>
+                    <p sec:authorize="hasAnyRole('ROLE_TEACHER','ROLE_ADMIN','ROLE_SUPER_ADMIN')">Create your first assignment above.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Assignment Modal (TEACHER/ADMIN) -->
+        <div class="modal-overlay" id="createModal"
+             sec:authorize="hasAnyRole('ROLE_TEACHER','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
+             onclick="if(event.target===this) this.classList.remove('open')">
+            <div class="modal">
+                <h2>Create Assignment</h2>
+                <form th:action="@{/academic/assignments/create}" method="post" enctype="multipart/form-data">
+
+                    <!-- ── TEACHER: Faculty → Course cascade (same pattern as admin) ── -->
+                    <div sec:authorize="hasRole('ROLE_TEACHER')">
+                        <div class="form-group">
+                            <label>Faculty *</label>
+                            <select class="form-control" id="facultyFilterTeacher" onchange="filterCoursesTeacher(this.value)">
+                                <!-- If teacher has a faculty, pre-select it and auto-filter -->
+                                <option value="" th:if="${currentUser.faculty == null}">— Select faculty —</option>
+                                <option th:each="f : ${allFaculties}"
+                                        th:value="${f.id}"
+                                        th:text="${f.name}"
+                                        th:selected="${currentUser.faculty != null and currentUser.faculty.id == f.id}">Faculty</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Course *</label>
+                            <select class="form-control" name="courseId" id="courseDropdownTeacher" required>
+                                <option value="">— Select faculty first —</option>
+                                <!-- Pre-populate with teacher's own courses -->
+                                <option th:each="c : ${teacherCourses}"
+                                        th:value="${c.id}"
+                                        th:text="${c.code + ' — ' + c.name}">Course</option>
+                            </select>
+                        </div>
+                        <!-- Hidden data store for teacher's courses -->
+                        <div id="courseDataStoreTeacher" style="display:none">
+                            <option th:each="c : ${teacherCourses}"
+                                    th:value="${c.id}"
+                                    th:data-faculty="${c.faculty != null ? c.faculty.id : ''}"
+                                    th:text="${c.code + ' — ' + c.name}">Course</option>
+                        </div>
+                    </div>
+
+                    <!-- ── ADMIN / SUPER_ADMIN: Faculty → Course cascade ── -->
+                    <div sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_SUPER_ADMIN')">
+                        <div class="form-group">
+                            <label>Faculty *</label>
+                            <select class="form-control" id="facultyFilter" onchange="filterCourses(this.value)">
+                                <option value="">— Select faculty first —</option>
+                                <option th:each="f : ${allFaculties}"
+                                        th:value="${f.id}"
+                                        th:text="${f.name}">Faculty</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Course *</label>
+                            <select class="form-control" name="courseId" id="courseDropdown" required disabled>
+                                <option value="">— Select faculty first —</option>
+                            </select>
+                        </div>
+                        <!-- Hidden data store: one option per course with data-faculty attribute -->
+                        <div id="courseDataStore" style="display:none">
+                            <option th:each="c : ${allCourses}"
+                                    th:value="${c.id}"
+                                    th:data-faculty="${c.faculty != null ? c.faculty.id : ''}"
+                                    th:text="${c.code + ' — ' + c.name}">Course</option>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input class="form-control" type="text" name="title" placeholder="Assignment title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description / Instructions</label>
+                        <textarea class="form-control" name="description" rows="3" placeholder="Describe the assignment…"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select class="form-control" name="type">
+                                <option value="HOMEWORK">Homework</option>
+                                <option value="PROJECT">Project</option>
+                                <option value="QUIZ">Quiz</option>
+                                <option value="LAB">Lab</option>
+                                <option value="ESSAY">Essay</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Max Score</label>
+                            <input class="form-control" type="number" name="maxScore" value="100" min="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Deadline *</label>
+                        <input class="form-control" type="datetime-local" name="deadline" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Attachment (optional — PDF, DOC…)</label>
+                        <input class="form-control" type="file" name="attachmentFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip">
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:18px">
+                        <button class="btn btn-navy" type="submit" style="flex:1">Create Assignment</button>
+                        <button class="btn" type="button" style="background:#f1f5f9;color:#555"
+                                onclick="document.getElementById('createModal').classList.remove('open')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            function filterCourses(facultyId) {
+                const dropdown = document.getElementById('courseDropdown');
+                const store    = document.getElementById('courseDataStore');
+                dropdown.innerHTML = '<option value="">— Select course —</option>';
+                if (!facultyId || !store) { dropdown.disabled = true; return; }
+                const opts = store.querySelectorAll('option[data-faculty="' + facultyId + '"]');
+                if (opts.length === 0) {
+                    dropdown.innerHTML = '<option value="">No courses for this faculty</option>';
+                    dropdown.disabled = true; return;
+                }
+                opts.forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o.value; opt.textContent = o.textContent;
+                    dropdown.appendChild(opt);
+                });
+                dropdown.disabled = false;
+            }
+
+            function filterCoursesTeacher(facultyId) {
+                const dropdown = document.getElementById('courseDropdownTeacher');
+                const store    = document.getElementById('courseDataStoreTeacher');
+                dropdown.innerHTML = '<option value="">— Select course —</option>';
+                if (!facultyId || !store) { dropdown.disabled = true; return; }
+                // Teacher's courses are already filtered by their assignment — show all if faculty matches
+                const opts = store.querySelectorAll('option');
+                let matched = 0;
+                opts.forEach(o => {
+                    // show course if it belongs to the selected faculty OR has no faculty set
+                    if (!o.dataset.faculty || o.dataset.faculty === facultyId) {
+                        const opt = document.createElement('option');
+                        opt.value = o.value; opt.textContent = o.textContent;
+                        dropdown.appendChild(opt);
+                        matched++;
+                    }
+                });
+                if (matched === 0) {
+                    dropdown.innerHTML = '<option value="">No courses for this faculty</option>';
+                }
+            }
+
+            // Auto-trigger teacher cascade on page load if faculty is pre-selected
+            document.addEventListener('DOMContentLoaded', function() {
+                const teacherFacultySelect = document.getElementById('facultyFilterTeacher');
+                if (teacherFacultySelect && teacherFacultySelect.value) {
+                    filterCoursesTeacher(teacherFacultySelect.value);
+                }
+            });
+        </script>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

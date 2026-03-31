@@ -50,7 +50,14 @@ public class SecurityConfig {
                         "/api/**", "/ws/**", "/quiz/**", "/games/create",
                         "/games/spectate/**", "/award-game-win", "/award-game-points",
                         "/admin/users/*/reset-password", "/auth/forgot-password",
-                        "/notifications/**"))
+                        "/notifications/**",
+                        // Academic AJAX endpoints (JSON responses, no form redirect)
+                        "/academic/courses/*/registration",
+                        "/academic/grades/enter",
+                        "/academic/assignments/submissions/*/grade",
+                        "/academic/attendance/open",
+                        "/academic/attendance/*/close",
+                        "/academic/attendance/*/mark"))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .securityContext(ctx -> ctx
                         .securityContextRepository(new HttpSessionSecurityContextRepository()))
@@ -94,6 +101,23 @@ public class SecurityConfig {
                         .requestMatchers("/exams/import", "/exams/clear", "/exams/*/delete")
                         .hasAnyRole("SECRETARY", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/exams/**").authenticated()
+                        .requestMatchers("/academic/courses/create").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN")
+                        .requestMatchers("/academic/courses/*/registration").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN","SECRETARY")
+                        .requestMatchers("/academic/courses/*/enroll").hasRole("STUDENT")
+                        .requestMatchers("/academic/courses/*/drop").hasRole("STUDENT")
+                        .requestMatchers("/academic/grades/enter").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN")
+                        .requestMatchers("/academic/assignments/create").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN")
+                        .requestMatchers("/academic/assignments/*/submit").hasRole("STUDENT")
+                        .requestMatchers("/academic/assignments/submissions/*/grade").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN")
+                        .requestMatchers("/academic/assignments/*/delete").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN")
+                        .requestMatchers("/academic/attendance/open").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN")
+                        .requestMatchers("/academic/attendance/*/close").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN")
+                        .requestMatchers("/academic/attendance/*/mark").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN")
+                        .requestMatchers("/academic/attendance/my").hasRole("STUDENT")
+                        .requestMatchers("/academic/**").authenticated()
+                        .requestMatchers("/library/upload").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN","SECRETARY")
+                        .requestMatchers("/library/*/delete").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN","SECRETARY")
+                        .requestMatchers("/library/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

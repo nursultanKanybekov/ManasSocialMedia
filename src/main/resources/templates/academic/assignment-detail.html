@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('Assignment Detail')}"></head>
+<body>
+<div class="app-shell" id="app-shell">
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <style>
+            .ad-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
+            .ad-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:28px 28px 22px}
+            .ad-body{max-width:900px;margin:0 auto;padding:24px 18px}
+            .card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;margin-bottom:18px}
+            .card-header{padding:14px 20px;border-bottom:1px solid #f0ede8;background:#fafaf8;display:flex;justify-content:space-between;align-items:center}
+            .card-header h3{margin:0;font-size:.95rem;font-weight:700}
+            .card-body{padding:18px 20px}
+            .flash{border-radius:10px;padding:12px 16px;font-size:.875rem;margin-bottom:18px}
+            .flash-ok{background:#f0fdf4;border:1px solid #86efac;color:#166534}
+            .flash-err{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c}
+            .meta-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+            .chip{font-size:.72rem;padding:2px 9px;border-radius:4px;font-weight:600}
+            .chip-blue{background:#dbeafe;color:#1e40af}
+            .chip-gray{background:#f1f5f9;color:#475569}
+            .chip-red{background:#fee2e2;color:#b91c1c}
+            .chip-green{background:#dcfce7;color:#15803d}
+            .chip-yellow{background:#fef9c3;color:#92400e}
+            .btn{border:none;border-radius:8px;padding:9px 20px;font-size:.875rem;font-weight:600;cursor:pointer}
+            .btn-navy{background:#002366;color:#fff}.btn-navy:hover{opacity:.88}
+            .btn-sm{padding:5px 12px;font-size:.78rem;border:none;border-radius:6px;cursor:pointer;font-weight:600}
+            .btn-outline{background:#fff;border:1.5px solid #e8e4dc;color:#555;border-radius:8px;padding:7px 14px;font-size:.82rem;cursor:pointer;text-decoration:none;display:inline-block}
+            .form-control{width:100%;border:1.5px solid #e8e4dc;border-radius:8px;padding:8px 12px;font-size:.875rem;box-sizing:border-box}
+            .form-control:focus{outline:none;border-color:#002366}
+            textarea.form-control{resize:vertical;min-height:80px}
+            .submission-card{border:1px solid #e8e4dc;border-radius:10px;padding:14px;margin-bottom:10px}
+            .submission-card:last-child{margin-bottom:0}
+            .sub-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+            .sub-student{font-weight:700;font-size:.9rem}
+            .sub-time{font-size:.75rem;color:#888}
+            table{width:100%;border-collapse:collapse;font-size:.875rem}
+            th{padding:9px 14px;text-align:left;font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;background:#f8f7f4}
+            td{padding:9px 14px;border-top:1px solid #f0ede8;vertical-align:top}
+            .progress-bar{height:6px;background:#e5e7eb;border-radius:3px;margin-top:4px}
+            .progress-fill{height:100%;border-radius:3px;background:#22c55e}
+        </style>
+
+        <div class="ad-page">
+            <div class="ad-hero">
+                <div style="max-width:900px;margin:0 auto">
+                    <a href="/academic/assignments" style="color:rgba(255,255,255,.65);font-size:.8rem;text-decoration:none">← Assignments</a>
+                    <h1 style="font-size:1.4rem;font-weight:700;margin:8px 0 4px" th:text="${assignment.title}">Assignment</h1>
+                    <p style="font-size:.875rem;color:rgba(255,255,255,.7);margin:0">
+                        <span th:text="${assignment.course.code + ' — ' + assignment.course.name}">Course</span>
+                        &nbsp;·&nbsp;
+                        Due: <strong th:text="${#temporals.format(assignment.deadline,'dd MMM yyyy HH:mm')}">date</strong>
+                        &nbsp;·&nbsp;
+                        <span th:text="${assignment.maxScore} + ' pts max'">100 pts</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="ad-body">
+                <div class="flash flash-ok" th:if="${success}" th:text="${success}"></div>
+                <div class="flash flash-err" th:if="${error}"   th:text="${error}"></div>
+
+                <!-- Assignment info card -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="meta-row">
+                            <span class="chip chip-blue" th:text="${assignment.type}">HOMEWORK</span>
+                            <span class="chip"
+                                  th:classappend="${assignment.deadline.isBefore(now)} ? 'chip-gray' : 'chip-green'"
+                                  th:text="${assignment.deadline.isBefore(now)} ? 'Deadline passed' : 'Open'">Open</span>
+                        </div>
+                        <div th:if="${assignment.description != null}" style="color:#444;line-height:1.65;white-space:pre-wrap"
+                             th:text="${assignment.description}"></div>
+                        <div th:if="${assignment.attachmentUrl != null}" style="margin-top:14px">
+                            <a th:href="${assignment.attachmentUrl}" target="_blank" class="btn-outline">
+                                📎 Download Instructions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── STUDENT: submit form ── -->
+                <div sec:authorize="hasRole('ROLE_STUDENT')" th:if="${!isTeacher}">
+                    <div class="card" th:if="${mySubmission == null or mySubmission.status.name() != 'GRADED'}">
+                        <div class="card-header">
+                            <h3 th:text="${mySubmission == null} ? 'Submit Your Work' : 'Update Submission'">Submit</h3>
+                            <span class="chip chip-green" th:if="${mySubmission != null}"
+                                  th:text="${mySubmission.status}">SUBMITTED</span>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/academic/assignments/{id}/submit(id=${assignment.id})}"
+                                  method="post" enctype="multipart/form-data">
+                                <div style="margin-bottom:14px">
+                                    <label style="font-size:.78rem;font-weight:700;color:#666;text-transform:uppercase;display:block;margin-bottom:5px">
+                                        Written Answer (optional)
+                                    </label>
+                                    <textarea class="form-control" name="textContent" rows="4"
+                                              placeholder="Write your answer here…"
+                                              th:text="${mySubmission?.textContent}"></textarea>
+                                </div>
+                                <div style="margin-bottom:16px">
+                                    <label style="font-size:.78rem;font-weight:700;color:#666;text-transform:uppercase;display:block;margin-bottom:5px">
+                                        File Upload (optional)
+                                    </label>
+                                    <input class="form-control" type="file" name="file">
+                                    <p th:if="${mySubmission?.fileName != null}" style="font-size:.78rem;color:#555;margin:6px 0 0">
+                                        Current file: <strong th:text="${mySubmission.fileName}">file.pdf</strong>
+                                    </p>
+                                </div>
+                                <button class="btn btn-navy" type="submit"
+                                        th:text="${mySubmission == null} ? 'Submit Assignment' : 'Update Submission'">Submit</button>
+                                <span th:if="${assignment.deadline.isBefore(now)}"
+                                      style="font-size:.78rem;color:#b91c1c;margin-left:10px">⚠ Deadline has passed — will be marked LATE</span>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Graded result -->
+                    <div class="card" th:if="${mySubmission != null and mySubmission.status.name() == 'GRADED'}">
+                        <div class="card-header"><h3>Your Grade</h3></div>
+                        <div class="card-body">
+                            <div style="font-size:2rem;font-weight:800;color:#002366"
+                                 th:text="${mySubmission.score} + ' / ' + ${assignment.maxScore}">85/100</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill"
+                                     th:style="'width:' + ${mySubmission.score / assignment.maxScore * 100} + '%'"></div>
+                            </div>
+                            <p th:if="${mySubmission.feedback != null}" style="margin:12px 0 0;color:#444;line-height:1.6">
+                                💬 <strong>Feedback:</strong> <span th:text="${mySubmission.feedback}"></span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── TEACHER / ADMIN: all submissions ── -->
+                <div th:if="${isTeacher}">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Submissions (<span th:text="${allSubmissions.size()}">0</span>)</h3>
+                        </div>
+                        <div class="card-body" th:if="${!allSubmissions.isEmpty()}" style="padding:0">
+                            <table>
+                                <thead><tr>
+                                    <th>Student</th><th>Submitted</th><th>Status</th><th>File</th><th>Grade</th><th>Action</th>
+                                </tr></thead>
+                                <tbody>
+                                <tr th:each="sub : ${allSubmissions}">
+                                    <td style="font-weight:600" th:text="${sub.student.fullName}">Name</td>
+                                    <td style="font-size:.8rem;color:#666"
+                                        th:text="${#temporals.format(sub.submittedAt,'dd MMM HH:mm')}">date</td>
+                                    <td>
+                    <span class="chip"
+                          th:classappend="${sub.status.name()=='GRADED'}?'chip-green':
+                                           (${sub.status.name()=='LATE'}?'chip-yellow':'chip-blue')"
+                          th:text="${sub.status}">SUBMITTED</span>
+                                    </td>
+                                    <td>
+                                        <a th:if="${sub.fileUrl != null}" th:href="${sub.fileUrl}" target="_blank"
+                                           style="font-size:.8rem;color:#002366">📎 <span th:text="${sub.fileName != null ? sub.fileName : 'Download'}">file</span></a>
+                                        <span th:if="${sub.fileUrl == null}" style="color:#aaa;font-size:.8rem">—</span>
+                                    </td>
+                                    <td style="font-weight:700"
+                                        th:text="${sub.score != null ? sub.score + '/' + assignment.maxScore : '—'}">—</td>
+                                    <td>
+                                        <button class="btn-outline"
+                                                th:data-sub="${sub.id}"
+                                                th:data-max="${assignment.maxScore}"
+                                                onclick="openGradeModal(this.dataset.sub, this.dataset.max)">
+                                            Grade
+                                        </button>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="card-body" th:if="${allSubmissions.isEmpty()}"
+                             style="color:#888;text-align:center;padding:30px">No submissions yet.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grade modal -->
+        <div id="gradeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center"
+             onclick="if(event.target===this)this.style.display='none'">
+            <div style="background:#fff;border-radius:16px;padding:28px;width:100%;max-width:400px">
+                <h3 style="margin:0 0 16px;font-size:1.05rem;font-weight:700">Grade Submission</h3>
+                <input type="hidden" id="gradeSubId">
+                <div style="margin-bottom:12px">
+                    <label style="font-size:.78rem;font-weight:700;color:#666;display:block;margin-bottom:4px">Score (max: <span id="gradeMax">100</span>)</label>
+                    <input type="number" id="gradeScore" class="form-control" min="0" placeholder="0">
+                </div>
+                <div style="margin-bottom:16px">
+                    <label style="font-size:.78rem;font-weight:700;color:#666;display:block;margin-bottom:4px">Feedback</label>
+                    <textarea id="gradeFeedback" class="form-control" rows="3" placeholder="Optional feedback…"></textarea>
+                </div>
+                <div style="display:flex;gap:10px">
+                    <button class="btn btn-navy" style="flex:1" onclick="submitGrade()">Save Grade</button>
+                    <button class="btn" style="background:#f1f5f9;color:#555" onclick="document.getElementById('gradeModal').style.display='none'">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function openGradeModal(subId, maxScore) {
+                document.getElementById('gradeSubId').value = subId;
+                document.getElementById('gradeMax').textContent = maxScore;
+                document.getElementById('gradeScore').max = maxScore;
+                document.getElementById('gradeModal').style.display = 'flex';
+            }
+            function submitGrade() {
+                const subId    = document.getElementById('gradeSubId').value;
+                const score    = document.getElementById('gradeScore').value;
+                const feedback = document.getElementById('gradeFeedback').value;
+                fetch(`/academic/assignments/submissions/${subId}/grade`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                    body:`score=${score}&feedback=${encodeURIComponent(feedback)}`
+                }).then(r => r.json()).then(d => {
+                    if (d.success) { document.getElementById('gradeModal').style.display='none'; location.reload(); }
+                    else alert(d.error);
+                });
+            }
+        </script>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

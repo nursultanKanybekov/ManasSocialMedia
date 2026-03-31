@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('Courses')}"></head>
+<body>
+<div class="app-shell" id="app-shell">
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <style>
+            .ac-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
+            .ac-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:32px 28px 24px;position:relative;overflow:hidden}
+            .ac-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 10px);pointer-events:none}
+            .ac-hero-inner{position:relative;max-width:1100px;margin:0 auto}
+            .ac-hero h1{font-size:1.65rem;font-weight:700;margin:0 0 4px}
+            .ac-hero p{font-size:.9rem;color:rgba(255,255,255,.72);margin:0}
+            .ac-body{max-width:1100px;margin:0 auto;padding:24px 18px 0}
+            .flash{border-radius:10px;padding:12px 16px;font-size:.875rem;margin-bottom:18px;display:flex;gap:8px;align-items:center}
+            .flash-ok{background:#f0fdf4;border:1px solid #86efac;color:#166534}
+            .flash-err{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c}
+            .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px}
+            .srch{flex:1;min-width:200px;border:1.5px solid #e8e4dc;border-radius:9px;padding:9px 14px 9px 36px;font-size:.875rem;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='none' viewBox='0 0 24 24' stroke='%238A867E' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center}
+            .srch:focus{outline:none;border-color:#002366}
+            .btn{border:none;border-radius:8px;padding:9px 18px;font-size:.875rem;font-weight:600;cursor:pointer;white-space:nowrap}
+            .btn-navy{background:#002366;color:#fff}.btn-navy:hover{opacity:.88}
+            .btn-outline{background:#fff;border:1.5px solid #e8e4dc;color:#666;border-radius:8px;padding:8px 14px;font-size:.875rem;cursor:pointer;text-decoration:none;display:inline-block}
+            .btn-outline:hover{border-color:#002366;color:#002366}
+            .btn-sm{padding:5px 12px;font-size:.78rem;font-weight:600;border:none;border-radius:6px;cursor:pointer}
+            .course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+            .course-card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;transition:box-shadow .15s}
+            .course-card:hover{box-shadow:0 4px 16px rgba(0,35,102,.1)}
+            .card-top{padding:16px 18px 12px;border-bottom:1px solid #f0ede8}
+            .card-code{font-size:.72rem;font-weight:700;letter-spacing:.06em;color:#002366;background:#eef2ff;border-radius:4px;padding:2px 8px;display:inline-block;margin-bottom:6px}
+            .card-name{font-size:1rem;font-weight:700;color:#1a1a1a;margin:0 0 4px}
+            .card-teacher{font-size:.8rem;color:#666}
+            .card-body{padding:12px 18px}
+            .card-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+            .chip{font-size:.72rem;padding:2px 8px;border-radius:4px;font-weight:500}
+            .chip-blue{background:#dbeafe;color:#1e40af}
+            .chip-gray{background:#f1f5f9;color:#475569}
+            .chip-open{background:#fef9c3;color:#92400e}
+            .card-footer{display:flex;gap:8px;align-items:center;padding:10px 18px 14px;flex-wrap:wrap}
+            .enrolled-badge{font-size:.75rem;color:#15803d;background:#dcfce7;border-radius:5px;padding:3px 10px;font-weight:600}
+            .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+            .modal-overlay.open{display:flex}
+            .modal{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto}
+            .modal h2{margin:0 0 18px;font-size:1.1rem;font-weight:700}
+            .form-group{margin-bottom:14px}
+            .form-group label{display:block;font-size:.78rem;font-weight:600;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+            .form-control{width:100%;border:1.5px solid #e8e4dc;border-radius:8px;padding:8px 12px;font-size:.875rem;background:#fff;box-sizing:border-box}
+            .form-control:focus{outline:none;border-color:#002366}
+            .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+            .faculty-info-box{background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 14px;font-size:.875rem;color:#3730a3;margin-bottom:14px}
+            .faculty-info-box .lbl{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6366f1;font-weight:700;margin-bottom:2px}
+        </style>
+
+        <div class="ac-page">
+            <div class="ac-hero">
+                <div class="ac-hero-inner">
+                    <h1>📚 Courses</h1>
+                    <p sec:authorize="hasRole('ROLE_STUDENT')">Browse and enroll in your faculty's courses</p>
+                    <p sec:authorize="hasRole('ROLE_TEACHER')">Your courses — manage students, grades and attendance</p>
+                    <p sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_SUPER_ADMIN','ROLE_SECRETARY')">All university courses</p>
+                </div>
+            </div>
+
+            <div class="ac-body">
+                <div class="flash flash-ok" th:if="${success}" th:text="${success}"></div>
+                <div class="flash flash-err" th:if="${error}"   th:text="${error}"></div>
+
+                <div class="controls">
+                    <form method="get" th:action="@{/academic/courses}" style="display:flex;gap:8px;flex:1;flex-wrap:wrap">
+                        <input class="srch" type="text" name="q" placeholder="Search course name or code…" th:value="${q}">
+                        <button class="btn btn-navy" type="submit">Search</button>
+                        <a class="btn-outline" th:href="@{/academic/courses}">Reset</a>
+                    </form>
+                    <button class="btn btn-navy"
+                            sec:authorize="hasAnyRole('ROLE_TEACHER','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
+                            onclick="document.getElementById('createModal').classList.add('open')">
+                        + New Course
+                    </button>
+                </div>
+
+                <div class="course-grid" th:if="${!courses.isEmpty()}">
+                    <div class="course-card" th:each="c : ${courses}">
+                        <div class="card-top">
+                            <span class="card-code" th:text="${c.code}">BLG-201</span>
+                            <div class="card-name" th:text="${c.name}">Data Structures</div>
+                            <div class="card-teacher">👤 <span th:text="${c.teacher.fullName}">Instructor</span>
+                                <span th:if="${c.faculty != null}" style="color:#aaa"> · <span th:text="${c.faculty.code}">MYO</span></span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-meta">
+                                <span class="chip chip-blue" th:text="${c.credits} + ' credits'">3 cr.</span>
+                                <span class="chip chip-gray" th:text="'Year ' + ${c.studyYear}">Year 1</span>
+                                <span class="chip chip-gray" th:text="${c.semester}">2025-2026</span>
+                                <span class="chip chip-open" th:if="${c.registrationOpen}">🟢 Open</span>
+                                <span class="chip chip-gray" th:if="${!c.registrationOpen}">🔒 Closed</span>
+                            </div>
+                            <div style="font-size:.8rem;color:#555;line-height:1.4"
+                                 th:if="${c.description != null and !#strings.isEmpty(c.description)}"
+                                 th:text="${#strings.abbreviate(c.description, 90)}"></div>
+                        </div>
+                        <div class="card-footer">
+                            <a th:href="@{/academic/courses/{id}(id=${c.id})}" class="btn-outline" style="flex:1;text-align:center">View Details</a>
+
+                            <!-- STUDENT -->
+                            <span sec:authorize="hasRole('ROLE_STUDENT')">
+              <span class="enrolled-badge" th:if="${enrolledCourseIds.contains(c.id)}">✓ Enrolled</span>
+              <form th:if="${!enrolledCourseIds.contains(c.id) and c.registrationOpen}"
+                    th:action="@{/academic/courses/{id}/enroll(id=${c.id})}" method="post" style="display:inline">
+                <button class="btn btn-navy btn-sm" type="submit">Enroll</button>
+              </form>
+            </span>
+
+                            <!-- TEACHER / ADMIN / SECRETARY: toggle registration -->
+                            <span sec:authorize="hasAnyRole('ROLE_TEACHER','ROLE_ADMIN','ROLE_SUPER_ADMIN','ROLE_SECRETARY')">
+              <button class="btn btn-sm"
+                      th:style="${c.registrationOpen} ? 'background:#fee2e2;color:#b91c1c' : 'background:#dcfce7;color:#166534'"
+                      th:text="${c.registrationOpen} ? 'Close Reg.' : 'Open Reg.'"
+                      th:data-id="${c.id}"
+                      th:data-open="${!c.registrationOpen}"
+                      onclick="toggleReg(this.dataset.id, this.dataset.open==='true')"></button>
+            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${courses.isEmpty()}"
+                     style="text-align:center;padding:60px 20px;color:#888;background:#fff;border-radius:14px;border:1.5px solid #e8e4dc">
+                    <p style="margin:0 0 6px;font-size:1rem">No courses found.</p>
+                    <p style="margin:0;font-size:.875rem"
+                       sec:authorize="hasAnyRole('ROLE_TEACHER','ROLE_ADMIN','ROLE_SUPER_ADMIN')">
+                        Click "+ New Course" to create the first one.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Create course modal ── -->
+        <div class="modal-overlay" id="createModal"
+             sec:authorize="hasAnyRole('ROLE_TEACHER','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
+             onclick="if(event.target===this) this.classList.remove('open')">
+            <div class="modal">
+                <h2>Create New Course</h2>
+
+                <!-- th:action → Thymeleaf injects _csrf automatically ✓ -->
+                <form th:action="@{/academic/courses/create}" method="post">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Course Code *</label>
+                            <input class="form-control" type="text" name="code" placeholder="BLG-201" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Credits</label>
+                            <input class="form-control" type="number" name="credits" value="3" min="1" max="6">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Course Name *</label>
+                        <input class="form-control" type="text" name="name" placeholder="e.g. Data Structures" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea class="form-control" name="description" rows="2" placeholder="Optional…"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Semester *</label>
+                            <input class="form-control" type="text" name="semester" value="2025-2026 BAHAR" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Study Year</label>
+                            <select class="form-control" name="studyYear">
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- ── TEACHER: ID is hidden, faculty shown as info box or selector ── -->
+                    <div sec:authorize="hasRole('ROLE_TEACHER')">
+                        <input type="hidden" name="teacherId" th:value="${currentUser.id}">
+
+                        <!-- Teacher has faculty → show it, pass as hidden -->
+                        <div th:if="${currentUser.faculty != null}">
+                            <input type="hidden" name="facultyId" th:value="${currentUser.faculty.id}">
+                            <div class="faculty-info-box">
+                                <span class="lbl">Faculty (auto-assigned)</span>
+                                <strong th:text="${currentUser.faculty.name}">Faculty Name</strong>
+                            </div>
+                        </div>
+
+                        <!-- Teacher has NO faculty → let them pick -->
+                        <div th:if="${currentUser.faculty == null}" class="form-group">
+                            <label>Faculty *</label>
+                            <select class="form-control" name="facultyId" required>
+                                <option value="">— Select faculty —</option>
+                                <option th:each="f : ${allFaculties}" th:value="${f.id}" th:text="${f.name}">Faculty</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- ── ADMIN / SUPER_ADMIN: choose both teacher and faculty ── -->
+                    <div sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_SUPER_ADMIN')">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Teacher *</label>
+                                <select class="form-control" name="teacherId" required>
+                                    <option value="">— Select teacher —</option>
+                                    <option th:each="t : ${allTeachers}" th:value="${t.id}" th:text="${t.fullName}">Teacher</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Faculty *</label>
+                                <select class="form-control" name="facultyId" required>
+                                    <option value="">— Select faculty —</option>
+                                    <option th:each="f : ${allFaculties}" th:value="${f.id}" th:text="${f.name}">Faculty</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:10px;margin-top:18px">
+                        <button class="btn btn-navy" type="submit" style="flex:1">Create Course</button>
+                        <button class="btn-outline" type="button"
+                                onclick="document.getElementById('createModal').classList.remove('open')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            function toggleReg(courseId, open) {
+                fetch('/academic/courses/' + courseId + '/registration', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: 'open=' + open
+                }).then(r => {
+                    if (r.ok) location.reload();
+                    else alert('Could not toggle registration. Please try again.');
+                });
+            }
+        </script>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

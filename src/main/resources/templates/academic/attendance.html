@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('Attendance')}" ></head>
+<body>
+<div class="app-shell" id="app-shell">
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <style>
+            .att-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
+            .att-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:28px 28px 22px}
+            .att-body{max-width:1000px;margin:0 auto;padding:24px 18px}
+            .card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;margin-bottom:18px}
+            .card-header{padding:14px 20px;border-bottom:1px solid #f0ede8;background:#fafaf8;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+            .card-header h3{margin:0;font-size:.95rem;font-weight:700}
+            .card-body{padding:16px 20px}
+            .btn{border:none;border-radius:8px;padding:8px 18px;font-size:.875rem;font-weight:600;cursor:pointer;white-space:nowrap}
+            .btn-navy{background:#002366;color:#fff}.btn-navy:hover{opacity:.88}
+            .btn-sm{padding:5px 12px;font-size:.78rem;border:none;border-radius:6px;cursor:pointer;font-weight:600}
+            table{width:100%;border-collapse:collapse;font-size:.875rem}
+            th{padding:10px 14px;text-align:left;font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;background:#f8f7f4;white-space:nowrap}
+            td{padding:10px 14px;border-top:1px solid #f0ede8;vertical-align:middle}
+            tr:hover td{background:#fafaf8}
+            .att-bar{height:8px;background:#e5e7eb;border-radius:4px;width:80px;display:inline-block;vertical-align:middle}
+            .att-fill{height:100%;border-radius:4px}
+            .chip{font-size:.72rem;padding:2px 8px;border-radius:4px;font-weight:600}
+            .chip-green{background:#dcfce7;color:#15803d}
+            .chip-red{background:#fee2e2;color:#b91c1c}
+            .chip-yellow{background:#fef9c3;color:#92400e}
+            .chip-blue{background:#dbeafe;color:#1e40af}
+            .chip-gray{background:#f1f5f9;color:#475569}
+            .qr-box{background:#fff;border:2px solid #002366;border-radius:14px;padding:20px;text-align:center;max-width:260px}
+            .session-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0ede8;gap:10px;flex-wrap:wrap}
+            .session-row:last-child{border-bottom:none}
+            .form-control{border:1.5px solid #e8e4dc;border-radius:8px;padding:7px 12px;font-size:.82rem}
+            .form-control:focus{outline:none;border-color:#002366}
+        </style>
+
+        <div class="att-page">
+            <div class="att-hero">
+                <div style="max-width:1000px;margin:0 auto">
+                    <a th:href="@{/academic/courses/{id}(id=${course.id})}"
+                       style="color:rgba(255,255,255,.65);font-size:.8rem;text-decoration:none">← Course</a>
+                    <h1 style="font-size:1.4rem;font-weight:700;margin:8px 0 4px">Attendance — <span th:text="${course.code + ' ' + course.name}">Course</span></h1>
+                    <p style="font-size:.875rem;color:rgba(255,255,255,.7);margin:0">
+                        <span th:text="${enrolled.size()}">0</span> enrolled students ·
+                        <span th:text="${sessions.size()}">0</span> sessions held
+                    </p>
+                </div>
+            </div>
+
+            <div class="att-body">
+
+                <!-- Active session QR -->
+                <div class="card" th:if="${activeSession != null}"
+                     style="border-color:#22c55e;background:linear-gradient(135deg,#f0fdf4,#fff)">
+                    <div class="card-header" style="background:#f0fdf4;border-color:#86efac">
+                        <h3 style="color:#166534">🟢 Active Session — <span th:text="${activeSession.topic != null ? activeSession.topic : 'No topic'}">Topic</span></h3>
+                        <span style="font-size:.8rem;color:#166534">
+            Expires: <strong th:text="${#temporals.format(activeSession.expiresAt,'HH:mm')}">12:00</strong>
+          </span>
+                    </div>
+                    <div class="card-body" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+                        <div class="qr-box">
+                            <div id="active-qr"></div>
+                            <p style="font-size:.78rem;color:#555;margin:8px 0 0">Scan to check in</p>
+                        </div>
+                        <div>
+                            <p style="font-size:.875rem;color:#444;margin:0 0 12px">
+                                Share this QR code with students. It expires at
+                                <strong th:text="${#temporals.format(activeSession.expiresAt,'HH:mm')}">12:00</strong>.
+                            </p>
+                            <p style="font-size:.82rem;color:#555;margin:0 0 12px;word-break:break-all">
+                                Link: <code th:text="'/academic/attendance/checkin?token=' + ${activeSession.qrToken}"></code>
+                            </p>
+                            <button class="btn btn-sm" style="background:#fee2e2;color:#b91c1c"
+                                    th:data-session="${activeSession.id}" onclick="closeSession(this.dataset.session)">
+                                ⏹ Close Session
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Open session button -->
+                <div class="card" th:if="${activeSession == null}">
+                    <div class="card-header"><h3>Start Attendance Session</h3></div>
+                    <div class="card-body" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+                        <div>
+                            <label style="font-size:.78rem;font-weight:700;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Topic (optional)</label>
+                            <input type="text" id="sessionTopic" class="form-control" placeholder="e.g. Lecture 5: Sorting">
+                        </div>
+                        <div>
+                            <label style="font-size:.78rem;font-weight:700;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">QR valid (minutes)</label>
+                            <input type="number" id="validMins" class="form-control" value="15" min="5" max="120" style="width:90px">
+                        </div>
+                        <button class="btn btn-navy" th:data-course="${course.id}" onclick="openSession(this.dataset.course)">▶ Open Session</button>
+                    </div>
+                </div>
+
+                <!-- Student attendance rates -->
+                <div class="card">
+                    <div class="card-header"><h3>Student Attendance Overview</h3></div>
+                    <div th:if="${!enrolled.isEmpty()}">
+                        <table>
+                            <thead><tr>
+                                <th>Student</th><th>Attendance Rate</th><th>Present / Total</th><th>Status</th><th>Mark Manual</th>
+                            </tr></thead>
+                            <tbody>
+                            <tr th:each="e : ${enrolled}"
+                                th:with="rate=${attendanceRates[e.student.id] != null ? attendanceRates[e.student.id] : 0}">
+                                <td>
+                                    <a th:href="@{/academic/transcript/{id}(id=${e.student.id})}"
+                                       style="color:#002366;font-weight:600;text-decoration:none"
+                                       th:text="${e.student.fullName}">Name</a>
+                                </td>
+                                <td>
+                  <span class="att-bar">
+                    <span class="att-fill"
+                          th:style="'width:'+${rate}+'%;background:'+(${rate}>=75?'#22c55e':(${rate}>=50?'#f59e0b':'#ef4444'))"></span>
+                  </span>
+                                    <span style="font-size:.82rem;margin-left:6px;font-weight:600"
+                                          th:style="'color:'+(${rate}>=75?'#15803d':(${rate}>=50?'#92400e':'#b91c1c'))"
+                                          th:text="${rate}+'%'">85%</span>
+                                </td>
+                                <td style="font-size:.82rem;color:#555">—</td>
+                                <td>
+                  <span class="chip"
+                        th:classappend="${rate>=75}?'chip-green':(${rate>=50}?'chip-yellow':'chip-red')"
+                        th:text="${rate>=75}?'Good':(${rate>=50}?'At Risk':'Critical')">Good</span>
+                                </td>
+                                <td>
+                                    <select class="form-control" th:id="'statusSel-'+${e.student.id}" style="width:auto;padding:4px 8px;font-size:.75rem">
+                                        <option value="PRESENT">Present</option>
+                                        <option value="ABSENT">Absent</option>
+                                        <option value="EXCUSED">Excused</option>
+                                        <option value="LATE">Late</option>
+                                    </select>
+                                    <button class="btn-sm" style="background:#dbeafe;color:#1e40af;margin-left:4px"
+                                            th:data-student="${e.student.id}" onclick="manualMark(this.dataset.student)">Mark</button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-body" th:if="${enrolled.isEmpty()}" style="color:#888;text-align:center">No students enrolled.</div>
+                </div>
+
+                <!-- Session history -->
+                <div class="card">
+                    <div class="card-header"><h3>Session History</h3></div>
+                    <div class="card-body" th:if="${!sessions.isEmpty()}" style="padding:0">
+                        <div class="session-row" th:each="s : ${sessions}" style="padding:10px 20px">
+                            <div>
+              <span style="font-weight:600;font-size:.875rem"
+                    th:text="${#temporals.format(s.sessionDate,'EEE, dd MMM yyyy')}">Date</span>
+                                <span th:if="${s.topic != null}" style="font-size:.8rem;color:#666;margin-left:8px"
+                                      th:text="${s.topic}">Topic</span>
+                            </div>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <span class="chip chip-green" th:text="${s.records.size()} + ' check-ins'">0</span>
+                                <span class="chip" th:classappend="${s.isOpen}?'chip-green':'chip-gray'"
+                                      th:text="${s.isOpen}?'Open':'Closed'">Closed</span>
+                                <button class="btn-sm" style="background:#f1f5f9;color:#374151"
+                                        th:data-session="${s.id}" onclick="viewRecords(this.dataset.session)">Records</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body" th:if="${sessions.isEmpty()}" style="color:#888;text-align:center">No sessions yet.</div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+        <script th:inline="javascript">
+            const courseId = /*[[${course.id}]]*/ '';
+            const activeToken = /*[[${activeSession?.qrToken}]]*/ null;
+            if (activeToken && document.getElementById('active-qr')) {
+                new QRCode(document.getElementById('active-qr'), {
+                    text: location.origin + '/academic/attendance/checkin?token=' + activeToken,
+                    width: 180, height: 180
+                });
+            }
+            function openSession(cid) {
+                const topic = document.getElementById('sessionTopic').value;
+                const mins  = document.getElementById('validMins').value;
+                fetch('/academic/attendance/open', {
+                    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                    body:`courseId=${cid}&topic=${encodeURIComponent(topic)}&validMinutes=${mins}`
+                }).then(() => location.reload());
+            }
+            function closeSession(sid) {
+                if (!confirm('Close session? Students who haven\'t checked in will be marked absent.')) return;
+                fetch('/academic/attendance/'+sid+'/close', {method:'POST'}).then(() => location.reload());
+            }
+            function manualMark(studentId) {
+                // Need an active/recent session; pick the latest
+                const status = document.getElementById('statusSel-'+studentId).value;
+                const sessions = document.querySelectorAll('[data-session-id]');
+                alert('Manual marking requires an open session. Open a session first, then mark.');
+            }
+            function viewRecords(sid) {
+                fetch('/academic/attendance/'+sid+'/records')
+                    .then(r => r.json())
+                    .then(records => {
+                        const rows = records.map(r =>
+                            `<tr><td>${r.student}</td><td>${r.status}</td><td>${r.method}</td><td>${new Date(r.checkedInAt).toLocaleTimeString()}</td></tr>`
+                        ).join('');
+                        document.getElementById('recordsBody').innerHTML = rows || '<tr><td colspan=4 style="color:#888;text-align:center">No records</td></tr>';
+                        document.getElementById('recordsModal').style.display = 'flex';
+                    });
+            }
+        </script>
+
+        <!-- Records modal -->
+        <div id="recordsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center"
+             onclick="if(event.target===this)this.style.display='none'">
+            <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:560px;max-height:80vh;overflow-y:auto">
+                <h3 style="margin:0 0 14px">Session Records</h3>
+                <table>
+                    <thead><tr><th>Student</th><th>Status</th><th>Method</th><th>Time</th></tr></thead>
+                    <tbody id="recordsBody"></tbody>
+                </table>
+                <button class="btn" style="margin-top:14px;background:#f1f5f9;color:#555;width:100%"
+                        onclick="document.getElementById('recordsModal').style.display='none'">Close</button>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

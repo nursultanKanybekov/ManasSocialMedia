@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('Digital Library')}"></head>
+<body>
+<div class="app-shell" id="app-shell">
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <style>
+            .lib-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
+            .lib-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:32px 28px 24px;position:relative;overflow:hidden}
+            .lib-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 12px);pointer-events:none}
+            .lib-hero-inner{position:relative;max-width:1100px;margin:0 auto}
+            .lib-body{max-width:1100px;margin:0 auto;padding:24px 18px}
+            .flash{border-radius:10px;padding:12px 16px;font-size:.875rem;margin-bottom:18px}
+            .flash-ok{background:#f0fdf4;border:1px solid #86efac;color:#166534}
+            .flash-err{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c}
+            .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:22px}
+            .srch{flex:1;min-width:200px;border:1.5px solid #e8e4dc;border-radius:9px;padding:9px 14px 9px 36px;font-size:.875rem;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='none' viewBox='0 0 24 24' stroke='%238A867E' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center}
+            .srch:focus{outline:none;border-color:#002366}
+            .cat-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+            .cat-btn{background:#fff;border:1.5px solid #e8e4dc;border-radius:20px;padding:5px 14px;font-size:.78rem;font-weight:600;cursor:pointer;color:#555;text-decoration:none}
+            .cat-btn:hover,.cat-btn.active{background:#002366;border-color:#002366;color:#fff}
+            .btn{border:none;border-radius:8px;padding:9px 18px;font-size:.875rem;font-weight:600;cursor:pointer}
+            .btn-navy{background:#002366;color:#fff}.btn-navy:hover{opacity:.88}
+            .btn-outline{background:#fff;border:1.5px solid #e8e4dc;color:#555;border-radius:8px;padding:7px 14px;font-size:.82rem;cursor:pointer;text-decoration:none;display:inline-block}
+            .btn-outline:hover{border-color:#002366;color:#002366}
+            .book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+            .book-card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s}
+            .book-card:hover{box-shadow:0 4px 16px rgba(0,35,102,.1)}
+            .book-cover{height:160px;background:linear-gradient(135deg,#eef2ff,#c7d2fe);display:flex;align-items:center;justify-content:center;font-size:3rem;flex-shrink:0;position:relative;overflow:hidden}
+            .book-cover img{width:100%;height:100%;object-fit:cover}
+            .book-body{padding:14px;flex:1;display:flex;flex-direction:column}
+            .book-cat{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#888;margin-bottom:5px}
+            .book-title{font-size:.9rem;font-weight:700;color:#1a1a1a;margin:0 0 4px;line-height:1.35}
+            .book-author{font-size:.78rem;color:#666;margin-bottom:10px}
+            .book-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+            .chip{font-size:.68rem;padding:2px 7px;border-radius:4px;font-weight:500}
+            .chip-blue{background:#dbeafe;color:#1e40af}
+            .chip-gray{background:#f1f5f9;color:#475569}
+            .chip-green{background:#dcfce7;color:#15803d}
+            .book-actions{display:flex;gap:8px;margin-top:auto;flex-wrap:wrap}
+            .btn-download{background:#002366;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;flex:1;text-align:center}
+            .btn-download:hover{opacity:.88}
+            .btn-del-sm{background:#fee2e2;color:#b91c1c;border:none;border-radius:7px;padding:7px 10px;font-size:.78rem;font-weight:600;cursor:pointer}
+            .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+            .modal-overlay.open{display:flex}
+            .modal{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto}
+            .modal h2{margin:0 0 18px;font-size:1.1rem;font-weight:700}
+            .form-group{margin-bottom:13px}
+            .form-group label{display:block;font-size:.78rem;font-weight:600;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+            .form-control{width:100%;border:1.5px solid #e8e4dc;border-radius:8px;padding:8px 12px;font-size:.875rem;box-sizing:border-box}
+            .form-control:focus{outline:none;border-color:#002366}
+            .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        </style>
+
+        <div class="lib-page">
+            <div class="lib-hero">
+                <div class="lib-hero-inner">
+                    <h1 style="font-size:1.65rem;font-weight:700;margin:0 0 4px">📖 Digital Library</h1>
+                    <p style="font-size:.9rem;color:rgba(255,255,255,.72);margin:0">
+                        Textbooks, lecture notes, theses and e-books for all faculties
+                    </p>
+                    <div style="display:flex;gap:14px;margin-top:14px;flex-wrap:wrap">
+          <span style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 14px;font-size:.82rem">
+            <strong th:text="${books.size()}">0</strong> resources
+          </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lib-body">
+                <div class="flash flash-ok" th:if="${success}" th:text="${success}"></div>
+                <div class="flash flash-err" th:if="${error}"   th:text="${error}"></div>
+
+                <!-- Controls -->
+                <div class="controls">
+                    <form method="get" th:action="@{/library}" style="display:flex;gap:8px;flex:1;flex-wrap:wrap">
+                        <input class="srch" type="text" name="q" placeholder="Search title, author, ISBN…" th:value="${q}">
+                        <button class="btn btn-navy" type="submit">Search</button>
+                        <a class="btn-outline" href="/library">Reset</a>
+                    </form>
+                    <button class="btn btn-navy" th:if="${canUpload}"
+                            onclick="document.getElementById('uploadModal').classList.add('open')">⬆ Upload Book</button>
+                </div>
+
+                <!-- Category filter -->
+                <div class="cat-filter">
+                    <a class="cat-btn" th:classappend="${selectedCategory == null}?' active':''" href="/library">All</a>
+                    <a class="cat-btn"
+                       th:each="cat : ${categories}"
+                       th:href="@{/library(category=${cat.name()})}"
+                       th:classappend="${selectedCategory != null and selectedCategory == cat.name()}?' active':''"
+                       th:text="${cat.name().replace('_',' ')}">Category</a>
+                </div>
+
+                <!-- Book grid -->
+                <div class="book-grid" th:if="${!books.isEmpty()}">
+                    <div class="book-card" th:each="book : ${books}">
+                        <div class="book-cover">
+                            <img th:if="${book.coverUrl != null}" th:src="${book.coverUrl}" th:alt="${book.title}">
+                            <span th:if="${book.coverUrl == null}">
+              <span th:text="${book.category.name() == 'TEXTBOOK'}?'📘':
+                             (${book.category.name() == 'LECTURE_NOTES'}?'📋':
+                             (${book.category.name() == 'THESIS'}?'🎓':
+                             (${book.category.name() == 'JOURNAL'}?'📰':'📄')))">📘</span>
+            </span>
+                        </div>
+                        <div class="book-body">
+                            <div class="book-cat" th:text="${book.category.name().replace('_',' ')}">TEXTBOOK</div>
+                            <div class="book-title" th:text="${book.title}">Book Title</div>
+                            <div class="book-author" th:text="${book.author != null ? book.author : 'Unknown author'}">Author</div>
+                            <div class="book-meta">
+                                <span class="chip chip-gray" th:if="${book.publishYear != null}" th:text="${book.publishYear}">2024</span>
+                                <span class="chip chip-blue" th:if="${book.language != null}" th:text="${book.language}">EN</span>
+                                <span class="chip chip-green" th:if="${book.isPublic}">Public</span>
+                                <span class="chip chip-gray" th:text="${book.downloadCount} + ' downloads'">0 downloads</span>
+                            </div>
+                            <div class="book-actions">
+                                <a th:if="${book.fileUrl != null}"
+                                   th:href="@{/library/{id}/download(id=${book.id})}"
+                                   class="btn-download">⬇ Download</a>
+                                <span th:if="${book.fileUrl == null}"
+                                      class="btn-download" style="background:#f1f5f9;color:#888;cursor:default">No file</span>
+                                <form th:if="${canUpload}"
+                                      th:action="@{/library/{id}/delete(id=${book.id})}" method="post"
+                                      onsubmit="return confirm('Remove this book?')">
+                                    <button type="submit" class="btn-del-sm">✕</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${books.isEmpty()}"
+                     style="text-align:center;padding:60px 20px;color:#888">
+                    <p style="font-size:1rem;margin:0 0 8px">No books found.</p>
+                    <p th:if="${canUpload}" style="font-size:.875rem">Use "Upload Book" to add the first resource.</p>
+                    <p th:if="${!canUpload}" style="font-size:.875rem">Ask your teacher or secretary to upload materials.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload modal (teacher/secretary/admin) -->
+        <div class="modal-overlay" id="uploadModal" th:if="${canUpload}"
+             onclick="if(event.target===this) this.classList.remove('open')">
+            <div class="modal">
+                <h2>Upload Book / Resource</h2>
+                <form th:action="@{/library/upload}" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input class="form-control" type="text" name="title" placeholder="Book title" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Author</label>
+                            <input class="form-control" type="text" name="author" placeholder="Author name">
+                        </div>
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <select class="form-control" name="category">
+                                <option th:each="cat : ${categories}" th:value="${cat.name()}"
+                                        th:text="${cat.name().replace('_',' ')}">Category</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea class="form-control" name="description" rows="2" placeholder="Short description…"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ISBN / Course Code</label>
+                            <input class="form-control" type="text" name="isbn">
+                        </div>
+                        <div class="form-group">
+                            <label>Publish Year</label>
+                            <input class="form-control" type="text" name="publishYear" placeholder="2024">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Language</label>
+                            <input class="form-control" type="text" name="language" value="English">
+                        </div>
+                        <div class="form-group">
+                            <label>Visibility</label>
+                            <select class="form-control" name="isPublic">
+                                <option value="true">Public (all faculties)</option>
+                                <option value="false">My faculty only</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Book File (PDF, DOCX, etc.) *</label>
+                        <input class="form-control" type="file" name="bookFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.epub,.zip">
+                    </div>
+                    <div class="form-group">
+                        <label>Cover Image (optional)</label>
+                        <input class="form-control" type="file" name="coverFile" accept="image/*">
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:16px">
+                        <button class="btn btn-navy" type="submit" style="flex:1">Upload</button>
+                        <button class="btn" type="button" style="background:#f1f5f9;color:#555"
+                                onclick="document.getElementById('uploadModal').classList.remove('open')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

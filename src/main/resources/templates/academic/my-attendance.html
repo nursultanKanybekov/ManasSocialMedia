@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('My Attendance')}"></head>
+<body>
+<div class="app-shell" id="app-shell">
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <style>
+            .ma-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
+            .ma-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:28px 28px 22px}
+            .ma-body{max-width:900px;margin:0 auto;padding:24px 18px}
+            .card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;margin-bottom:18px}
+            .card-header{padding:14px 20px;border-bottom:1px solid #f0ede8;background:#fafaf8;display:flex;justify-content:space-between;align-items:center}
+            .card-header h3{margin:0;font-size:.95rem;font-weight:700}
+            .course-row{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #f0ede8;flex-wrap:wrap;gap:10px}
+            .course-row:last-child{border-bottom:none}
+            .att-bar{height:10px;background:#e5e7eb;border-radius:5px;width:120px;display:inline-block;vertical-align:middle}
+            .att-fill{height:100%;border-radius:5px}
+            .chip{font-size:.72rem;padding:2px 9px;border-radius:4px;font-weight:600}
+            .chip-green{background:#dcfce7;color:#15803d}
+            .chip-red{background:#fee2e2;color:#b91c1c}
+            .chip-yellow{background:#fef9c3;color:#92400e}
+            .chip-blue{background:#dbeafe;color:#1e40af}
+            .chip-gray{background:#f1f5f9;color:#475569}
+            table{width:100%;border-collapse:collapse;font-size:.875rem}
+            th{padding:9px 14px;text-align:left;font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;background:#f8f7f4}
+            td{padding:9px 14px;border-top:1px solid #f0ede8;vertical-align:middle}
+            tr:hover td{background:#fafaf8}
+        </style>
+
+        <div class="ma-page">
+            <div class="ma-hero">
+                <div style="max-width:900px;margin:0 auto">
+                    <h1 style="font-size:1.4rem;font-weight:700;margin:0 0 4px">✅ My Attendance</h1>
+                    <p style="font-size:.875rem;color:rgba(255,255,255,.7);margin:0">Track your attendance across all enrolled courses</p>
+                </div>
+            </div>
+
+            <div class="ma-body">
+                <!-- Per-course summary -->
+                <div class="card">
+                    <div class="card-header"><h3>Attendance by Course</h3></div>
+                    <div th:if="${!enrollments.isEmpty()}">
+                        <div class="course-row" th:each="e : ${enrollments}"
+                             th:with="rate=${courseRates[e.course.id] != null ? courseRates[e.course.id] : 0}">
+                            <div>
+                                <span style="font-weight:700;color:#002366" th:text="${e.course.code}">BLG</span>
+                                <span style="font-size:.875rem;margin-left:6px" th:text="${e.course.name}">Course</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <span class="att-bar">
+                <span class="att-fill"
+                      th:style="'width:'+${rate}+'%;background:'+(${rate}>=75?'#22c55e':(${rate}>=50?'#f59e0b':'#ef4444'))"></span>
+              </span>
+                                <span style="font-size:.9rem;font-weight:700"
+                                      th:style="'color:'+(${rate}>=75?'#15803d':(${rate}>=50?'#92400e':'#b91c1c'))"
+                                      th:text="${rate}+'%'">85%</span>
+                                <span class="chip"
+                                      th:classappend="${rate>=75}?'chip-green':(${rate>=50}?'chip-yellow':'chip-red')"
+                                      th:text="${rate>=75}?'Good':(${rate>=50}?'At Risk':'Critical')">Good</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding:30px;text-align:center;color:#888" th:if="${enrollments.isEmpty()}">
+                        Not enrolled in any courses yet.
+                    </div>
+                </div>
+
+                <!-- Detailed records -->
+                <div class="card">
+                    <div class="card-header"><h3>Attendance Records</h3></div>
+                    <table th:if="${!records.isEmpty()}">
+                        <thead><tr>
+                            <th>Date</th><th>Course</th><th>Topic</th><th>Status</th><th>Method</th>
+                        </tr></thead>
+                        <tbody>
+                        <tr th:each="r : ${records}">
+                            <td style="white-space:nowrap"
+                                th:text="${#temporals.format(r.session.sessionDate,'EEE dd MMM')}">Mon 01 Mar</td>
+                            <td>
+                                <span style="font-weight:600;color:#002366" th:text="${r.session.course.code}">BLG</span>
+                                <span style="font-size:.8rem;color:#555;margin-left:4px" th:text="${r.session.course.name}">Course</span>
+                            </td>
+                            <td style="font-size:.8rem;color:#666"
+                                th:text="${r.session.topic != null ? r.session.topic : '—'}">Topic</td>
+                            <td>
+                <span class="chip"
+                      th:classappend="${r.status.name()=='PRESENT'}?'chip-green':
+                                       (${r.status.name()=='EXCUSED'}?'chip-blue':
+                                       (${r.status.name()=='LATE'}?'chip-yellow':'chip-red'))"
+                      th:text="${r.status}">PRESENT</span>
+                            </td>
+                            <td style="font-size:.78rem;color:#888" th:text="${r.method}">QR</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div style="padding:30px;text-align:center;color:#888" th:if="${records.isEmpty()}">
+                        No attendance records yet.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>
