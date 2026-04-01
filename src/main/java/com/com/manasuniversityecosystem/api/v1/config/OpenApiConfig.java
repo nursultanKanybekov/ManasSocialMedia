@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,6 +20,10 @@ public class OpenApiConfig {
 
     private static final String BEARER_SCHEME = "bearerAuth";
 
+    /** Set APP_BASE_URL env var on the server (e.g. https://yourdomain.com) */
+    @Value("${app.base-url:http://localhost:8081}")
+    private String baseUrl;
+
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
@@ -27,6 +32,7 @@ public class OpenApiConfig {
                         .description("ManasMezun Platform Documentation")
                         .url("https://manas.edu.kg"))
                 .servers(List.of(
+                        new Server().url(baseUrl).description("Current server"),
                         new Server().url("http://localhost:8081").description("Local Dev")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList(BEARER_SCHEME))
