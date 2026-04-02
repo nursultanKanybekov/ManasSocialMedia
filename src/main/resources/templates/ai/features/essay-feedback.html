@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('Essay Feedback')}"></head>
+<body>
+<div class="app-shell" id="app-shell">
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <style>
+            .es-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
+            .es-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:28px 28px 22px;position:relative;overflow:hidden}
+            .es-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 10px);pointer-events:none}
+            .es-body{max-width:860px;margin:0 auto;padding:24px 18px}
+            .card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;margin-bottom:20px}
+            .card-header{padding:14px 20px;border-bottom:1px solid #f0ede8;background:#fafaf8;display:flex;justify-content:space-between;align-items:center}
+            .card-header h3{margin:0;font-size:.95rem;font-weight:700}
+            .card-body{padding:18px 20px}
+            .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+            .form-group{flex:1;min-width:180px}
+            .form-group label{display:block;font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+            .form-control{border:1.5px solid #e8e4dc;border-radius:8px;padding:8px 12px;font-size:.875rem;width:100%;box-sizing:border-box}
+            .form-control:focus{outline:none;border-color:#002366}
+            textarea.essay-input{min-height:220px;resize:vertical;font-family:inherit}
+            .char-count{font-size:.72rem;color:#aaa;text-align:right;margin-top:3px}
+            .btn-analyse{background:#002366;color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:.9rem;font-weight:700;cursor:pointer;transition:opacity .2s;margin-top:4px}
+            .btn-analyse:hover{opacity:.88}
+            .btn-analyse:disabled{opacity:.4;cursor:default}
+            .loading-bar{height:4px;background:linear-gradient(90deg,#002366,#4f46e5,#002366);background-size:200%;border-radius:2px;animation:load 1.5s infinite;display:none;margin-top:10px}
+            @keyframes load{0%{background-position:0%}100%{background-position:200%}}
+
+            /* Results */
+            .results{display:none}
+            .score-ring-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0}
+            .score-ring{width:110px;height:110px;position:relative}
+            .score-ring svg{transform:rotate(-90deg)}
+            .score-ring .ring-bg{fill:none;stroke:#e8e4dc;stroke-width:10}
+            .score-ring .ring-fill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .8s ease}
+            .score-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:#002366}
+            .score-label{font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em}
+
+            .grade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+            .grade-item{background:#f8f7f4;border-radius:10px;padding:12px 14px;text-align:center}
+            .grade-item .g-name{font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+            .grade-item .g-bar{height:6px;background:#e8e4dc;border-radius:3px;overflow:hidden;margin-bottom:6px}
+            .grade-item .g-fill{height:100%;border-radius:3px;transition:width .6s ease}
+            .grade-item .g-score{font-size:1rem;font-weight:800;color:#002366}
+
+            .tag-list{display:flex;flex-direction:column;gap:6px}
+            .tag-item{display:flex;align-items:flex-start;gap:8px;font-size:.875rem;line-height:1.5}
+            .tag-icon{font-size:.95rem;min-width:20px;margin-top:1px}
+
+            .risk-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:700}
+            .risk-LOW{background:#dcfce7;color:#15803d}
+            .risk-MEDIUM{background:#fef9c3;color:#a16207}
+            .risk-HIGH{background:#fee2e2;color:#b91c1c}
+
+            .rewritten-box{background:#f8f7ff;border:1.5px solid #c7d2fe;border-radius:10px;padding:14px 16px;font-size:.875rem;line-height:1.7;color:#1e1b4b;white-space:pre-wrap}
+
+            .summary-text{font-size:.9rem;line-height:1.7;color:#444}
+
+            .btn-reset{background:#fff;border:1.5px solid #e8e4dc;color:#444;border-radius:10px;padding:9px 20px;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px}
+            .btn-reset:hover{border-color:#002366;color:#002366}
+        </style>
+
+        <div class="es-page">
+            <!-- Hero -->
+            <div class="es-hero">
+                <div style="max-width:860px;margin:0 auto;position:relative">
+                    <h1 style="font-size:1.4rem;font-weight:700;margin:0 0 4px">✍️ AI Essay Feedback</h1>
+                    <p style="font-size:.875rem;color:rgba(255,255,255,.72);margin:0">
+                        Paste your essay → get instant score, detailed grades, and improvement tips
+                    </p>
+                </div>
+            </div>
+
+            <div class="es-body">
+
+                <!-- Input form -->
+                <div class="card" id="inputCard">
+                    <div class="card-header">
+                        <h3>📝 Submit Your Essay</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group" style="min-width:200px">
+                                <label>Essay Type</label>
+                                <select class="form-control" id="essayType">
+                                    <option value="Academic Essay">Academic Essay</option>
+                                    <option value="Argumentative Essay">Argumentative Essay</option>
+                                    <option value="Persuasive Essay">Persuasive Essay</option>
+                                    <option value="Descriptive Essay">Descriptive Essay</option>
+                                    <option value="Narrative Essay">Narrative Essay</option>
+                                    <option value="Analytical Essay">Analytical Essay</option>
+                                    <option value="Expository Essay">Expository Essay</option>
+                                    <option value="Research Paper">Research Paper</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Essay Text</label>
+                            <textarea class="form-control essay-input" id="essayText"
+                                      oninput="updateCount()"
+                                      placeholder="Paste your essay here (minimum 50 characters)…"></textarea>
+                            <div class="char-count"><span id="charCount">0</span> characters</div>
+                        </div>
+                        <button class="btn-analyse" id="analyseBtn" onclick="analyseEssay()">
+                            🔍 Analyse Essay
+                        </button>
+                        <div class="loading-bar" id="loadingBar"></div>
+                    </div>
+                </div>
+
+                <!-- Results (hidden until analysed) -->
+                <div class="results" id="resultsArea">
+
+                    <!-- Overall score -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📊 Overall Score</h3>
+                            <span id="resultEssayType" style="font-size:.8rem;color:#888"></span>
+                        </div>
+                        <div class="card-body" style="display:flex;align-items:center;gap:28px;flex-wrap:wrap">
+                            <div class="score-ring-wrap">
+                                <div class="score-ring">
+                                    <svg viewBox="0 0 100 100" width="110" height="110">
+                                        <circle class="ring-bg" cx="50" cy="50" r="42"/>
+                                        <circle class="ring-fill" id="ringFill" cx="50" cy="50" r="42"
+                                                stroke="#002366"
+                                                stroke-dasharray="263.9"
+                                                stroke-dashoffset="263.9"/>
+                                    </svg>
+                                    <div class="score-num" id="overallScore">—</div>
+                                </div>
+                                <div class="score-label">Overall</div>
+                            </div>
+                            <div style="flex:1;min-width:200px">
+                                <div class="summary-text" id="summaryText"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed grades -->
+                    <div class="card">
+                        <div class="card-header"><h3>🎯 Detailed Grades</h3></div>
+                        <div class="card-body">
+                            <div class="grade-grid" id="gradeGrid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Strengths & Improvements -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap">
+                        <div class="card">
+                            <div class="card-header"><h3>✅ Strengths</h3></div>
+                            <div class="card-body">
+                                <div class="tag-list" id="strengthsList"></div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><h3>🔧 Areas to Improve</h3></div>
+                            <div class="card-body">
+                                <div class="tag-list" id="improvementsList"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Plagiarism -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🔎 Plagiarism Risk</h3>
+                            <span id="riskBadge" class="risk-badge"></span>
+                        </div>
+                        <div class="card-body">
+                            <p id="plagiarismNote" style="margin:0;font-size:.875rem;color:#555;line-height:1.6"></p>
+                        </div>
+                    </div>
+
+                    <!-- Rewritten intro -->
+                    <div class="card">
+                        <div class="card-header"><h3>✨ Suggested Introduction Rewrite</h3></div>
+                        <div class="card-body">
+                            <div class="rewritten-box" id="rewrittenIntro"></div>
+                        </div>
+                    </div>
+
+                    <!-- Reset -->
+                    <div style="text-align:center">
+                        <button class="btn-reset" onclick="resetForm()">← Analyse Another Essay</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <script>
+            function updateCount() {
+                document.getElementById('charCount').textContent =
+                    document.getElementById('essayText').value.length;
+            }
+
+            async function analyseEssay() {
+                const text = document.getElementById('essayText').value.trim();
+                const type = document.getElementById('essayType').value;
+                if (text.length < 50) {
+                    alert('Please write at least 50 characters before analysing.');
+                    return;
+                }
+
+                const btn = document.getElementById('analyseBtn');
+                const bar = document.getElementById('loadingBar');
+                btn.disabled = true;
+                btn.textContent = '⏳ Analysing…';
+                bar.style.display = 'block';
+
+                try {
+                    const res = await fetch('/ai/essay/analyse', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({text, type})
+                    });
+                    const data = await res.json();
+                    bar.style.display = 'none';
+
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        btn.disabled = false;
+                        btn.textContent = '🔍 Analyse Essay';
+                        return;
+                    }
+
+                    renderResults(data, type);
+                } catch (e) {
+                    bar.style.display = 'none';
+                    alert('Network error. Please try again.');
+                    btn.disabled = false;
+                    btn.textContent = '🔍 Analyse Essay';
+                }
+            }
+
+            function renderResults(d, type) {
+                // Overall score ring
+                const score = d.overallScore || 0;
+                document.getElementById('overallScore').textContent = score;
+                document.getElementById('resultEssayType').textContent = type;
+                // Circumference = 2π × 42 ≈ 263.9
+                const circ = 263.9;
+                const offset = circ - (score / 100) * circ;
+                const ring = document.getElementById('ringFill');
+                ring.style.strokeDashoffset = circ; // start at 0
+                setTimeout(() => ring.style.strokeDashoffset = offset, 50);
+
+                // Color ring by score
+                ring.style.stroke = score >= 75 ? '#16a34a' : score >= 50 ? '#d97706' : '#dc2626';
+
+                // Summary
+                document.getElementById('summaryText').textContent = d.summary || '';
+
+                // Detailed grades
+                const grades = d.grades || {};
+                const gradeNames = {
+                    grammar: 'Grammar', structure: 'Structure',
+                    clarity: 'Clarity', content: 'Content', originality: 'Originality'
+                };
+                const gradeColors = {
+                    grammar: '#3b82f6', structure: '#8b5cf6',
+                    clarity: '#10b981', content: '#f59e0b', originality: '#ef4444'
+                };
+                const gradeGrid = document.getElementById('gradeGrid');
+                gradeGrid.innerHTML = Object.entries(gradeNames).map(([key, label]) => {
+                    const val = grades[key] || 0;
+                    const pct = val * 10;
+                    return `<div class="grade-item">
+                        <div class="g-name">${label}</div>
+                        <div class="g-bar"><div class="g-fill" style="width:0%;background:${gradeColors[key]}"
+                             data-pct="${pct}"></div></div>
+                        <div class="g-score">${val}<span style="font-size:.7rem;color:#aaa;font-weight:400">/10</span></div>
+                    </div>`;
+                }).join('');
+                // Animate bars after render
+                setTimeout(() => {
+                    document.querySelectorAll('.g-fill').forEach(el => {
+                        el.style.width = el.dataset.pct + '%';
+                    });
+                }, 80);
+
+                // Strengths
+                const sList = document.getElementById('strengthsList');
+                sList.innerHTML = (d.strengths || []).map(s =>
+                    `<div class="tag-item"><span class="tag-icon">✅</span><span>${s}</span></div>`
+                ).join('');
+
+                // Improvements
+                const iList = document.getElementById('improvementsList');
+                iList.innerHTML = (d.improvements || []).map(i =>
+                    `<div class="tag-item"><span class="tag-icon">🔧</span><span>${i}</span></div>`
+                ).join('');
+
+                // Plagiarism
+                const risk = d.plagiarismRisk || 'LOW';
+                const badge = document.getElementById('riskBadge');
+                badge.textContent = risk === 'LOW' ? '🟢 Low Risk'
+                    : risk === 'HIGH' ? '🔴 High Risk' : '🟡 Medium Risk';
+                badge.className = 'risk-badge risk-' + risk;
+                document.getElementById('plagiarismNote').textContent = d.plagiarismNote || '';
+
+                // Rewritten intro
+                document.getElementById('rewrittenIntro').textContent = d.rewrittenIntro || '';
+
+                // Show results
+                document.getElementById('inputCard').style.display = 'none';
+                document.getElementById('resultsArea').style.display = 'block';
+                window.scrollTo({top: 0, behavior: 'smooth'});
+            }
+
+            function resetForm() {
+                document.getElementById('resultsArea').style.display = 'none';
+                document.getElementById('inputCard').style.display = 'block';
+                document.getElementById('analyseBtn').disabled = false;
+                document.getElementById('analyseBtn').textContent = '🔍 Analyse Essay';
+                window.scrollTo({top: 0, behavior: 'smooth'});
+            }
+        </script>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

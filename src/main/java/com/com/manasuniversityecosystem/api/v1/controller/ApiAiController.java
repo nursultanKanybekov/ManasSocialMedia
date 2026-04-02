@@ -1,47 +1,40 @@
 package com.com.manasuniversityecosystem.api.v1.controller;
 
 import com.com.manasuniversityecosystem.api.v1.common.ApiResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.com.manasuniversityecosystem.api.v1.common.ErrorCode;
+import com.com.manasuniversityecosystem.service.ai.GeminiService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+/**
+ * REST API controller for AI chat — backed by GeminiService (Groq-first, Gemini fallback).
+ */
 @RestController
 @RequestMapping("/api/v1/ai")
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "AI Assistant", description = "Gemini-powered chat assistant and AI quiz generation")
+@Tag(name = "AI Assistant", description = "Groq/Gemini-powered chat assistant and AI quiz generation")
+@RequiredArgsConstructor
+@Slf4j
 public class ApiAiController {
 
-    @Value("${app.gemini.api-key:}")
-    private String geminiApiKey;
+    private final GeminiService geminiService;   // Groq-first, Gemini fallback
 
-    private static final String[] GEMINI_MODELS = {
-            "gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"
-    };
-    private static final String GEMINI_URL =
-            "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s";
-
-    private final RestTemplate   restTemplate;
-    private final ObjectMapper   objectMapper;
-
-    public ApiAiController(RestTemplate restTemplate, ObjectMapper objectMapper) {
-        this.restTemplate = restTemplate;
-        this.objectMapper = objectMapper;
-    }
+    private static final String SYSTEM_PROMPT =
+            "You are a helpful AI assistant for Manas University, Bishkek, Kyrgyzstan. " +
+                    "Help students with academic questions, study tips, career advice, and general knowledge. " +
+                    "Be concise and encouraging. Reply in the same language as the user (EN/RU/KY/TR).";
 
     // ══ DTOs ══════════════════════════════════════════════════════
-
     public record ChatMessage(@NotBlank String role, @NotBlank String content) {}
     public record ChatRequest(@NotEmpty List<ChatMessage> messages) {}
     public record ChatResponse(String reply) {}
@@ -50,42 +43,27 @@ public class ApiAiController {
 
     @PostMapping("/chat")
     @Operation(
-            summary = "Send a message to the Manas AI assistant (Gemini-powered)",
-            description = "Pass full conversation history each request. role = \'user\' or \'model\'.")
+            summary = "Send a message to the Manas AI assistant (Groq-powered, Gemini fallback)",
+            description = "Pass full conversation history each request. role = 'user' or 'assistant'.")
     public ResponseEntity<ApiResponse<ChatResponse>> chat(
             @Valid @RequestBody ChatRequest req) {
 
-        List<Map<String, Object>> contents = req.messages().stream()
-                .map(m -> Map.<String, Object>of(
-                        "role",  "assistant".equals(m.role()) ? "model" : "user",
-                        "parts", List.of(Map.of("text", m.content()))
-                ))
-                .toList();
+        try {
+            // Convert DTOs to the format GeminiService expects
+            List<Map<String, String>> messages = req.messages().stream()
+                    .map(m -> Map.of("role", m.role(), "content", m.content()))
+                    .toList();
 
-        String lastError = "Gemini unavailable";
-        for (String model : GEMINI_MODELS) {
-            try {
-                String url  = String.format(GEMINI_URL, model, geminiApiKey);
-                Map<String, Object> body = Map.of("contents", contents);
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                @SuppressWarnings("unchecked")
-                Map<String, Object> resp = restTemplate.postForObject(
-                        url, new HttpEntity<>(body, headers), Map.class);
-                if (resp != null && resp.containsKey("candidates")) {
-                    @SuppressWarnings("unchecked")
-                    var candidates = (List<Map<String, Object>>) resp.get("candidates");
-                    @SuppressWarnings("unchecked")
-                    var content = (Map<String, Object>) candidates.get(0).get("content");
-                    @SuppressWarnings("unchecked")
-                    var parts = (List<Map<String, Object>>) content.get("parts");
-                    String reply = (String) parts.get(0).get("text");
-                    return ResponseEntity.ok(ApiResponse.ok(new ChatResponse(reply)));
-                }
-            } catch (Exception e) { lastError = e.getMessage(); }
+            // GeminiService tries Groq first, then Gemini automatically
+            String reply = geminiService.generate(SYSTEM_PROMPT, messages);
+            log.info("API AI chat answered via GeminiService (Groq-first)");
+            return ResponseEntity.ok(ApiResponse.ok(new ChatResponse(reply)));
+
+        } catch (Exception e) {
+            log.error("API AI chat error: {}", e.getMessage());
+            return ResponseEntity.status(503)
+                    .body(ApiResponse.error(503, ErrorCode.INTERNAL_ERROR,
+                            "AI service unavailable: " + e.getMessage()));
         }
-        return ResponseEntity.status(503)
-                .body(ApiResponse.error(503, com.com.manasuniversityecosystem.api.v1.common.ErrorCode.INTERNAL_ERROR,
-                        "AI service unavailable: " + lastError));
     }
 }

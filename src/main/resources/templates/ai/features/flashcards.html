@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('AI Flashcards')}"></head>
+<body>
+<div class="app-shell" id="app-shell">
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <style>
+            .fc-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
+            .fc-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:28px 28px 22px;position:relative;overflow:hidden}
+            .fc-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 10px);pointer-events:none}
+            .fc-body{max-width:860px;margin:0 auto;padding:24px 18px}
+            .card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;margin-bottom:20px}
+            .card-header{padding:14px 20px;border-bottom:1px solid #f0ede8;background:#fafaf8;display:flex;justify-content:space-between;align-items:center}
+            .card-header h3{margin:0;font-size:.95rem;font-weight:700}
+            .card-body{padding:18px 20px}
+            .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+            .form-group label{display:block;font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+            .form-control{border:1.5px solid #e8e4dc;border-radius:8px;padding:8px 12px;font-size:.875rem;width:100%;box-sizing:border-box}
+            .form-control:focus{outline:none;border-color:#002366}
+            textarea.notes-input{min-height:180px;resize:vertical}
+            .btn-gen{background:#002366;color:#fff;border:none;border-radius:10px;padding:11px 24px;font-size:.9rem;font-weight:700;cursor:pointer;transition:opacity .2s}
+            .btn-gen:hover{opacity:.88}
+            .btn-gen:disabled{opacity:.4;cursor:default}
+            .loading-bar{height:4px;background:linear-gradient(90deg,#002366,#4f46e5,#002366);background-size:200%;border-radius:2px;animation:load 1.5s infinite;display:none;margin-top:10px}
+            @keyframes load{0%{background-position:0%}100%{background-position:200%}}
+
+            /* Flashcard deck */
+            .deck-area{display:none;flex-direction:column;align-items:center;gap:20px}
+            .progress-row{display:flex;align-items:center;gap:12px;width:100%;max-width:600px}
+            .progress-bar{flex:1;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden}
+            .progress-fill{height:100%;background:#002366;border-radius:4px;transition:width .3s}
+            .progress-label{font-size:.82rem;color:#888;white-space:nowrap}
+
+            /* The flip card */
+            .flip-scene{width:100%;max-width:600px;height:260px;perspective:1200px;cursor:pointer}
+            .flip-card{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .5s ease}
+            .flip-card.flipped{transform:rotateY(180deg)}
+            .flip-front,.flip-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;border:1.5px solid #e8e4dc}
+            .flip-front{background:#fff}
+            .flip-back{background:#002366;color:#fff;transform:rotateY(180deg)}
+            .flip-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.55;margin-bottom:12px}
+            .flip-text{font-size:1.05rem;line-height:1.6;font-weight:500}
+            .flip-hint{font-size:.72rem;opacity:.5;margin-top:16px}
+            .flip-back .flip-label{color:rgba(255,255,255,.6)}
+            .flip-back .flip-hint{color:rgba(255,255,255,.5)}
+
+            .nav-row{display:flex;gap:12px;align-items:center;justify-content:center}
+            .nav-btn{background:#fff;border:1.5px solid #e8e4dc;border-radius:10px;padding:9px 22px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .15s}
+            .nav-btn:hover{border-color:#002366;color:#002366}
+            .nav-btn:disabled{opacity:.3;cursor:default}
+            .flip-btn{background:#002366;color:#fff;border:none;border-radius:10px;padding:9px 22px;font-size:.9rem;font-weight:600;cursor:pointer}
+            .flip-btn:hover{opacity:.88}
+
+            .cards-list{display:grid;grid-template-columns:1fr;gap:10px;max-height:400px;overflow-y:auto}
+            .card-list-item{display:flex;gap:14px;background:#f8f7f4;border-radius:10px;padding:12px 16px;cursor:pointer;transition:background .15s;border:1.5px solid transparent}
+            .card-list-item:hover{background:#eef2ff;border-color:#c7d2fe}
+            .card-list-item.active{background:#eef2ff;border-color:#002366}
+            .card-num{font-size:.72rem;font-weight:700;color:#002366;min-width:24px}
+            .card-q{font-size:.875rem;font-weight:500;color:#222}
+            .card-a{font-size:.8rem;color:#666;margin-top:2px}
+
+            .known-btn{background:#dcfce7;color:#15803d;border:none;border-radius:8px;padding:6px 16px;font-size:.8rem;font-weight:600;cursor:pointer}
+            .unknown-btn{background:#fee2e2;color:#b91c1c;border:none;border-radius:8px;padding:6px 16px;font-size:.8rem;font-weight:600;cursor:pointer}
+            .score-bar{display:flex;gap:8px;font-size:.82rem;color:#666}
+            .score-known{color:#15803d;font-weight:700}
+            .score-unknown{color:#b91c1c;font-weight:700}
+        </style>
+
+        <div class="fc-page">
+            <div class="fc-hero">
+                <div style="max-width:860px;margin:0 auto;position:relative">
+                    <h1 style="font-size:1.4rem;font-weight:700;margin:0 0 4px">🃏 AI Flashcard Generator</h1>
+                    <p style="font-size:.875rem;color:rgba(255,255,255,.72);margin:0">
+                        Paste your lecture notes → AI creates smart Q&amp;A flashcards instantly
+                    </p>
+                </div>
+            </div>
+
+            <div class="fc-body">
+                <!-- Input -->
+                <div class="card" id="inputCard">
+                    <div class="card-header"><h3>Generate Flashcards from Notes</h3></div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1;min-width:160px">
+                                <label>Subject / Topic</label>
+                                <input class="form-control" type="text" id="subject" placeholder="e.g. Data Structures, Biology…">
+                            </div>
+                            <div class="form-group" style="min-width:100px">
+                                <label>Number of Cards</label>
+                                <select class="form-control" id="cardCount">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Lecture Notes</label>
+                            <textarea class="form-control notes-input" id="notes"
+                                      placeholder="Paste your lecture notes, textbook excerpts or any study material here…"></textarea>
+                        </div>
+                        <button class="btn-gen" id="genBtn" onclick="generateCards()">⚡ Generate Flashcards</button>
+                        <div class="loading-bar" id="loadingBar"></div>
+                    </div>
+                </div>
+
+                <!-- Deck -->
+                <div class="deck-area" id="deckArea">
+                    <!-- Controls bar -->
+                    <div style="width:100%;max-width:600px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                        <div class="score-bar">
+                            ✅ Known: <span class="score-known" id="knownCount">0</span>
+                            &nbsp;❌ Learning: <span class="score-unknown" id="unknownCount">0</span>
+                        </div>
+                        <button class="nav-btn" style="padding:6px 14px;font-size:.8rem" onclick="shuffleCards()">🔀 Shuffle</button>
+                        <button class="nav-btn" style="padding:6px 14px;font-size:.8rem" onclick="resetDeck()">↺ Reset</button>
+                        <button class="nav-btn" style="padding:6px 14px;font-size:.8rem" onclick="showInput()">✎ New Notes</button>
+                    </div>
+
+                    <div class="progress-row" style="max-width:600px;width:100%">
+                        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+                        <span class="progress-label" id="progressLabel">0 / 0</span>
+                    </div>
+
+                    <!-- Flip card -->
+                    <div class="flip-scene" onclick="flipCard()">
+                        <div class="flip-card" id="flipCard">
+                            <div class="flip-front">
+                                <div class="flip-label">Question</div>
+                                <div class="flip-text" id="cardQuestion">—</div>
+                                <div class="flip-hint">Click to reveal answer</div>
+                            </div>
+                            <div class="flip-back">
+                                <div class="flip-label">Answer</div>
+                                <div class="flip-text" id="cardAnswer">—</div>
+                                <div class="flip-hint">Click to go back</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="nav-row">
+                        <button class="nav-btn" id="prevBtn" onclick="prevCard()" disabled>← Prev</button>
+                        <button class="unknown-btn" onclick="markCard(false)">❌ Still learning</button>
+                        <button class="known-btn" onclick="markCard(true)">✅ Got it!</button>
+                        <button class="nav-btn" id="nextBtn" onclick="nextCard()">Next →</button>
+                    </div>
+                </div>
+
+                <!-- Card list -->
+                <div class="card" id="cardListCard" style="display:none">
+                    <div class="card-header">
+                        <h3 id="deckTitle">Flashcards</h3>
+                        <span id="deckSubject" style="font-size:.8rem;color:#888"></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="cards-list" id="cardsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let cards = [], currentIdx = 0, knownSet = new Set(), unknownSet = new Set();
+
+            async function generateCards() {
+                const notes   = document.getElementById('notes').value.trim();
+                const subject = document.getElementById('subject').value.trim() || 'General';
+                const count   = document.getElementById('cardCount').value;
+                if (notes.length < 30) { alert('Please provide more notes (at least 30 characters).'); return; }
+
+                const btn = document.getElementById('genBtn');
+                const bar = document.getElementById('loadingBar');
+                btn.disabled = true; btn.textContent = '⏳ Generating…';
+                bar.style.display = 'block';
+
+                try {
+                    const res = await fetch('/ai/flashcards/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ notes, subject, count })
+                    });
+                    const data = await res.json();
+                    bar.style.display = 'none';
+
+                    if (data.error) { alert('Error: ' + data.error); return; }
+
+                    cards = data.cards || [];
+                    if (!cards.length) { alert('No flashcards generated. Please try with more detailed notes.'); return; }
+
+                    currentIdx = 0; knownSet.clear(); unknownSet.clear();
+                    document.getElementById('deckTitle').textContent = cards.length + ' Flashcards';
+                    document.getElementById('deckSubject').textContent = data.subject || subject;
+
+                    renderCardList();
+                    showCard(0);
+                    document.getElementById('inputCard').style.display = 'none';
+                    document.getElementById('deckArea').style.display = 'flex';
+                    document.getElementById('cardListCard').style.display = 'block';
+                } catch(e) {
+                    bar.style.display = 'none'; alert('Network error. Please try again.');
+                }
+                btn.disabled=false; btn.textContent='⚡ Generate Flashcards';
+            }
+
+            function showCard(idx) {
+                if (idx < 0 || idx >= cards.length) return;
+                currentIdx = idx;
+                const card = cards[idx];
+                document.getElementById('cardQuestion').textContent = card.question;
+                document.getElementById('cardAnswer').textContent   = card.answer;
+                document.getElementById('flipCard').classList.remove('flipped');
+                document.getElementById('prevBtn').disabled = idx === 0;
+                document.getElementById('nextBtn').disabled = idx === cards.length - 1;
+                // Progress
+                document.getElementById('progressFill').style.width = ((idx+1)/cards.length*100) + '%';
+                document.getElementById('progressLabel').textContent = (idx+1) + ' / ' + cards.length;
+                // Highlight in list
+                document.querySelectorAll('.card-list-item').forEach((el,i) => {
+                    el.classList.toggle('active', i === idx);
+                });
+                document.querySelectorAll('.card-list-item')[idx]?.scrollIntoView({block:'nearest'});
+            }
+
+            function flipCard() { document.getElementById('flipCard').classList.toggle('flipped'); }
+            function prevCard() { showCard(currentIdx - 1); }
+            function nextCard() { showCard(currentIdx + 1); }
+
+            function markCard(known) {
+                if (known) { knownSet.add(currentIdx); unknownSet.delete(currentIdx); }
+                else        { unknownSet.add(currentIdx); knownSet.delete(currentIdx); }
+                document.getElementById('knownCount').textContent   = knownSet.size;
+                document.getElementById('unknownCount').textContent = unknownSet.size;
+                if (currentIdx < cards.length - 1) nextCard();
+            }
+
+            function shuffleCards() {
+                for (let i = cards.length-1; i>0; i--) {
+                    const j = Math.floor(Math.random()*(i+1));
+                    [cards[i],cards[j]] = [cards[j],cards[i]];
+                }
+                knownSet.clear(); unknownSet.clear();
+                document.getElementById('knownCount').textContent = '0';
+                document.getElementById('unknownCount').textContent = '0';
+                renderCardList(); showCard(0);
+            }
+
+            function resetDeck() { knownSet.clear(); unknownSet.clear();
+                document.getElementById('knownCount').textContent = '0';
+                document.getElementById('unknownCount').textContent = '0'; showCard(0); }
+
+            function showInput() {
+                document.getElementById('inputCard').style.display = 'block';
+                document.getElementById('deckArea').style.display = 'none';
+                document.getElementById('cardListCard').style.display = 'none';
+            }
+
+            function renderCardList() {
+                const list = document.getElementById('cardsList');
+                list.innerHTML = cards.map((c,i) =>
+                    `<div class="card-list-item" onclick="showCard(${i})">
+           <span class="card-num">${i+1}</span>
+           <div><div class="card-q">${c.question}</div>
+                <div class="card-a">${c.answer.substring(0,80)}${c.answer.length>80?'…':''}</div></div>
+         </div>`
+                ).join('');
+            }
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', e => {
+                if (!document.getElementById('deckArea').style.display || document.getElementById('deckArea').style.display==='none') return;
+                if (e.key === 'ArrowRight') nextCard();
+                if (e.key === 'ArrowLeft')  prevCard();
+                if (e.key === ' ') { e.preventDefault(); flipCard(); }
+                if (e.key === 'g') markCard(true);
+                if (e.key === 'b') markCard(false);
+            });
+        </script>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

@@ -57,7 +57,10 @@ public class SecurityConfig {
                         "/academic/assignments/submissions/*/grade",
                         "/academic/attendance/open",
                         "/academic/attendance/*/close",
-                        "/academic/attendance/*/mark"))
+                        "/academic/attendance/*/mark",
+                        // AI feature AJAX endpoints
+                        "/ai/study/chat", "/ai/essay/analyse", "/ai/flashcards/generate",
+                        "/ai/faq/ask", "/ai/career-advisor/recommend"))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .securityContext(ctx -> ctx
                         .securityContextRepository(new HttpSessionSecurityContextRepository()))
@@ -118,6 +121,9 @@ public class SecurityConfig {
                         .requestMatchers("/library/upload").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN","SECRETARY")
                         .requestMatchers("/library/*/delete").hasAnyRole("TEACHER","ADMIN","SUPER_ADMIN","SECRETARY")
                         .requestMatchers("/library/**").authenticated()
+                        // AI features
+                        .requestMatchers("/ai/study/**", "/ai/essay/**", "/ai/flashcards/**",
+                                "/ai/faq/**", "/ai/career-advisor/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
