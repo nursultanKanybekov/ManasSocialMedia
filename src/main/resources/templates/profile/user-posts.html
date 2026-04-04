@@ -85,7 +85,8 @@
         </div>
 
         <div class="post-content" th:id="'post-view-' + ${post.id}">
-          <p class="post-body" th:text="${post.getLocalizedContent('en')}">Content</p>
+          <p class="post-body" style="word-break:break-word;overflow-wrap:break-word;white-space:pre-wrap;"
+             th:text="${post.getLocalizedContent('en')}">Content</p>
         </div>
 
         <div th:id="'post-edit-' + ${post.id}" style="display:none;padding:0 20px 12px;">
@@ -166,7 +167,7 @@
   });
 
   function togglePostMenu(btn) {
-    const dd = dd = btn.nextElementSibling;
+    const dd = btn.nextElementSibling;
     const open = dd.style.display === 'block';
     document.querySelectorAll('.post-dropdown').forEach(d => d.style.display = 'none');
     dd.style.display = open ? 'none' : 'block';

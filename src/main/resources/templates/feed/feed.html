@@ -268,6 +268,9 @@
         color: #fff; box-shadow: 0 4px 16px rgba(99,102,241,0.35);
     }
 
+    /* ─── GRID FIX: prevent long text from blowing out the center column ─── */
+    .fd-layout > div { min-width: 0; }
+
     /* ─── POSTS ─── */
     .fd-post {
         background: rgba(255,255,255,0.78);
@@ -331,7 +334,21 @@
     .fd-type-tag.announce{ background:rgba(245,158,11,0.1);  color:#d97706; border:1px solid rgba(245,158,11,0.2);  }
     .fd-type-tag.general { background:rgba(99,102,241,0.08); color:#6366f1; border:1px solid rgba(99,102,241,0.18); }
     .fd-post-time { font-size: 11px; color: #cbd5e1; font-weight: 500; }
-    .fd-post-body { padding: 4px 20px 16px; font-size: 14px; line-height: 1.75; color: #475569; }
+    .fd-post-body { padding: 4px 20px 16px; font-size: 14px; line-height: 1.75; color: #475569;
+        word-break: break-word; overflow-wrap: break-word; white-space: pre-wrap; }
+
+    /* ─── SHOW ALL / CLAMP ─── */
+    .fd-post-body-clamped { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;
+        overflow: hidden; white-space: normal !important; }
+    .fd-show-all-btn {
+        display: none; background: none; border: none; color: #6366f1; cursor: pointer;
+        font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700;
+        padding: 0 20px 14px; transition: color .15s;
+    }
+    .fd-show-all-btn:hover { color: #4f46e5; text-decoration: underline; }
+
+    /* ─── TEXTAREA: cap height so Post button stays visible ─── */
+    .fd-creator-input { max-height: 160px; overflow-y: auto; }
     .fd-post-img { width: 100%; max-height: 420px; object-fit: cover; cursor: zoom-in; display: block; }
     .fd-edit-wrap { padding: 0 20px 16px; }
     .fd-edit-textarea {
@@ -544,7 +561,13 @@
                     </div>
 
                     <div th:id="'post-view-' + ${post.id}">
-                        <p class="fd-post-body" th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
+                        <p class="fd-post-body fd-post-body-clamped"
+                           th:id="'post-body-' + ${post.id}"
+                           th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
+                        <button class="fd-show-all-btn"
+                                th:id="'show-all-' + ${post.id}"
+                                th:attr="data-post-id=${post.id}"
+                                onclick="togglePostExpand(this)">Show all ↓</button>
                     </div>
 
                     <div th:id="'post-edit-' + ${post.id}" class="fd-edit-wrap" style="display:none;">
@@ -612,6 +635,31 @@
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script>
+    // ── "Show all" text expand ──────────────────────────────────────
+    function initPostExpand(postId) {
+        const body = document.getElementById('post-body-' + postId);
+        const btn  = document.getElementById('show-all-' + postId);
+        if (!body || !btn) return;
+        // Only show button if text is actually clamped
+        if (body.scrollHeight > body.clientHeight + 2) {
+            btn.style.display = 'block';
+        }
+    }
+    function initAllPostExpands() {
+        document.querySelectorAll('[id^="post-body-"]').forEach(function(el) {
+            initPostExpand(el.id.replace('post-body-', ''));
+        });
+    }
+    function togglePostExpand(btn) {
+        const postId = btn.dataset.postId;
+        const body = document.getElementById('post-body-' + postId);
+        if (!body) return;
+        const clamped = body.classList.toggle('fd-post-body-clamped');
+        btn.textContent = clamped ? 'Show all ↓' : 'Show less ↑';
+    }
+    // Init on first load
+    document.addEventListener('DOMContentLoaded', initAllPostExpands);
+
     const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
@@ -651,6 +699,7 @@
 
                     // Observe any new load-more trigger that appeared
                     _observeLoadMore();
+                    initAllPostExpands();
                 })
                 .catch(function() {
                     trigger.dataset.loading = 'false';
@@ -726,6 +775,7 @@
 
             // Start observing any load-more triggers in the new content
             _observeLoadMore();
+            initAllPostExpands();
         } catch(e) {
             list.innerHTML = '<div class="fd-empty"><div class="fd-empty-icon">⚠️</div><div class="fd-empty-title">Failed to load posts</div></div>';
         }
@@ -748,6 +798,7 @@
             const tmp = document.createElement('div'); tmp.innerHTML = html;
             list.insertBefore(tmp.firstElementChild, list.firstChild);
             if (window.htmx) htmx.process(list.firstElementChild);
+            initAllPostExpands();
             cancelPost();
         } catch (err) { showError('Failed to post. Please try again.'); }
         finally { btn.disabled = false; btn.textContent = '🚀 Post'; }

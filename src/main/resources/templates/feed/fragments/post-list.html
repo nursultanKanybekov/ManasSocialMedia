@@ -67,7 +67,13 @@
 
         <!-- View mode -->
         <div th:id="'post-view-' + ${post.id}">
-            <p class="fd-post-body" th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
+            <p class="fd-post-body fd-post-body-clamped"
+               th:id="'post-body-' + ${post.id}"
+               th:text="${post.getLocalizedContent(#locale.language)}">Content</p>
+            <button class="fd-show-all-btn"
+                    th:id="'show-all-' + ${post.id}"
+                    th:attr="data-post-id=${post.id}"
+                    onclick="togglePostExpand(this)">Show all ↓</button>
         </div>
 
         <!-- Edit mode (hidden) -->
