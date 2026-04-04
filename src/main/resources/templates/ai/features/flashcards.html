@@ -7,278 +7,278 @@
     <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
     <main class="main-content">
         <style>
-            .fc-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
-            .fc-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:28px 28px 22px;position:relative;overflow:hidden}
-            .fc-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 10px);pointer-events:none}
-            .fc-body{max-width:860px;margin:0 auto;padding:24px 18px}
-            .card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;margin-bottom:20px}
-            .card-header{padding:14px 20px;border-bottom:1px solid #f0ede8;background:#fafaf8;display:flex;justify-content:space-between;align-items:center}
-            .card-header h3{margin:0;font-size:.95rem;font-weight:700}
-            .card-body{padding:18px 20px}
-            .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
-            .form-group label{display:block;font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
-            .form-control{border:1.5px solid #e8e4dc;border-radius:8px;padding:8px 12px;font-size:.875rem;width:100%;box-sizing:border-box}
-            .form-control:focus{outline:none;border-color:#002366}
-            textarea.notes-input{min-height:180px;resize:vertical}
-            .btn-gen{background:#002366;color:#fff;border:none;border-radius:10px;padding:11px 24px;font-size:.9rem;font-weight:700;cursor:pointer;transition:opacity .2s}
-            .btn-gen:hover{opacity:.88}
-            .btn-gen:disabled{opacity:.4;cursor:default}
-            .loading-bar{height:4px;background:linear-gradient(90deg,#002366,#4f46e5,#002366);background-size:200%;border-radius:2px;animation:load 1.5s infinite;display:none;margin-top:10px}
-            @keyframes load{0%{background-position:0%}100%{background-position:200%}}
+            .fc-wrap{background:#f0f4ff;min-height:100vh;padding-bottom:60px}
+            .fc-hero{background:linear-gradient(135deg,#b45309,#d97706);color:#fff;padding:26px 28px 22px;position:relative;overflow:hidden}
+            .fc-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 500px 300px at 85% 50%,rgba(253,230,138,0.3),transparent);pointer-events:none}
+            .fc-hero-inner{position:relative;max-width:880px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+            .fc-hero-icon{width:48px;height:48px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0}
+            .fc-hero-text h1{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.25rem;margin:0 0 3px;color:#fff}
+            .fc-hero-text p{font-size:.82rem;color:rgba(255,255,255,.78);margin:0}
 
-            /* Flashcard deck */
-            .deck-area{display:none;flex-direction:column;align-items:center;gap:20px}
-            .progress-row{display:flex;align-items:center;gap:12px;width:100%;max-width:600px}
-            .progress-bar{flex:1;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden}
-            .progress-fill{height:100%;background:#002366;border-radius:4px;transition:width .3s}
-            .progress-label{font-size:.82rem;color:#888;white-space:nowrap}
+            .fc-body{max-width:880px;margin:0 auto;padding:24px 20px}
+            .fc-card{background:#fff;border:1.5px solid #fde68a;border-radius:18px;overflow:hidden;margin-bottom:20px;box-shadow:0 2px 12px rgba(180,83,9,.07)}
+            .fc-card-head{padding:14px 20px;border-bottom:1px solid #fef3c7;background:#fffbeb;display:flex;justify-content:space-between;align-items:center}
+            .fc-card-head h3{margin:0;font-family:'Montserrat',sans-serif;font-weight:800;font-size:.9rem;color:#92400e;display:flex;align-items:center;gap:8px}
+            .fc-card-body{padding:20px}
 
-            /* The flip card */
-            .flip-scene{width:100%;max-width:600px;height:260px;perspective:1200px;cursor:pointer}
-            .flip-card{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .5s ease}
-            .flip-card.flipped{transform:rotateY(180deg)}
-            .flip-front,.flip-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;border:1.5px solid #e8e4dc}
-            .flip-front{background:#fff}
-            .flip-back{background:#002366;color:#fff;transform:rotateY(180deg)}
-            .flip-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.55;margin-bottom:12px}
-            .flip-text{font-size:1.05rem;line-height:1.6;font-weight:500}
-            .flip-hint{font-size:.72rem;opacity:.5;margin-top:16px}
-            .flip-back .flip-label{color:rgba(255,255,255,.6)}
-            .flip-back .flip-hint{color:rgba(255,255,255,.5)}
+            .fc-fg label{display:block;font-size:.7rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+            .fc-ctrl{border:1.5px solid #fde68a;border-radius:10px;padding:9px 12px;font-size:.875rem;width:100%;box-sizing:border-box;font-family:inherit;outline:none;transition:border-color .2s;background:#fff;color:#1e293b}
+            .fc-ctrl:focus{border-color:#d97706;box-shadow:0 0 0 3px rgba(217,119,6,.1)}
+            .fc-form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+            .fc-fg{flex:1;min-width:160px}
+            textarea.fc-ctrl{min-height:160px;resize:vertical;line-height:1.65}
 
-            .nav-row{display:flex;gap:12px;align-items:center;justify-content:center}
-            .nav-btn{background:#fff;border:1.5px solid #e8e4dc;border-radius:10px;padding:9px 22px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .15s}
-            .nav-btn:hover{border-color:#002366;color:#002366}
-            .nav-btn:disabled{opacity:.3;cursor:default}
-            .flip-btn{background:#002366;color:#fff;border:none;border-radius:10px;padding:9px 22px;font-size:.9rem;font-weight:600;cursor:pointer}
-            .flip-btn:hover{opacity:.88}
+            .fc-btn{background:linear-gradient(135deg,#b45309,#d97706);color:#fff;border:none;border-radius:12px;padding:12px 28px;font-size:.9rem;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;transition:opacity .2s;margin-top:6px}
+            .fc-btn:hover{opacity:.88}
+            .fc-btn:disabled{opacity:.4;cursor:default}
+            .fc-loadbar{height:3px;background:linear-gradient(90deg,#d97706,#fbbf24,#d97706);background-size:200%;border-radius:2px;animation:fc-load 1.5s infinite;display:none;margin-top:12px}
+            @keyframes fc-load{0%{background-position:0%}100%{background-position:200%}}
 
-            .cards-list{display:grid;grid-template-columns:1fr;gap:10px;max-height:400px;overflow-y:auto}
-            .card-list-item{display:flex;gap:14px;background:#f8f7f4;border-radius:10px;padding:12px 16px;cursor:pointer;transition:background .15s;border:1.5px solid transparent}
-            .card-list-item:hover{background:#eef2ff;border-color:#c7d2fe}
-            .card-list-item.active{background:#eef2ff;border-color:#002366}
-            .card-num{font-size:.72rem;font-weight:700;color:#002366;min-width:24px}
-            .card-q{font-size:.875rem;font-weight:500;color:#222}
-            .card-a{font-size:.8rem;color:#666;margin-top:2px}
+            /* Deck */
+            .fc-deck{display:none;flex-direction:column;align-items:center;gap:20px}
+            .fc-progress-row{display:flex;align-items:center;gap:12px;width:100%;max-width:600px}
+            .fc-prog-bar{flex:1;height:7px;background:#fde68a;border-radius:4px;overflow:hidden}
+            .fc-prog-fill{height:100%;background:#d97706;border-radius:4px;transition:width .4s ease}
+            .fc-prog-lbl{font-size:.8rem;color:#92400e;font-weight:700;white-space:nowrap}
 
-            .known-btn{background:#dcfce7;color:#15803d;border:none;border-radius:8px;padding:6px 16px;font-size:.8rem;font-weight:600;cursor:pointer}
-            .unknown-btn{background:#fee2e2;color:#b91c1c;border:none;border-radius:8px;padding:6px 16px;font-size:.8rem;font-weight:600;cursor:pointer}
-            .score-bar{display:flex;gap:8px;font-size:.82rem;color:#666}
-            .score-known{color:#15803d;font-weight:700}
-            .score-unknown{color:#b91c1c;font-weight:700}
+            /* Flip card */
+            .fc-scene{width:100%;max-width:600px;height:260px;perspective:1200px;cursor:pointer}
+            .fc-flipcard{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .52s cubic-bezier(.4,0,.2,1)}
+            .fc-flipcard.flipped{transform:rotateY(180deg)}
+            .fc-front,.fc-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center}
+            .fc-front{background:#fff;border:2px solid #fde68a;box-shadow:0 8px 32px rgba(180,83,9,.12)}
+            .fc-back{background:linear-gradient(135deg,#b45309,#d97706);color:#fff;transform:rotateY(180deg);box-shadow:0 8px 32px rgba(180,83,9,.25)}
+            .fc-side-lbl{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;opacity:.55}
+            .fc-side-text{font-size:1.05rem;line-height:1.65;font-weight:600}
+            .fc-side-hint{font-size:.72rem;margin-top:16px;opacity:.5}
+            .fc-back .fc-side-lbl{color:rgba(255,255,255,.75)}
+            .fc-back .fc-side-hint{color:rgba(255,255,255,.55)}
+            .fc-back .fc-side-text{color:#fff}
+            .fc-front .fc-side-lbl{color:#92400e}
+            .fc-front .fc-side-text{color:#1e293b}
+
+            /* Nav */
+            .fc-nav-row{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+            .fc-nav-btn{background:#fff;border:1.5px solid #fde68a;border-radius:12px;padding:10px 24px;font-size:.875rem;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;transition:all .15s;color:#92400e}
+            .fc-nav-btn:hover{background:#fffbeb;border-color:#d97706}
+            .fc-nav-btn.primary{background:linear-gradient(135deg,#b45309,#d97706);color:#fff;border:none}
+            .fc-nav-btn:disabled{opacity:.4;cursor:default}
+            .fc-counter{font-family:'Montserrat',sans-serif;font-weight:800;font-size:.9rem;color:#92400e}
+
+            /* Result row */
+            .fc-result-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+            .fc-res-btn{padding:10px 18px;border-radius:12px;font-size:.82rem;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;border:none;transition:all .15s}
+            .fc-res-btn.know{background:#dcfce7;color:#15803d}
+            .fc-res-btn.know:hover{background:#bbf7d0}
+            .fc-res-btn.skip{background:#fee2e2;color:#b91c1c}
+            .fc-res-btn.skip:hover{background:#fecaca}
+            .fc-res-btn.again{background:#fef9c3;color:#92400e}
+            .fc-res-btn.again:hover{background:#fef08a}
+
+            /* Summary */
+            .fc-summary{text-align:center;padding:20px}
+            .fc-summary .fc-sum-icon{font-size:3rem;margin-bottom:12px}
+            .fc-summary h3{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.2rem;color:#1B2A6B;margin:0 0 8px}
+            .fc-summary p{font-size:.875rem;color:#64748b;margin:0 0 16px;line-height:1.6}
+            .fc-sum-stats{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+            .fc-sum-stat .v{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.6rem}
+            .fc-sum-stat .l{font-size:.72rem;color:#64748b}
+            .fc-sum-stat.green .v{color:#15803d}
+            .fc-sum-stat.red .v{color:#b91c1c}
+            .fc-sum-stat.amber .v{color:#d97706}
+
+            @media(max-width:600px){.fc-hero{padding:16px}.fc-body{padding:14px}.fc-scene{height:220px}}
         </style>
 
-        <div class="fc-page">
+        <div class="fc-wrap">
             <div class="fc-hero">
-                <div style="max-width:860px;margin:0 auto;position:relative">
-                    <h1 style="font-size:1.4rem;font-weight:700;margin:0 0 4px">🃏 AI Flashcard Generator</h1>
-                    <p style="font-size:.875rem;color:rgba(255,255,255,.72);margin:0">
-                        Paste your lecture notes → AI creates smart Q&amp;A flashcards instantly
-                    </p>
+                <div class="fc-hero-inner">
+                    <div class="fc-hero-icon">🃏</div>
+                    <div class="fc-hero-text">
+                        <h1>AI Flashcards</h1>
+                        <p>Paste your notes — get interactive flip cards for faster memorisation</p>
+                    </div>
                 </div>
             </div>
 
             <div class="fc-body">
                 <!-- Input -->
-                <div class="card" id="inputCard">
-                    <div class="card-header"><h3>Generate Flashcards from Notes</h3></div>
-                    <div class="card-body">
-                        <div class="form-row">
-                            <div class="form-group" style="flex:1;min-width:160px">
-                                <label>Subject / Topic</label>
-                                <input class="form-control" type="text" id="subject" placeholder="e.g. Data Structures, Biology…">
+                <div class="fc-card" id="inputCard">
+                    <div class="fc-card-head">
+                        <h3>📝 Your Notes</h3>
+                        <span style="font-size:.78rem;color:#b45309">Tip: include key terms &amp; definitions</span>
+                    </div>
+                    <div class="fc-card-body">
+                        <div class="fc-form-row">
+                            <div class="fc-fg">
+                                <label>Topic / Subject</label>
+                                <input type="text" class="fc-ctrl" id="topicInput" placeholder="e.g. Organic Chemistry, World History…"/>
                             </div>
-                            <div class="form-group" style="min-width:100px">
+                            <div class="fc-fg">
                                 <label>Number of Cards</label>
-                                <select class="form-control" id="cardCount">
-                                    <option value="5">5</option>
-                                    <option value="10" selected>10</option>
-                                    <option value="15">15</option>
-                                    <option value="20">20</option>
+                                <select class="fc-ctrl" id="cardCount">
+                                    <option value="5">5 cards</option>
+                                    <option value="10" selected>10 cards</option>
+                                    <option value="15">15 cards</option>
+                                    <option value="20">20 cards</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Lecture Notes</label>
-                            <textarea class="form-control notes-input" id="notes"
-                                      placeholder="Paste your lecture notes, textbook excerpts or any study material here…"></textarea>
+                        <div class="fc-fg" style="margin-bottom:14px">
+                            <label>Notes / Text</label>
+                            <textarea class="fc-ctrl" id="notesInput" placeholder="Paste your lecture notes, textbook excerpts, or key concepts here…"></textarea>
                         </div>
-                        <button class="btn-gen" id="genBtn" onclick="generateCards()">⚡ Generate Flashcards</button>
-                        <div class="loading-bar" id="loadingBar"></div>
+                        <button class="fc-btn" id="genBtn" onclick="generateCards()">✨ Generate Flashcards</button>
+                        <div class="fc-loadbar" id="loadbar"></div>
                     </div>
                 </div>
 
                 <!-- Deck -->
-                <div class="deck-area" id="deckArea">
-                    <!-- Controls bar -->
-                    <div style="width:100%;max-width:600px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-                        <div class="score-bar">
-                            ✅ Known: <span class="score-known" id="knownCount">0</span>
-                            &nbsp;❌ Learning: <span class="score-unknown" id="unknownCount">0</span>
-                        </div>
-                        <button class="nav-btn" style="padding:6px 14px;font-size:.8rem" onclick="shuffleCards()">🔀 Shuffle</button>
-                        <button class="nav-btn" style="padding:6px 14px;font-size:.8rem" onclick="resetDeck()">↺ Reset</button>
-                        <button class="nav-btn" style="padding:6px 14px;font-size:.8rem" onclick="showInput()">✎ New Notes</button>
+                <div class="fc-card" id="deckCard" style="display:none">
+                    <div class="fc-card-head">
+                        <h3 id="deckTitle">🃏 Flashcard Deck</h3>
+                        <button style="background:transparent;border:none;font-size:.82rem;color:#92400e;cursor:pointer;font-weight:700" onclick="resetDeck()">← New Deck</button>
                     </div>
-
-                    <div class="progress-row" style="max-width:600px;width:100%">
-                        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-                        <span class="progress-label" id="progressLabel">0 / 0</span>
-                    </div>
-
-                    <!-- Flip card -->
-                    <div class="flip-scene" onclick="flipCard()">
-                        <div class="flip-card" id="flipCard">
-                            <div class="flip-front">
-                                <div class="flip-label">Question</div>
-                                <div class="flip-text" id="cardQuestion">—</div>
-                                <div class="flip-hint">Click to reveal answer</div>
+                    <div class="fc-card-body">
+                        <!-- Study mode -->
+                        <div id="studyMode">
+                            <div class="fc-prog-row" style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+                                <div class="fc-prog-bar"><div class="fc-prog-fill" id="progFill" style="width:0%"></div></div>
+                                <div class="fc-prog-lbl" id="progLbl">1 / 10</div>
                             </div>
-                            <div class="flip-back">
-                                <div class="flip-label">Answer</div>
-                                <div class="flip-text" id="cardAnswer">—</div>
-                                <div class="flip-hint">Click to go back</div>
+                            <div style="display:flex;justify-content:center;margin-bottom:16px">
+                                <div class="fc-scene" onclick="flipCard()">
+                                    <div class="fc-flipcard" id="flipCard">
+                                        <div class="fc-front">
+                                            <div class="fc-side-lbl">Question</div>
+                                            <div class="fc-side-text" id="cardFront">Loading…</div>
+                                            <div class="fc-side-hint">Click to reveal answer</div>
+                                        </div>
+                                        <div class="fc-back">
+                                            <div class="fc-side-lbl">Answer</div>
+                                            <div class="fc-side-text" id="cardBack"></div>
+                                            <div class="fc-side-hint">How well did you know this?</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="fc-result-row" id="resultRow" style="display:none;margin-bottom:14px">
+                                <button class="fc-res-btn know" onclick="markCard('know')">✅ Got it!</button>
+                                <button class="fc-res-btn again" onclick="markCard('again')">🔄 Almost</button>
+                                <button class="fc-res-btn skip" onclick="markCard('skip')">❌ Missed it</button>
+                            </div>
+                            <div class="fc-nav-row">
+                                <button class="fc-nav-btn" id="prevBtn" onclick="prevCard()" disabled>← Prev</button>
+                                <span class="fc-counter" id="cardCounter">1 / 10</span>
+                                <button class="fc-nav-btn primary" id="flipBtn" onclick="flipCard()">Flip Card</button>
+                                <button class="fc-nav-btn" id="nextBtn" onclick="nextCard()">Next →</button>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Action buttons -->
-                    <div class="nav-row">
-                        <button class="nav-btn" id="prevBtn" onclick="prevCard()" disabled>← Prev</button>
-                        <button class="unknown-btn" onclick="markCard(false)">❌ Still learning</button>
-                        <button class="known-btn" onclick="markCard(true)">✅ Got it!</button>
-                        <button class="nav-btn" id="nextBtn" onclick="nextCard()">Next →</button>
-                    </div>
-                </div>
-
-                <!-- Card list -->
-                <div class="card" id="cardListCard" style="display:none">
-                    <div class="card-header">
-                        <h3 id="deckTitle">Flashcards</h3>
-                        <span id="deckSubject" style="font-size:.8rem;color:#888"></span>
-                    </div>
-                    <div class="card-body">
-                        <div class="cards-list" id="cardsList"></div>
+                        <!-- Summary -->
+                        <div id="summaryMode" style="display:none">
+                            <div class="fc-summary">
+                                <div class="fc-sum-icon">🎉</div>
+                                <h3>Session Complete!</h3>
+                                <p>Here's how you did on this deck.</p>
+                                <div class="fc-sum-stats">
+                                    <div class="fc-sum-stat green"><div class="v" id="sumKnow">0</div><div class="l">Got It</div></div>
+                                    <div class="fc-sum-stat amber"><div class="v" id="sumAlmost">0</div><div class="l">Almost</div></div>
+                                    <div class="fc-sum-stat red"><div class="v" id="sumMissed">0</div><div class="l">Missed</div></div>
+                                </div>
+                                <button class="fc-btn" onclick="restartDeck()" style="margin-right:10px">🔄 Study Again</button>
+                                <button class="fc-nav-btn" onclick="resetDeck()">← New Deck</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <script>
-            let cards = [], currentIdx = 0, knownSet = new Set(), unknownSet = new Set();
+            let cards = [], currentIdx = 0, isFlipped = false;
+            let scores = { know: 0, again: 0, skip: 0 };
 
             async function generateCards() {
-                const notes   = document.getElementById('notes').value.trim();
-                const subject = document.getElementById('subject').value.trim() || 'General';
-                const count   = document.getElementById('cardCount').value;
-                if (notes.length < 30) { alert('Please provide more notes (at least 30 characters).'); return; }
-
+                const notes = document.getElementById('notesInput').value.trim();
+                const topic = document.getElementById('topicInput').value.trim();
+                const count = document.getElementById('cardCount').value;
+                if (!notes || notes.length < 30) { alert('Please enter at least a few sentences of notes.'); return; }
                 const btn = document.getElementById('genBtn');
-                const bar = document.getElementById('loadingBar');
-                btn.disabled = true; btn.textContent = '⏳ Generating…';
-                bar.style.display = 'block';
-
+                btn.disabled = true;
+                document.getElementById('loadbar').style.display = 'block';
                 try {
                     const res = await fetch('/ai/flashcards/generate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ notes, subject, count })
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ notes, topic, count: parseInt(count) })
                     });
                     const data = await res.json();
-                    bar.style.display = 'none';
-
-                    if (data.error) { alert('Error: ' + data.error); return; }
-
-                    cards = data.cards || [];
-                    if (!cards.length) { alert('No flashcards generated. Please try with more detailed notes.'); return; }
-
-                    currentIdx = 0; knownSet.clear(); unknownSet.clear();
-                    document.getElementById('deckTitle').textContent = cards.length + ' Flashcards';
-                    document.getElementById('deckSubject').textContent = data.subject || subject;
-
-                    renderCardList();
-                    showCard(0);
-                    document.getElementById('inputCard').style.display = 'none';
-                    document.getElementById('deckArea').style.display = 'flex';
-                    document.getElementById('cardListCard').style.display = 'block';
+                    document.getElementById('loadbar').style.display = 'none';
+                    if (data.error || !data.flashcards) { alert('Error: ' + (data.error||'Could not generate cards.')); btn.disabled=false; return; }
+                    cards = data.flashcards;
+                    startDeck(topic);
                 } catch(e) {
-                    bar.style.display = 'none'; alert('Network error. Please try again.');
+                    document.getElementById('loadbar').style.display = 'none';
+                    alert('Connection error.'); btn.disabled=false;
                 }
-                btn.disabled=false; btn.textContent='⚡ Generate Flashcards';
             }
-
-            function showCard(idx) {
-                if (idx < 0 || idx >= cards.length) return;
-                currentIdx = idx;
-                const card = cards[idx];
-                document.getElementById('cardQuestion').textContent = card.question;
-                document.getElementById('cardAnswer').textContent   = card.answer;
-                document.getElementById('flipCard').classList.remove('flipped');
-                document.getElementById('prevBtn').disabled = idx === 0;
-                document.getElementById('nextBtn').disabled = idx === cards.length - 1;
-                // Progress
-                document.getElementById('progressFill').style.width = ((idx+1)/cards.length*100) + '%';
-                document.getElementById('progressLabel').textContent = (idx+1) + ' / ' + cards.length;
-                // Highlight in list
-                document.querySelectorAll('.card-list-item').forEach((el,i) => {
-                    el.classList.toggle('active', i === idx);
-                });
-                document.querySelectorAll('.card-list-item')[idx]?.scrollIntoView({block:'nearest'});
+            function startDeck(topic) {
+                currentIdx = 0; isFlipped = false; scores = { know:0, again:0, skip:0 };
+                document.getElementById('inputCard').style.display = 'none';
+                document.getElementById('deckCard').style.display = 'block';
+                document.getElementById('deckTitle').textContent = '🃏 ' + (topic||'Flashcard Deck') + ' (' + cards.length + ' cards)';
+                document.getElementById('summaryMode').style.display = 'none';
+                document.getElementById('studyMode').style.display = 'block';
+                showCard();
             }
-
-            function flipCard() { document.getElementById('flipCard').classList.toggle('flipped'); }
-            function prevCard() { showCard(currentIdx - 1); }
-            function nextCard() { showCard(currentIdx + 1); }
-
-            function markCard(known) {
-                if (known) { knownSet.add(currentIdx); unknownSet.delete(currentIdx); }
-                else        { unknownSet.add(currentIdx); knownSet.delete(currentIdx); }
-                document.getElementById('knownCount').textContent   = knownSet.size;
-                document.getElementById('unknownCount').textContent = unknownSet.size;
-                if (currentIdx < cards.length - 1) nextCard();
+            function showCard() {
+                const card = cards[currentIdx];
+                document.getElementById('cardFront').textContent = card.question || card.front;
+                document.getElementById('cardBack').textContent  = card.answer  || card.back;
+                const fc = document.getElementById('flipCard');
+                fc.classList.remove('flipped'); isFlipped = false;
+                document.getElementById('resultRow').style.display = 'none';
+                const pct = (currentIdx / cards.length) * 100;
+                document.getElementById('progFill').style.width = pct + '%';
+                document.getElementById('progLbl').textContent = (currentIdx+1) + ' / ' + cards.length;
+                document.getElementById('cardCounter').textContent = (currentIdx+1) + ' / ' + cards.length;
+                document.getElementById('prevBtn').disabled = currentIdx === 0;
+                document.getElementById('nextBtn').textContent = currentIdx === cards.length-1 ? 'Finish ✓' : 'Next →';
             }
-
-            function shuffleCards() {
-                for (let i = cards.length-1; i>0; i--) {
-                    const j = Math.floor(Math.random()*(i+1));
-                    [cards[i],cards[j]] = [cards[j],cards[i]];
-                }
-                knownSet.clear(); unknownSet.clear();
-                document.getElementById('knownCount').textContent = '0';
-                document.getElementById('unknownCount').textContent = '0';
-                renderCardList(); showCard(0);
+            function flipCard() {
+                const fc = document.getElementById('flipCard');
+                fc.classList.toggle('flipped');
+                isFlipped = !isFlipped;
+                if (isFlipped) document.getElementById('resultRow').style.display = 'flex';
             }
-
-            function resetDeck() { knownSet.clear(); unknownSet.clear();
-                document.getElementById('knownCount').textContent = '0';
-                document.getElementById('unknownCount').textContent = '0'; showCard(0); }
-
-            function showInput() {
+            function markCard(result) {
+                scores[result === 'know' ? 'know' : result === 'again' ? 'again' : 'skip']++;
+                if (currentIdx < cards.length - 1) { currentIdx++; showCard(); }
+                else showSummary();
+            }
+            function nextCard() {
+                if (currentIdx < cards.length - 1) { currentIdx++; showCard(); }
+                else showSummary();
+            }
+            function prevCard() { if (currentIdx > 0) { currentIdx--; showCard(); } }
+            function showSummary() {
+                document.getElementById('studyMode').style.display = 'none';
+                document.getElementById('summaryMode').style.display = 'block';
+                document.getElementById('sumKnow').textContent   = scores.know;
+                document.getElementById('sumAlmost').textContent = scores.again;
+                document.getElementById('sumMissed').textContent = scores.skip;
+                document.getElementById('progFill').style.width = '100%';
+            }
+            function restartDeck() {
+                currentIdx = 0; isFlipped = false; scores = { know:0, again:0, skip:0 };
+                document.getElementById('summaryMode').style.display = 'none';
+                document.getElementById('studyMode').style.display = 'block';
+                showCard();
+            }
+            function resetDeck() {
+                document.getElementById('deckCard').style.display = 'none';
                 document.getElementById('inputCard').style.display = 'block';
-                document.getElementById('deckArea').style.display = 'none';
-                document.getElementById('cardListCard').style.display = 'none';
+                document.getElementById('genBtn').disabled = false;
             }
-
-            function renderCardList() {
-                const list = document.getElementById('cardsList');
-                list.innerHTML = cards.map((c,i) =>
-                    `<div class="card-list-item" onclick="showCard(${i})">
-           <span class="card-num">${i+1}</span>
-           <div><div class="card-q">${c.question}</div>
-                <div class="card-a">${c.answer.substring(0,80)}${c.answer.length>80?'…':''}</div></div>
-         </div>`
-                ).join('');
-            }
-
-            // Keyboard shortcuts
-            document.addEventListener('keydown', e => {
-                if (!document.getElementById('deckArea').style.display || document.getElementById('deckArea').style.display==='none') return;
-                if (e.key === 'ArrowRight') nextCard();
-                if (e.key === 'ArrowLeft')  prevCard();
-                if (e.key === ' ') { e.preventDefault(); flipCard(); }
-                if (e.key === 'g') markCard(true);
-                if (e.key === 'b') markCard(false);
-            });
         </script>
     </main>
 </div>

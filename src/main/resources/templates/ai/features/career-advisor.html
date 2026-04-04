@@ -3,224 +3,238 @@
 <head th:replace="~{fragments/header :: head('AI Career Advisor')}"></head>
 <body>
 <div class="app-shell" id="app-shell">
-  <nav th:replace="~{fragments/navbar :: navbar}"></nav>
-  <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
-  <main class="main-content">
-    <style>
-      .ca-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
-      .ca-hero{background:linear-gradient(135deg,#065f46,#059669);color:#fff;padding:28px 28px 22px;position:relative;overflow:hidden}
-      .ca-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 1px,transparent 1px,transparent 10px);pointer-events:none}
-      .ca-body{max-width:900px;margin:0 auto;padding:24px 18px}
-      .card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;margin-bottom:20px}
-      .card-header{padding:14px 20px;border-bottom:1px solid #f0ede8;background:#fafaf8;display:flex;justify-content:space-between;align-items:center}
-      .card-header h3{margin:0;font-size:.95rem;font-weight:700}
-      .card-body{padding:18px 20px}
-      .form-group{margin-bottom:14px}
-      .form-group label{display:block;font-size:.78rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
-      .form-control{width:100%;border:1.5px solid #e8e4dc;border-radius:8px;padding:9px 12px;font-size:.875rem;box-sizing:border-box}
-      .form-control:focus{outline:none;border-color:#059669}
-      textarea.form-control{resize:vertical;min-height:70px}
-      .btn-gen{background:#059669;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:.95rem;font-weight:700;cursor:pointer;transition:opacity .2s}
-      .btn-gen:hover{opacity:.88}
-      .btn-gen:disabled{opacity:.4;cursor:default}
-      .loading-bar{height:4px;background:linear-gradient(90deg,#059669,#34d399,#059669);background-size:200%;border-radius:2px;animation:load 1.5s infinite;display:none;margin-top:12px}
-      @keyframes load{0%{background-position:0%}100%{background-position:200%}}
-      .results{display:none}
-      .summary-box{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #6ee7b7;border-radius:12px;padding:16px 20px;margin-bottom:20px;line-height:1.65;color:#065f46;font-size:.9rem}
-      .career-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
-      .career-card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;transition:box-shadow .15s}
-      .career-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
-      .career-card-top{padding:14px 16px 10px;border-bottom:1px solid #f0ede8}
-      .career-title{font-size:.975rem;font-weight:700;color:#1a1a1a;margin-bottom:6px}
-      .match-row{display:flex;align-items:center;gap:8px}
-      .match-bar{flex:1;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden}
-      .match-fill{height:100%;border-radius:4px;transition:width 1s ease}
-      .match-pct{font-size:.78rem;font-weight:700;min-width:36px;text-align:right}
-      .career-card-body{padding:12px 16px}
-      .why-text{font-size:.8rem;color:#555;line-height:1.5;margin-bottom:10px}
-      .skill-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
-      .skill-tag{background:#dbeafe;color:#1e40af;border-radius:4px;padding:2px 8px;font-size:.72rem;font-weight:500}
-      .step-list{list-style:none;padding:0;margin:0}
-      .step-list li{font-size:.78rem;color:#374151;padding:3px 0;padding-left:14px;position:relative;line-height:1.4}
-      .step-list li::before{content:'→';position:absolute;left:0;color:#059669;font-weight:700}
-      .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-      @media(max-width:560px){.two-col{grid-template-columns:1fr}}
-      .tag-list{display:flex;flex-wrap:wrap;gap:6px}
-      .tag{padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:500}
-      .tag-green{background:#dcfce7;color:#15803d}
-      .tag-orange{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
-      .actions-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
-      .action-item{background:#f8f7f4;border-radius:8px;padding:10px 14px;font-size:.875rem;color:#374151;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
-      .action-num{background:#059669;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;margin-top:1px}
-      .note-box{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;font-size:.82rem;color:#166534;margin-top:12px;line-height:1.5}
-    </style>
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <style>
+            .ca-wrap{background:#f0fdf4;min-height:100vh;padding-bottom:60px}
+            .ca-hero{background:linear-gradient(135deg,#065f46,#059669);color:#fff;padding:26px 28px 22px;position:relative;overflow:hidden}
+            .ca-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 500px 300px at 85% 50%,rgba(110,231,183,0.25),transparent);pointer-events:none}
+            .ca-hero-inner{position:relative;max-width:940px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+            .ca-hero-icon{width:48px;height:48px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0}
+            .ca-hero-text h1{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.25rem;margin:0 0 3px;color:#fff}
+            .ca-hero-text p{font-size:.82rem;color:rgba(255,255,255,.75);margin:0}
 
-    <div class="ca-page">
-      <div class="ca-hero">
-        <div style="max-width:900px;margin:0 auto;position:relative">
-          <h1 style="font-size:1.4rem;font-weight:700;margin:0 0 4px">🚀 AI Career Path Advisor</h1>
-          <p style="font-size:.875rem;color:rgba(255,255,255,.75);margin:0">
-            Personalised career recommendations based on your academic profile, courses and grades
-          </p>
-        </div>
-      </div>
+            .ca-body{max-width:940px;margin:0 auto;padding:24px 20px}
+            .ca-card{background:#fff;border:1.5px solid #bbf7d0;border-radius:18px;overflow:hidden;margin-bottom:20px;box-shadow:0 2px 12px rgba(6,95,70,.07)}
+            .ca-card-head{padding:14px 20px;border-bottom:1px solid #f0fdf4;background:#f0fdf4;display:flex;justify-content:space-between;align-items:center}
+            .ca-card-head h3{margin:0;font-family:'Montserrat',sans-serif;font-weight:800;font-size:.9rem;color:#065f46;display:flex;align-items:center;gap:8px}
+            .ca-card-body{padding:20px}
 
-      <div class="ca-body">
-        <!-- Input card -->
-        <div class="card" id="inputCard">
-          <div class="card-header">
-            <h3>Tell us about yourself</h3>
-            <span style="font-size:.8rem;color:#888">Your academic data is read automatically from the system</span>
-          </div>
-          <div class="card-body">
-            <div class="note-box">
-              ℹ️ Your enrolled courses and grades are automatically included in the analysis.
-              Fill in the optional fields below to get more personalised recommendations.
-            </div>
-            <div style="height:16px"></div>
-            <div class="form-group">
-              <label>Your Interests (optional)</label>
-              <textarea class="form-control" id="interests"
-                        placeholder="e.g. programming, data analysis, project management, design…"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Your Strengths (optional)</label>
-              <textarea class="form-control" id="strengths"
-                        placeholder="e.g. problem solving, communication, teamwork, mathematics…"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Dream Role / Industry (optional)</label>
-              <input class="form-control" type="text" id="targetRole"
-                     placeholder="e.g. Software Engineer, Data Scientist, Project Manager…">
-            </div>
-            <button class="btn-gen" id="genBtn" onclick="getCareerAdvice()">
-              🔮 Get Career Recommendations
-            </button>
-            <div class="loading-bar" id="loadingBar"></div>
-          </div>
-        </div>
+            .ca-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+            @media(max-width:560px){.ca-form-grid{grid-template-columns:1fr}}
+            .ca-fg label{display:block;font-size:.7rem;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+            .ca-ctrl{border:1.5px solid #bbf7d0;border-radius:10px;padding:9px 12px;font-size:.875rem;width:100%;box-sizing:border-box;font-family:inherit;outline:none;transition:border-color .2s;background:#fff;color:#1e293b}
+            .ca-ctrl:focus{border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.08)}
+            textarea.ca-ctrl{resize:vertical;min-height:70px;line-height:1.6}
 
-        <!-- Results -->
-        <div class="results" id="results">
-          <!-- Profile summary -->
-          <div class="summary-box" id="summaryBox"></div>
+            .ca-btn{background:linear-gradient(135deg,#065f46,#059669);color:#fff;border:none;border-radius:12px;padding:12px 28px;font-size:.9rem;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;transition:opacity .2s;margin-top:6px}
+            .ca-btn:hover{opacity:.88}
+            .ca-btn:disabled{opacity:.4;cursor:default}
+            .ca-loadbar{height:3px;background:linear-gradient(90deg,#059669,#34d399,#059669);background-size:200%;border-radius:2px;animation:ca-load 1.5s infinite;display:none;margin-top:12px}
+            @keyframes ca-load{0%{background-position:0%}100%{background-position:200%}}
 
-          <!-- Career cards -->
-          <h2 style="font-size:1rem;font-weight:700;margin-bottom:14px;color:#1a1a1a">🎯 Recommended Career Paths</h2>
-          <div class="career-cards" id="careerCards"></div>
+            /* Results */
+            .ca-results{display:none}
+            .ca-summary-box{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #6ee7b7;border-radius:14px;padding:18px 22px;margin-bottom:20px;line-height:1.7;color:#065f46;font-size:.9rem}
 
-          <!-- Strengths + Gaps -->
-          <div class="two-col">
-            <div class="card">
-              <div class="card-header"><h3>✅ Your Strengths</h3></div>
-              <div class="card-body">
-                <div class="tag-list" id="strengthsList"></div>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-header"><h3>📈 Gaps to Bridge</h3></div>
-              <div class="card-body">
-                <div class="tag-list" id="gapsList"></div>
-              </div>
-            </div>
-          </div>
+            .ca-career-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+            .ca-career-card{background:#fff;border:1.5px solid #bbf7d0;border-radius:16px;overflow:hidden;transition:all .2s;box-shadow:0 2px 8px rgba(6,95,70,.06)}
+            .ca-career-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(6,95,70,.12)}
+            .ca-career-top{padding:14px 16px 10px;border-bottom:1px solid #f0fdf4}
+            .ca-career-title{font-family:'Montserrat',sans-serif;font-size:.975rem;font-weight:800;color:#1a1a1a;margin-bottom:8px}
+            .ca-match-row{display:flex;align-items:center;gap:10px}
+            .ca-match-bar{flex:1;height:7px;background:#d1fae5;border-radius:4px;overflow:hidden}
+            .ca-match-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#059669,#34d399);transition:width 1.2s ease}
+            .ca-match-pct{font-family:'Montserrat',sans-serif;font-size:.8rem;font-weight:800;color:#059669;min-width:36px;text-align:right}
+            .ca-career-body{padding:12px 16px}
+            .ca-why{font-size:.8rem;color:#555;line-height:1.55;margin-bottom:10px}
+            .ca-skill-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+            .ca-skill-tag{background:#dbeafe;color:#1e40af;border-radius:6px;padding:2px 9px;font-size:.7rem;font-weight:600}
+            .ca-steps{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px}
+            .ca-steps li{font-size:.78rem;color:#374151;padding-left:16px;position:relative;line-height:1.5}
+            .ca-steps li::before{content:'→';position:absolute;left:0;color:#059669;font-weight:700}
 
-          <!-- Immediate actions -->
-          <div class="card">
-            <div class="card-header"><h3>⚡ Immediate Actions</h3></div>
-            <div class="card-body">
-              <ol class="actions-list" id="actionsList"></ol>
-            </div>
-          </div>
+            .ca-two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+            @media(max-width:560px){.ca-two-col{grid-template-columns:1fr}}
+            .ca-tag-list{display:flex;flex-wrap:wrap;gap:6px}
+            .ca-tag{padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:600}
+            .ca-tag-green{background:#dcfce7;color:#15803d}
+            .ca-tag-orange{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
 
-          <button class="btn-gen" style="margin-top:4px;background:#374151"
-                  onclick="document.getElementById('inputCard').style.display='block';document.getElementById('results').style.display='none'">
-            ↺ Update Profile
-          </button>
-        </div>
-      </div>
-    </div>
+            .ca-actions{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+            .ca-action{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;font-size:.875rem;color:#374151;display:flex;align-items:flex-start;gap:10px;line-height:1.55}
+            .ca-action-num{background:linear-gradient(135deg,#065f46,#059669);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-size:.7rem;font-weight:800;flex-shrink:0;margin-top:1px}
 
-    <script>
-      async function getCareerAdvice() {
-        const btn = document.getElementById('genBtn');
-        const bar = document.getElementById('loadingBar');
-        btn.disabled=true; btn.textContent='⏳ Analysing your profile…';
-        bar.style.display='block';
-        document.getElementById('results').style.display='none';
+            .ca-btn-reset{background:#fff;border:1.5px solid #bbf7d0;color:#065f46;border-radius:12px;padding:10px 22px;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+            .ca-btn-reset:hover{border-color:#059669;background:#f0fdf4}
+            .ca-note{background:#f0fdf4;border:1px solid #6ee7b7;border-radius:10px;padding:12px 16px;font-size:.82rem;color:#065f46;margin-top:12px;line-height:1.55}
 
-        try {
-          const res = await fetch('/ai/career-advisor/recommend', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              interests:  document.getElementById('interests').value,
-              strengths:  document.getElementById('strengths').value,
-              targetRole: document.getElementById('targetRole').value
-            })
-          });
-          const data = await res.json();
-          bar.style.display='none';
+            @media(max-width:600px){.ca-hero{padding:16px}.ca-body{padding:14px}}
+        </style>
 
-          if (data.error) { alert('Error: ' + data.error); return; }
-
-          // Summary
-          document.getElementById('summaryBox').textContent = data.summary || '';
-
-          // Career cards
-          const careers = data.topCareers || [];
-          document.getElementById('careerCards').innerHTML = careers.map(c => {
-            const match = c.match || 0;
-            const color = match>=80?'#22c55e':match>=60?'#f59e0b':'#ef4444';
-            const skills = (c.skills||[]).map(s=>`<span class="skill-tag">${s}</span>`).join('');
-            const steps  = (c.nextSteps||[]).map(s=>`<li>${s}</li>`).join('');
-            return `
-            <div class="career-card">
-              <div class="career-card-top">
-                <div class="career-title">${c.title}</div>
-                <div class="match-row">
-                  <div class="match-bar"><div class="match-fill" style="width:${match}%;background:${color}" data-w="${match}"></div></div>
-                  <span class="match-pct" style="color:${color}">${match}%</span>
+        <div class="ca-wrap">
+            <div class="ca-hero">
+                <div class="ca-hero-inner">
+                    <div class="ca-hero-icon">📈</div>
+                    <div class="ca-hero-text">
+                        <h1>AI Career Advisor</h1>
+                        <p>Discover career paths that match your skills &amp; get a personalised roadmap</p>
+                    </div>
                 </div>
-              </div>
-              <div class="career-card-body">
-                <div class="why-text">${c.why||''}</div>
-                <div style="font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:5px">Skills to Develop</div>
-                <div class="skill-tags">${skills}</div>
-                <div style="font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;margin:8px 0 4px">Next Steps</div>
-                <ul class="step-list">${steps}</ul>
-              </div>
-            </div>`;
-          }).join('');
+            </div>
 
-          // Strengths
-          document.getElementById('strengthsList').innerHTML =
-                  (data.strengthsFound||[]).map(s=>`<span class="tag tag-green">✓ ${s}</span>`).join('');
-          // Gaps
-          document.getElementById('gapsList').innerHTML =
-                  (data.gapsToBridge||[]).map(g=>`<span class="tag tag-orange">↑ ${g}</span>`).join('');
-          // Actions
-          document.getElementById('actionsList').innerHTML =
-                  (data.immediateActions||[]).map((a,i)=>
-                          `<li class="action-item"><span class="action-num">${i+1}</span><span>${a}</span></li>`).join('');
+            <div class="ca-body">
+                <!-- Input -->
+                <div class="ca-card" id="inputCard">
+                    <div class="ca-card-head">
+                        <h3>👤 Your Profile</h3>
+                        <span style="font-size:.78rem;color:#059669">Takes ~20 seconds to analyse</span>
+                    </div>
+                    <div class="ca-card-body">
+                        <div class="ca-form-grid">
+                            <div class="ca-fg">
+                                <label>Faculty / Major</label>
+                                <input type="text" class="ca-ctrl" id="faculty" placeholder="e.g. Computer Science, Law, Medicine…"
+                                       th:value="${profile != null ? profile.faculty : ''}"/>
+                            </div>
+                            <div class="ca-fg">
+                                <label>Year of Study</label>
+                                <select class="ca-ctrl" id="yearStudy">
+                                    <option>1st Year</option>
+                                    <option>2nd Year</option>
+                                    <option selected>3rd Year</option>
+                                    <option>4th Year</option>
+                                    <option>Graduate / Alumni</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="ca-form-grid">
+                            <div class="ca-fg">
+                                <label>Skills (comma-separated)</label>
+                                <input type="text" class="ca-ctrl" id="skills" placeholder="Python, public speaking, research, design…"/>
+                            </div>
+                            <div class="ca-fg">
+                                <label>Interests</label>
+                                <input type="text" class="ca-ctrl" id="interests" placeholder="startups, healthcare, AI, teaching…"/>
+                            </div>
+                        </div>
+                        <div class="ca-fg" style="margin-bottom:14px">
+                            <label>Additional Context (optional)</label>
+                            <textarea class="ca-ctrl" id="context" placeholder="Tell the AI anything relevant: work experience, goals, preferred work style, salary expectations…"></textarea>
+                        </div>
+                        <button class="ca-btn" id="genBtn" onclick="getAdvice()">🚀 Get Career Advice</button>
+                        <div class="ca-loadbar" id="loadbar"></div>
+                    </div>
+                </div>
 
-          document.getElementById('inputCard').style.display='none';
-          document.getElementById('results').style.display='block';
-          document.getElementById('results').scrollIntoView({behavior:'smooth'});
+                <!-- Results -->
+                <div class="ca-results" id="resultsWrap">
 
-          // Animate match bars
-          setTimeout(() => {
-            document.querySelectorAll('.match-fill').forEach(el => {
-              el.style.width = el.dataset.w + '%';
-            });
-          }, 200);
-        } catch(e) {
-          bar.style.display='none'; alert('Network error. Please try again.');
-        }
-        btn.disabled=false; btn.textContent='🔮 Get Career Recommendations';
-      }
-    </script>
-  </main>
+                    <div class="ca-summary-box" id="summaryBox"></div>
+
+                    <div class="ca-card">
+                        <div class="ca-card-head"><h3>🎯 Top Career Matches</h3></div>
+                        <div class="ca-card-body">
+                            <div class="ca-career-grid" id="careerGrid"></div>
+                        </div>
+                    </div>
+
+                    <div class="ca-two-col">
+                        <div class="ca-card" style="margin:0">
+                            <div class="ca-card-head"><h3>✅ Your Strengths</h3></div>
+                            <div class="ca-card-body"><div class="ca-tag-list" id="strengthTags"></div></div>
+                        </div>
+                        <div class="ca-card" style="margin:0">
+                            <div class="ca-card-head"><h3>📚 Skills to Develop</h3></div>
+                            <div class="ca-card-body"><div class="ca-tag-list" id="growthTags"></div></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:20px"></div>
+
+                    <div class="ca-card">
+                        <div class="ca-card-head"><h3>🗺️ Immediate Action Plan</h3></div>
+                        <div class="ca-card-body">
+                            <ul class="ca-actions" id="actionList"></ul>
+                            <div class="ca-note" id="noteBox"></div>
+                        </div>
+                    </div>
+
+                    <button class="ca-btn-reset" onclick="resetForm()">← New Analysis</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            async function getAdvice() {
+                const faculty   = document.getElementById('faculty').value.trim();
+                const skills    = document.getElementById('skills').value.trim();
+                const interests = document.getElementById('interests').value.trim();
+                const year      = document.getElementById('yearStudy').value;
+                const context   = document.getElementById('context').value.trim();
+                if (!faculty || !skills) { alert('Please fill in at least Faculty and Skills.'); return; }
+                const btn = document.getElementById('genBtn');
+                btn.disabled = true;
+                document.getElementById('loadbar').style.display = 'block';
+                try {
+                    const res = await fetch('/ai/career-advisor/analyse', {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ faculty, skills, interests, yearOfStudy:year, additionalContext:context })
+                    });
+                    const data = await res.json();
+                    document.getElementById('loadbar').style.display = 'none';
+                    if (data.error) { alert('Error: ' + data.error); btn.disabled=false; return; }
+                    renderResults(data);
+                } catch(e) {
+                    document.getElementById('loadbar').style.display = 'none';
+                    alert('Connection error. Please try again.'); btn.disabled=false;
+                }
+            }
+            function renderResults(d) {
+                document.getElementById('inputCard').style.display = 'none';
+                document.getElementById('resultsWrap').style.display = 'block';
+                document.getElementById('summaryBox').textContent = d.summary || '';
+
+                // Career cards
+                const grid = document.getElementById('careerGrid');
+                grid.innerHTML = (d.careers || []).map(c => `
+                    <div class="ca-career-card">
+                        <div class="ca-career-top">
+                            <div class="ca-career-title">${esc(c.title)}</div>
+                            <div class="ca-match-row">
+                                <div class="ca-match-bar"><div class="ca-match-fill" style="width:${c.matchPct||75}%"></div></div>
+                                <span class="ca-match-pct">${c.matchPct||75}%</span>
+                            </div>
+                        </div>
+                        <div class="ca-career-body">
+                            <div class="ca-why">${esc(c.whyFit||'')}</div>
+                            <div class="ca-skill-tags">${(c.keySkills||[]).map(s=>`<span class="ca-skill-tag">${esc(s)}</span>`).join('')}</div>
+                            <ul class="ca-steps">${(c.steps||[]).map(s=>`<li>${esc(s)}</li>`).join('')}</ul>
+                        </div>
+                    </div>`).join('');
+
+                // Strengths
+                document.getElementById('strengthTags').innerHTML = (d.strengths||[]).map(s=>`<span class="ca-tag ca-tag-green">${esc(s)}</span>`).join('');
+                document.getElementById('growthTags').innerHTML   = (d.growthAreas||[]).map(s=>`<span class="ca-tag ca-tag-orange">${esc(s)}</span>`).join('');
+
+                // Actions
+                document.getElementById('actionList').innerHTML = (d.actions||[]).map((a,i)=>`
+                    <li class="ca-action">
+                        <span class="ca-action-num">${i+1}</span>
+                        <span>${esc(a)}</span>
+                    </li>`).join('');
+                document.getElementById('noteBox').textContent = d.note || 'Keep building your skills and stay curious — your journey is unique!';
+            }
+            function esc(s) {
+                return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+            function resetForm() {
+                document.getElementById('inputCard').style.display = 'block';
+                document.getElementById('resultsWrap').style.display = 'none';
+                document.getElementById('genBtn').disabled = false;
+            }
+        </script>
+    </main>
 </div>
 <div th:replace="~{fragments/footer :: footer}"></div>
 </body>

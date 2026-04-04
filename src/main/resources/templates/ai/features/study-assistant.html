@@ -7,98 +7,107 @@
     <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
     <main class="main-content">
         <style>
-            .ai-page{background:#F2F0EB;min-height:100vh;display:flex;flex-direction:column}
-            .ai-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:24px 28px 20px;position:relative;overflow:hidden;flex-shrink:0}
-            .ai-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 10px);pointer-events:none}
-            .ai-hero-inner{position:relative;max-width:900px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-            .ai-hero h1{font-size:1.4rem;font-weight:700;margin:0 0 2px}
-            .ai-hero p{font-size:.85rem;color:rgba(255,255,255,.72);margin:0}
-            .course-selector{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:7px 12px;font-size:.875rem;cursor:pointer;min-width:220px}
-            .course-selector option{color:#111;background:#fff}
-            .chat-wrap{max-width:900px;margin:0 auto;padding:20px 18px;flex:1;display:flex;flex-direction:column;min-height:0}
-            .chat-box{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:4px 0 8px;min-height:300px;max-height:calc(100vh - 340px)}
-            .msg{display:flex;gap:10px;align-items:flex-start}
-            .msg.user{flex-direction:row-reverse}
-            .msg-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem}
-            .msg-avatar.ai{background:#eef2ff;color:#3730a3}
-            .msg-avatar.user{background:#002366;color:#fff;font-size:.8rem;font-weight:700}
-            .msg-bubble{max-width:75%;padding:12px 16px;border-radius:16px;font-size:.875rem;line-height:1.6;white-space:pre-wrap}
-            .msg.ai .msg-bubble{background:#fff;border:1px solid #e8e4dc;border-radius:4px 16px 16px 16px;color:#222}
-            .msg.user .msg-bubble{background:#002366;color:#fff;border-radius:16px 4px 16px 16px}
-            .msg-bubble code{background:rgba(0,0,0,.08);padding:1px 5px;border-radius:3px;font-size:.82rem}
-            .msg-bubble pre{background:rgba(0,0,0,.06);padding:10px;border-radius:8px;overflow-x:auto;font-size:.8rem}
-            .typing{display:none;align-items:center;gap:4px;padding:8px 14px;background:#fff;border:1px solid #e8e4dc;border-radius:16px;width:fit-content}
-            .typing span{width:7px;height:7px;background:#aaa;border-radius:50%;animation:bounce .9s infinite}
-            .typing span:nth-child(2){animation-delay:.15s}
-            .typing span:nth-child(3){animation-delay:.3s}
-            @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
-            .input-row{display:flex;gap:10px;margin-top:14px;align-items:flex-end}
-            .chat-input{flex:1;border:1.5px solid #e8e4dc;border-radius:12px;padding:11px 16px;font-size:.9rem;resize:none;min-height:46px;max-height:120px;overflow-y:auto;outline:none;font-family:inherit;background:#fff;transition:border-color .2s}
-            .chat-input:focus{border-color:#002366}
-            .send-btn{background:#002366;color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:.9rem;font-weight:600;cursor:pointer;flex-shrink:0;transition:opacity .2s}
-            .send-btn:hover{opacity:.88}
-            .send-btn:disabled{opacity:.4;cursor:default}
-            .clear-btn{background:#fff;border:1.5px solid #e8e4dc;color:#666;border-radius:10px;padding:10px 14px;font-size:.82rem;cursor:pointer;flex-shrink:0}
-            .clear-btn:hover{border-color:#999}
-            .empty-hint{text-align:center;padding:40px 20px;color:#aaa;font-size:.875rem}
-            .empty-hint .icon{font-size:2.5rem;margin-bottom:10px}
-            .course-badge{background:rgba(255,255,255,.2);border-radius:20px;padding:4px 14px;font-size:.78rem;white-space:nowrap}
+            .sa-wrap{background:#f0f4ff;min-height:100vh;display:flex;flex-direction:column}
+            .sa-hero{background:linear-gradient(135deg,#1B2A6B,#2d4494);color:#fff;padding:22px 28px 18px;flex-shrink:0;position:relative;overflow:hidden}
+            .sa-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 600px 300px at 90% 50%,rgba(99,130,255,0.2),transparent);pointer-events:none}
+            .sa-hero-inner{position:relative;max-width:960px;margin:0 auto;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+            .sa-hero-icon{width:48px;height:48px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+            .sa-hero-text{flex:1;min-width:200px}
+            .sa-hero-text h1{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.25rem;margin:0 0 3px;color:#fff}
+            .sa-hero-text p{font-size:.8rem;color:rgba(255,255,255,.7);margin:0}
+            .sa-course-wrap{flex-shrink:0;min-width:220px}
+            .sa-course-lbl{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+            .sa-course-sel{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:8px 12px;font-size:.85rem;cursor:pointer;width:100%}
+            .sa-course-sel option{color:#111;background:#fff}
+            .sa-badge{background:rgba(255,255,255,.15);border-radius:20px;padding:3px 12px;font-size:.72rem;color:rgba(255,255,255,.9);white-space:nowrap;align-self:flex-end}
+
+            .sa-body{max-width:960px;margin:0 auto;padding:16px 20px;flex:1;display:flex;flex-direction:column;min-height:0}
+            .sa-chatbox{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:8px 0;min-height:340px;max-height:calc(100vh - 310px)}
+
+            .sa-msg{display:flex;gap:10px;align-items:flex-start;animation:sa-fadein .25s ease}
+            @keyframes sa-fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+            .sa-msg.user{flex-direction:row-reverse}
+            .sa-avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem}
+            .sa-avatar.ai{background:#eef2ff;color:#1B2A6B;border:1.5px solid #c7d2fe}
+            .sa-avatar.user{background:#1B2A6B;color:#fff;font-size:.75rem;font-weight:800}
+            .sa-bubble{max-width:76%;padding:12px 16px;border-radius:18px;font-size:.875rem;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+            .sa-msg.ai .sa-bubble{background:#fff;border:1.5px solid #e0e7ff;border-radius:4px 18px 18px 18px;color:#1e293b;box-shadow:0 2px 8px rgba(27,42,107,.06)}
+            .sa-msg.user .sa-bubble{background:linear-gradient(135deg,#1B2A6B,#2d4494);color:#fff;border-radius:18px 4px 18px 18px}
+            .sa-bubble code{background:rgba(0,0,0,.08);padding:1px 5px;border-radius:4px;font-size:.82rem}
+            .sa-bubble pre{background:#f8f9fc;border:1px solid #e0e7ff;padding:12px;border-radius:10px;overflow-x:auto;font-size:.8rem;margin:8px 0}
+
+            .sa-typing{display:none;align-items:center;gap:5px;padding:10px 16px;background:#fff;border:1.5px solid #e0e7ff;border-radius:18px;width:fit-content;box-shadow:0 2px 8px rgba(27,42,107,.06)}
+            .sa-typing span{width:7px;height:7px;background:#93c5fd;border-radius:50%;animation:sa-bounce .9s infinite}
+            .sa-typing span:nth-child(2){animation-delay:.15s}
+            .sa-typing span:nth-child(3){animation-delay:.3s}
+            @keyframes sa-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+
+            .sa-empty{text-align:center;padding:50px 20px;color:#94a3b8}
+            .sa-empty .ic{font-size:3rem;margin-bottom:12px}
+            .sa-empty p{font-size:.875rem;line-height:1.6;max-width:340px;margin:0 auto}
+
+            .sa-input-row{display:flex;gap:10px;margin-top:14px;align-items:flex-end;padding:14px;background:#fff;border-radius:16px;border:1.5px solid #e0e7ff;box-shadow:0 4px 16px rgba(27,42,107,.06)}
+            .sa-input{flex:1;border:none;outline:none;font-family:inherit;font-size:.9rem;resize:none;min-height:42px;max-height:120px;overflow-y:auto;color:#1e293b;background:transparent;line-height:1.5}
+            .sa-input::placeholder{color:#b0b9d0}
+            .sa-clear{background:transparent;border:1.5px solid #e0e7ff;color:#94a3b8;border-radius:10px;padding:10px 13px;cursor:pointer;font-size:.82rem;transition:all .15s}
+            .sa-clear:hover{border-color:#1B2A6B;color:#1B2A6B}
+            .sa-send{background:linear-gradient(135deg,#1B2A6B,#2d4494);color:#fff;border:none;border-radius:12px;padding:10px 22px;font-size:.9rem;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;flex-shrink:0;transition:opacity .2s}
+            .sa-send:hover{opacity:.88}
+            .sa-send:disabled{opacity:.4;cursor:default}
+
+            @media(max-width:600px){
+                .sa-hero{padding:16px} .sa-body{padding:10px} .sa-bubble{max-width:90%}
+                .sa-input-row{padding:10px}
+            }
         </style>
 
-        <div class="ai-page">
-            <div class="ai-hero">
-                <div class="ai-hero-inner">
-                    <div style="flex:1">
-                        <h1>🤖 AI Study Assistant</h1>
-                        <p>Ask anything about your course — explanations, examples, study tips</p>
+        <div class="sa-wrap">
+            <div class="sa-hero">
+                <div class="sa-hero-inner">
+                    <div class="sa-hero-icon">🎓</div>
+                    <div class="sa-hero-text">
+                        <h1>AI Study Assistant</h1>
+                        <p>Ask anything about your course — explanations, examples, exam prep</p>
                     </div>
-                    <div>
-                        <label style="font-size:.72rem;color:rgba(255,255,255,.7);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Course</label>
-                        <select class="course-selector" id="courseSelect" onchange="selectCourse(this)">
-                            <option value="" data-name="General Studies" data-desc="">📚 General (no course selected)</option>
-                            <!-- STUDENT: enrolled courses -->
-                            <optgroup label="My Courses" sec:authorize="hasRole('ROLE_STUDENT')"
-                                      th:if="${!enrollments.isEmpty()}">
-                                <option th:each="e : ${enrollments}"
-                                        th:value="${e.course.id}"
-                                        th:data-name="${e.course.name}"
-                                        th:data-code="${e.course.code}"
+                    <div class="sa-course-wrap">
+                        <div class="sa-course-lbl">Course</div>
+                        <select class="sa-course-sel" id="courseSelect" onchange="selectCourse(this)">
+                            <option value="" data-name="General Studies" data-desc="">📚 General (no course)</option>
+                            <optgroup label="My Courses" sec:authorize="hasRole('ROLE_STUDENT')" th:if="${!enrollments.isEmpty()}">
+                                <option th:each="e : ${enrollments}" th:value="${e.course.id}"
+                                        th:data-name="${e.course.name}" th:data-code="${e.course.code}"
                                         th:data-desc="${e.course.description != null ? e.course.description : ''}"
                                         th:text="${e.course.code + ' — ' + e.course.name}"
                                         th:selected="${selectedCourseId != null and selectedCourseId == e.course.id}">Course</option>
                             </optgroup>
-                            <!-- TEACHER: their courses -->
-                            <optgroup label="My Courses" sec:authorize="hasRole('ROLE_TEACHER')"
-                                      th:if="${!teacherCourses.isEmpty()}">
-                                <option th:each="c : ${teacherCourses}"
-                                        th:value="${c.id}"
-                                        th:data-name="${c.name}"
-                                        th:data-code="${c.code}"
+                            <optgroup label="My Courses" sec:authorize="hasRole('ROLE_TEACHER')" th:if="${!teacherCourses.isEmpty()}">
+                                <option th:each="c : ${teacherCourses}" th:value="${c.id}"
+                                        th:data-name="${c.name}" th:data-code="${c.code}"
                                         th:data-desc="${c.description != null ? c.description : ''}"
                                         th:text="${c.code + ' — ' + c.name}"
                                         th:selected="${selectedCourseId != null and selectedCourseId == c.id}">Course</option>
                             </optgroup>
                         </select>
                     </div>
-                    <span class="course-badge" id="courseBadge">📚 General</span>
+                    <span class="sa-badge" id="courseBadge">📚 General</span>
                 </div>
             </div>
 
-            <div class="chat-wrap">
-                <div class="chat-box" id="chatBox">
-                    <div class="empty-hint" id="emptyHint">
-                        <div class="icon">🎓</div>
-                        <p>Select a course above and ask your first question.<br>I'll help you understand any topic, solve problems, or prepare for exams.</p>
+            <div class="sa-body">
+                <div class="sa-chatbox" id="chatBox">
+                    <div class="sa-empty" id="emptyHint">
+                        <div class="ic">🎓</div>
+                        <p>Select a course above and ask your first question. I'll help you understand any topic, solve problems, or prepare for exams.</p>
                     </div>
                 </div>
-                <div class="typing" id="typingIndicator">
+                <div class="sa-typing" id="typingIndicator">
                     <span></span><span></span><span></span>
                 </div>
-                <div class="input-row">
-        <textarea class="chat-input" id="chatInput" placeholder="Ask a question about your course…" rows="1"
-                  onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
-                    <button class="clear-btn" onclick="clearChat()" title="Clear chat">↺</button>
-                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send ↑</button>
+                <div class="sa-input-row">
+                    <textarea class="sa-input" id="chatInput" placeholder="Ask a question about your course… (Enter to send)" rows="1"
+                              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+                    <button class="sa-clear" onclick="clearChat()" title="Clear chat">↺</button>
+                    <button class="sa-send" id="sendBtn" onclick="sendMessage()">Send ↑</button>
                 </div>
             </div>
         </div>
@@ -109,96 +118,65 @@
 
             function selectCourse(sel) {
                 const opt = sel.options[sel.selectedIndex];
-                selectedCourse = {
-                    name: opt.dataset.name || 'General Studies',
-                    description: opt.dataset.desc || ''
-                };
+                selectedCourse = { name: opt.dataset.name || 'General Studies', description: opt.dataset.desc || '' };
                 const code = opt.dataset.code ? opt.dataset.code + ' — ' : '';
                 document.getElementById('courseBadge').textContent = '📘 ' + (opt.dataset.code ? code + selectedCourse.name : 'General');
                 clearChat();
             }
-
             function clearChat() {
                 conversationHistory = [];
                 const box = document.getElementById('chatBox');
-                box.innerHTML = '<div class="empty-hint" id="emptyHint"><div class="icon">🎓</div><p>Select a course above and ask your first question.<br>I\'ll help you understand any topic, solve problems, or prepare for exams.</p></div>';
+                box.innerHTML = '<div class="sa-empty" id="emptyHint"><div class="ic">🎓</div><p>Select a course above and ask your first question.</p></div>';
             }
-
             function appendMsg(role, text) {
                 const box = document.getElementById('chatBox');
                 const hint = document.getElementById('emptyHint');
                 if (hint) hint.remove();
-
                 const div = document.createElement('div');
-                div.className = 'msg ' + role;
-
+                div.className = 'sa-msg ' + role;
                 const av = document.createElement('div');
-                av.className = 'msg-avatar ' + role;
+                av.className = 'sa-avatar ' + role;
                 av.textContent = role === 'ai' ? '🤖' : 'ME';
-
                 const bub = document.createElement('div');
-                bub.className = 'msg-bubble';
-                // Simple markdown: **bold**, `code`, ```blocks```
+                bub.className = 'sa-bubble';
                 bub.innerHTML = text
-                    .replace(/```([\s\S]*?)```/g, '<pre>$1</pre>')
-                    .replace(/`([^`]+)`/g, '<code>$1</code>')
-                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\n/g, '<br>');
-
-                div.appendChild(av);
-                div.appendChild(bub);
+                    .replace(/```([\s\S]*?)```/g,'<pre>$1</pre>')
+                    .replace(/`([^`]+)`/g,'<code>$1</code>')
+                    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+                    .replace(/\n/g,'<br>');
+                div.appendChild(av); div.appendChild(bub);
                 box.appendChild(div);
                 box.scrollTop = box.scrollHeight;
             }
-
             async function sendMessage() {
                 const input = document.getElementById('chatInput');
-                const btn   = document.getElementById('sendBtn');
-                const text  = input.value.trim();
+                const btn = document.getElementById('sendBtn');
+                const text = input.value.trim();
                 if (!text) return;
-
-                input.value = '';
-                input.style.height = 'auto';
+                input.value = ''; input.style.height = 'auto';
                 appendMsg('user', text);
-                conversationHistory.push({ role: 'user', content: text });
-
+                conversationHistory.push({ role:'user', content:text });
                 btn.disabled = true;
                 document.getElementById('typingIndicator').style.display = 'flex';
-
                 try {
                     const res = await fetch('/ai/study/chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            courseName: selectedCourse.name,
-                            courseDescription: selectedCourse.description,
-                            messages: conversationHistory
-                        })
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ courseName:selectedCourse.name, courseDescription:selectedCourse.description, messages:conversationHistory })
                     });
                     const data = await res.json();
                     document.getElementById('typingIndicator').style.display = 'none';
-
-                    if (data.error) {
-                        appendMsg('ai', '⚠️ ' + data.error);
-                    } else {
-                        appendMsg('ai', data.reply);
-                        conversationHistory.push({ role: 'assistant', content: data.reply });
-                    }
-                } catch (e) {
+                    if (data.error) appendMsg('ai','⚠️ ' + data.error);
+                    else { appendMsg('ai', data.reply); conversationHistory.push({role:'assistant',content:data.reply}); }
+                } catch(e) {
                     document.getElementById('typingIndicator').style.display = 'none';
-                    appendMsg('ai', '⚠️ Connection error. Please try again.');
+                    appendMsg('ai','⚠️ Connection error. Please try again.');
                 }
-                btn.disabled = false;
-                input.focus();
+                btn.disabled = false; input.focus();
             }
-
-            // Auto-resize textarea
             document.getElementById('chatInput').addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = Math.min(this.scrollHeight, 120) + 'px';
             });
-
-            // Auto-select course if passed via URL
             window.addEventListener('DOMContentLoaded', () => {
                 const sel = document.getElementById('courseSelect');
                 if (sel.value) selectCourse(sel);

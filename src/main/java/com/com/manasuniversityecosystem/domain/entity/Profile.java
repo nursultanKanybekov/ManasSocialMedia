@@ -142,6 +142,27 @@ public class Profile {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+
+    // ── Alumni Map fields ───────────────────────────────────────
+    /** WGS-84 latitude pinned by the alumni themselves */
+    private Double mapLat;
+
+    /** WGS-84 longitude pinned by the alumni themselves */
+    private Double mapLng;
+
+    /** Display city name (e.g. "Bishkek") */
+    @Column(length = 200)
+    private String mapCity;
+
+    /** Display country name (e.g. "Kyrgyzstan") */
+    @Column(length = 100)
+    private String mapCountry;
+
+    /** True = alumni has opted in to appear on the alumni world map */
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    @Builder.Default
+    private Boolean showOnMap = false;
+
     @PreUpdate
     public void onUpdate() {
         this.updatedAt = LocalDateTime.now();

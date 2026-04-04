@@ -58,9 +58,10 @@ public class SecurityConfig {
                         "/academic/attendance/open",
                         "/academic/attendance/*/close",
                         "/academic/attendance/*/mark",
-                        // AI feature AJAX endpoints
-                        "/ai/study/chat", "/ai/essay/analyse", "/ai/flashcards/generate",
-                        "/ai/faq/ask", "/ai/career-advisor/recommend"))
+                        // AI feature AJAX endpoints — wildcard covers all current and future paths
+                        "/ai/**",
+                        // Alumni map AJAX endpoints
+                        "/mezun/map/pin", "/mezun/map/pins"))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .securityContext(ctx -> ctx
                         .securityContextRepository(new HttpSessionSecurityContextRepository()))

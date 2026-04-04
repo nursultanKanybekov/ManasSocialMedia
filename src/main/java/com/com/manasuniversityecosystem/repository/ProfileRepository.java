@@ -56,4 +56,19 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID> {
     @Modifying
     @Query("DELETE FROM Profile p WHERE p.user.id = :userId")
     void deleteByUserId(@Param("userId") UUID userId);
+
+    /** All alumni who opted in to the world map, with their user and faculty */
+    @Query("""
+            SELECT p FROM Profile p
+            JOIN FETCH p.user u
+            LEFT JOIN FETCH u.faculty
+            WHERE p.showOnMap = true
+              AND u.status = 'ACTIVE'
+              AND u.role = 'MEZUN'
+              AND p.mapLat IS NOT NULL
+              AND p.mapLng IS NOT NULL
+            ORDER BY u.fullName
+            """)
+    List<Profile> findAllMapPins();
+
 }

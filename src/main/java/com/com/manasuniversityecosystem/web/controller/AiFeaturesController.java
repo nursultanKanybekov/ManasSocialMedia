@@ -109,12 +109,13 @@ public class AiFeaturesController {
                 return ResponseEntity.ok(Map.of("error", "Essay is too short. Please submit at least 50 characters."));
 
             String system = "You are an academic writing evaluator for Manas University. " +
-                    "Analyse this " + essayType + " and respond ONLY with valid JSON (no markdown): " +
+                    "Analyse this " + essayType + " and respond ONLY with valid JSON (no markdown, no code fences): " +
                     "{\"overallScore\":<0-100>,\"grades\":{\"grammar\":<0-10>,\"structure\":<0-10>," +
                     "\"clarity\":<0-10>,\"content\":<0-10>,\"originality\":<0-10>}," +
                     "\"summary\":\"<2 sentences>\",\"strengths\":[\"s1\",\"s2\",\"s3\"]," +
                     "\"improvements\":[\"i1\",\"i2\",\"i3\"],\"plagiarismRisk\":\"LOW|MEDIUM|HIGH\"," +
-                    "\"plagiarismNote\":\"<brief>\",\"rewrittenIntro\":\"<improved first paragraph>\"}";
+                    "\"plagiarismNote\":\"<brief>\",\"rewrittenIntro\":\"<improved first paragraph>\"}. " +
+                    "IMPORTANT: Do NOT use double-quote characters inside any string values. Use single quotes instead.";
 
             // generateLarge uses 4096 tokens — essays with rewritten intros can be long
             String raw = geminiService.generateLarge(system, "Essay to evaluate:\n\n" + essayText);
@@ -160,8 +161,10 @@ public class AiFeaturesController {
                 return ResponseEntity.ok(Map.of("error", "Notes are too short. Please provide more content."));
 
             String system = "Create exactly " + count + " flashcards from lecture notes about: " + subject + ". " +
-                    "Respond ONLY with valid JSON (no markdown): " +
+                    "Respond ONLY with valid JSON (no markdown, no code fences): " +
                     "{\"subject\":\"" + subject + "\",\"cards\":[{\"question\":\"...\",\"answer\":\"...\"},...]}. " +
+                    "IMPORTANT: Do NOT use double-quote characters inside question or answer text. " +
+                    "Use single quotes or rephrase instead. " +
                     "Questions must be specific and test real understanding. Answers: 1-3 sentences. " +
                     "Reply in the same language as the notes.";
 
@@ -197,16 +200,20 @@ public class AiFeaturesController {
         return "ai/features/faq-bot";
     }
 
-    /** AJAX: answer a university FAQ question */
-    @PostMapping("/faq/ask")
+    /** AJAX: answer a university FAQ question — accepts both /faq/ask and /faq/chat */
+    @PostMapping({"/faq/ask", "/faq/chat"})
     @PreAuthorize("isAuthenticated()")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> faqAsk(@RequestBody Map<String, Object> body) {
         try {
+            // Support both old format {question, history} and new format {messages}
             String question = (String) body.getOrDefault("question", "");
             @SuppressWarnings("unchecked")
             List<Map<String, String>> history =
                     (List<Map<String, String>>) body.getOrDefault("history", List.of());
+            @SuppressWarnings("unchecked")
+            List<Map<String, String>> directMessages =
+                    (List<Map<String, String>>) body.get("messages");
 
             String system = "You are the 24/7 virtual assistant for Kyrgyz-Turkish Manas University, Bishkek. " +
                     "Answer questions about enrollment, exams, grading, dormitories, scholarships, " +
@@ -214,9 +221,17 @@ public class AiFeaturesController {
                     "Be professional and friendly. If you don't know a specific date or number, say so and " +
                     "suggest contacting the department. Reply in the same language as the user (EN/RU/KY/TR).";
 
-            // Add current question to history
-            List<Map<String, String>> messages = new ArrayList<>(history);
-            messages.add(Map.of("role", "user", "content", question));
+            List<Map<String, String>> messages;
+            if (directMessages != null && !directMessages.isEmpty()) {
+                // New template: sends full messages array directly
+                messages = directMessages;
+            } else {
+                // Old template: sends question + history separately
+                messages = new ArrayList<>(history);
+                if (!question.isBlank()) {
+                    messages.add(Map.of("role", "user", "content", question));
+                }
+            }
 
             String reply = geminiService.generate(system, messages);
             return ResponseEntity.ok(Map.of("reply", reply));
@@ -238,8 +253,8 @@ public class AiFeaturesController {
         return "ai/features/career-advisor";
     }
 
-    /** AJAX: generate personalised career recommendations */
-    @PostMapping("/career-advisor/recommend")
+    /** AJAX: generate personalised career recommendations — accepts both /recommend and /analyse */
+    @PostMapping({"/career-advisor/recommend", "/career-advisor/analyse"})
     @PreAuthorize("isAuthenticated()")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> careerRecommend(
@@ -253,9 +268,15 @@ public class AiFeaturesController {
             List<Grade> grades = gradeRepo.findByStudentIdOrderByCourse_CodeAscTypeAsc(principal.getId());
             Double avgScore = gradeRepo.avgScoreForStudent(principal.getId());
 
-            String interests  = body.getOrDefault("interests", "");
-            String strengths  = body.getOrDefault("strengths", "");
-            String targetRole = body.getOrDefault("targetRole", "");
+            // Accept both old field names (interests/strengths/targetRole)
+            // and new template field names (interests/skills/faculty/year/context)
+            String interests  = body.getOrDefault("interests",  "");
+            String strengths  = body.getOrDefault("strengths",
+                    body.getOrDefault("skills", ""));
+            String targetRole = body.getOrDefault("targetRole",
+                    body.getOrDefault("context", ""));
+            String extraFaculty = body.getOrDefault("faculty", "");
+            String year         = body.getOrDefault("year", "");
 
             // Build academic profile string
             String courseList = enrollments.stream()
@@ -268,32 +289,37 @@ public class AiFeaturesController {
                             + " (" + (g.getLetterGrade() != null ? g.getLetterGrade() : "?") + ")")
                     .collect(Collectors.joining("\n"));
 
-            String faculty = user.getFaculty() != null ? user.getFaculty().getName() : "Unknown";
+            String faculty = !extraFaculty.isBlank() ? extraFaculty
+                    : (user.getFaculty() != null ? user.getFaculty().getName() : "Unknown");
             String gpa     = avgScore != null ? String.format("%.1f%%", avgScore) : "No grades yet";
 
             String system = "You are a career advisor for Manas University students. " +
                     "Analyse the student's academic profile and give career recommendations. " +
-                    "Respond ONLY with valid JSON (no markdown): " +
+                    "Respond ONLY with valid JSON (no markdown, no code fences): " +
                     "{\"summary\":\"<2 sentences>\",\"topCareers\":[{\"title\":\"...\",\"match\":<0-100>," +
                     "\"why\":\"...\",\"skills\":[\"s1\",\"s2\"],\"nextSteps\":[\"n1\",\"n2\"]}]," +
                     "\"immediateActions\":[\"a1\",\"a2\",\"a3\"]," +
                     "\"strengthsFound\":[\"s1\",\"s2\"],\"gapsToBridge\":[\"g1\",\"g2\"]}. " +
+                    "IMPORTANT: Do NOT use double-quote characters inside any string values. Use single quotes instead. " +
                     "Include 3 career paths. Be specific and realistic.";
 
             String userMsg = """
                     Student Profile:
-                    - Faculty: %s
+                    - Faculty / Major: %s
+                    - Year of study: %s
                     - Average score: %s
                     - Enrolled courses:
                     %s
                     - Recent grades:
                     %s
                     - Student's interests: %s
-                    - Student's self-assessed strengths: %s
-                    - Target role (if any): %s
+                    - Student's skills / strengths: %s
+                    - Additional context / target role: %s
                     
                     Please analyse this profile and provide career recommendations.
-                    """.formatted(faculty, gpa,
+                    """.formatted(faculty,
+                    year.isBlank()        ? "Not specified"        : year,
+                    gpa,
                     courseList.isBlank() ? "No active enrollments" : courseList,
                     gradeList.isBlank()  ? "No grades yet"        : gradeList,
                     interests.isBlank()  ? "Not specified"        : interests,
@@ -304,6 +330,7 @@ public class AiFeaturesController {
             String json = raw.replaceAll("(?s)```json\\s*", "")
                     .replaceAll("(?s)```\\s*", "")
                     .trim();
+            json = repairJson(json);
             @SuppressWarnings("unchecked")
             Map<String, Object> result = new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Map.class);
             return ResponseEntity.ok(result);
@@ -314,32 +341,94 @@ public class AiFeaturesController {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Utility: attempt to repair a JSON string that was truncated
-    // mid-stream by the AI provider hitting its token limit.
-    // Handles the two most common cases:
-    //   • Truncated inside a JSON array  → appends ]}
-    //   • Truncated inside a JSON object → appends }
+    // Utility: clean + repair JSON returned by Gemini.
+    //
+    // Two problems we solve:
+    //  1. Unescaped double-quotes INSIDE string values
+    //     e.g.  "answer":"The "OSI" model has 7 layers"
+    //     Fix:  walk char-by-char and escape rogue quotes.
+    //  2. Truncated JSON (token limit hit mid-stream)
+    //     Fix:  close any open arrays/objects.
     // ─────────────────────────────────────────────────────────────
     private String repairJson(String json) {
         if (json == null || json.isBlank()) return json;
-        String trimmed = json.trim();
-        // Count opening vs closing braces/brackets to detect truncation
-        long opens  = trimmed.chars().filter(c -> c == '{').count();
-        long closes = trimmed.chars().filter(c -> c == '}').count();
-        long arrO   = trimmed.chars().filter(c -> c == '[').count();
-        long arrC   = trimmed.chars().filter(c -> c == ']').count();
+        String cleaned = sanitizeJsonStrings(json.trim());
 
-        // Remove any trailing incomplete key-value (last comma or unclosed string)
-        String repaired = trimmed;
+        // Count brackets to detect truncation
+        long opens  = cleaned.chars().filter(c -> c == '{').count();
+        long closes = cleaned.chars().filter(c -> c == '}').count();
+        long arrO   = cleaned.chars().filter(c -> c == '[').count();
+        long arrC   = cleaned.chars().filter(c -> c == ']').count();
+
         // Strip trailing comma before we close
-        repaired = repaired.replaceAll(",\\s*$", "");
-        // Strip a trailing open string that was never closed
-        repaired = repaired.replaceAll("\"[^\"]*$", "\"\"");
+        cleaned = cleaned.replaceAll(",\\s*$", "");
 
-        // Close arrays first, then objects
-        StringBuilder sb = new StringBuilder(repaired);
+        StringBuilder sb = new StringBuilder(cleaned);
         for (long i = arrC; i < arrO; i++) sb.append("]");
         for (long i = closes; i < opens; i++) sb.append("}");
         return sb.toString();
+    }
+
+    /**
+     * Walk the JSON character-by-character and escape any double-quote that
+     * appears INSIDE a string value but was not escaped by the AI.
+     *
+     * Algorithm:
+     *  • Track whether we are currently inside a JSON string.
+     *  • A '\' immediately consumed with the next char as an escape sequence.
+     *  • A '"' that is NOT followed (ignoring whitespace) by a JSON structural
+     *    character (:  ,  }  ]) is treated as a rogue inline quote and escaped.
+     */
+    private String sanitizeJsonStrings(String json) {
+        StringBuilder out = new StringBuilder(json.length() + 32);
+        boolean inString = false;
+
+        for (int i = 0; i < json.length(); i++) {
+            char c = json.charAt(i);
+
+            // Inside a string, consume escape sequences verbatim
+            if (c == '\\' && inString) {
+                out.append(c);
+                if (i + 1 < json.length()) {
+                    out.append(json.charAt(i + 1));
+                    i++;
+                }
+                continue;
+            }
+
+            if (c == '"') {
+                if (!inString) {
+                    // Opening a new JSON string
+                    inString = true;
+                    out.append(c);
+                } else {
+                    // Inside a string — is this the legitimate closing quote?
+                    if (isClosingQuote(json, i + 1)) {
+                        inString = false;
+                        out.append(c);
+                    } else {
+                        // Rogue quote inside the value — escape it
+                        out.append("\\\"");
+                    }
+                }
+                continue;
+            }
+
+            out.append(c);
+        }
+        return out.toString();
+    }
+
+    /**
+     * Returns true if the first non-whitespace character at or after {@code pos}
+     * is a JSON structural delimiter that can legally follow a closing quote.
+     */
+    private boolean isClosingQuote(String json, int pos) {
+        for (int i = pos; i < json.length(); i++) {
+            char ahead = json.charAt(i);
+            if (ahead == ' ' || ahead == '\t' || ahead == '\r' || ahead == '\n') continue;
+            return ahead == ':' || ahead == ',' || ahead == '}' || ahead == ']';
+        }
+        return true; // end of input — last string is being closed
     }
 }

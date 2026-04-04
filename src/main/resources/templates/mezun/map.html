@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('Alumni World Map')}"></head>
+<body>
+<div class="app-shell" id="app-shell">
+  <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+  <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+  <main class="main-content" style="padding:0;overflow:hidden">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css"/>
+
+    <style>
+      /* ── Layout ── */
+      .map-shell{position:relative;width:100%;height:calc(100vh - var(--navbar-h));display:flex;flex-direction:column}
+
+      /* ── Top bar ── */
+      .map-topbar{
+        background:#fff;border-bottom:1px solid var(--border);
+        padding:0 22px;height:58px;display:flex;align-items:center;
+        gap:18px;flex-shrink:0;z-index:10;
+      }
+      .map-topbar-title{
+        font-family:'Montserrat',sans-serif;font-weight:800;
+        font-size:1rem;color:var(--navy);display:flex;align-items:center;gap:8px;
+      }
+      .map-stats{display:flex;gap:14px;margin-left:auto;align-items:center;flex-wrap:wrap}
+      .map-stat{
+        display:flex;align-items:center;gap:6px;
+        background:var(--bg);border:1px solid var(--border);
+        border-radius:20px;padding:4px 12px;font-size:.78rem;
+      }
+      .map-stat .val{font-family:'Montserrat',sans-serif;font-weight:800;color:var(--navy);font-size:.88rem}
+      .map-stat .lbl{color:var(--muted)}
+
+      /* ── Pin button (Mezun only) ── */
+      .pin-btn{
+        display:flex;align-items:center;gap:7px;
+        background:linear-gradient(135deg,#1B2A6B,#2d4494);
+        color:#fff;border:none;border-radius:10px;
+        padding:8px 16px;font-size:.82rem;font-weight:700;
+        font-family:'Montserrat',sans-serif;cursor:pointer;
+        transition:opacity .2s;flex-shrink:0;
+      }
+      .pin-btn:hover{opacity:.88}
+      .pin-btn.remove{background:linear-gradient(135deg,#b91c1c,#dc2626)}
+
+      /* ── Map container ── */
+      #alumni-map{flex:1;width:100%;min-height:0}
+
+      /* ── Custom marker ── */
+      .alumni-pin{
+        width:36px;height:36px;border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);border:2.5px solid #fff;
+        box-shadow:0 3px 12px rgba(27,42,107,.35);
+        display:flex;align-items:center;justify-content:center;
+        background:linear-gradient(135deg,#1B2A6B,#2d4494);
+        overflow:hidden;
+      }
+      .alumni-pin img{width:100%;height:100%;object-fit:cover;transform:rotate(45deg);border-radius:50%}
+      .alumni-pin .ini{transform:rotate(45deg);color:#fff;font-size:12px;font-weight:800;font-family:'Montserrat',sans-serif}
+      .my-pin{background:linear-gradient(135deg,#C0392B,#e74c3c)!important}
+
+      /* ── Popup ── */
+      .leaflet-popup-content-wrapper{border-radius:14px!important;box-shadow:0 8px 32px rgba(27,42,107,.18)!important;padding:0!important;overflow:hidden!important;border:none!important}
+      .leaflet-popup-content{margin:0!important;width:220px!important}
+      .leaflet-popup-tip-container{display:none}
+      .alumni-popup{padding:0}
+      .ap-header{background:linear-gradient(135deg,#1B2A6B,#2d4494);padding:14px 16px;display:flex;align-items:center;gap:10px}
+      .ap-avatar{width:42px;height:42px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.8rem;overflow:hidden;flex-shrink:0}
+      .ap-avatar img{width:100%;height:100%;object-fit:cover}
+      .ap-name{font-family:'Montserrat',sans-serif;font-weight:800;font-size:.88rem;color:#fff;line-height:1.2}
+      .ap-faculty{font-size:.72rem;color:rgba(255,255,255,.72);margin-top:2px}
+      .ap-body{padding:12px 14px}
+      .ap-row{display:flex;align-items:center;gap:7px;font-size:.78rem;color:#475569;margin-bottom:6px}
+      .ap-row:last-child{margin-bottom:0}
+      .ap-icon{font-size:.85rem;flex-shrink:0}
+      .ap-link{display:block;width:100%;text-align:center;padding:8px;background:#f0f4ff;color:#1B2A6B;font-weight:700;font-size:.78rem;text-decoration:none;border-top:1px solid #e0e7ff;font-family:'Montserrat',sans-serif}
+      .ap-link:hover{background:#e0e7ff}
+
+      /* ── Pin modal ── */
+      .pin-modal-overlay{
+        display:none;position:fixed;inset:0;z-index:9999;
+        background:rgba(10,15,40,.6);backdrop-filter:blur(4px);
+        align-items:center;justify-content:center;
+      }
+      .pin-modal-overlay.open{display:flex}
+      .pin-modal{
+        background:#fff;border-radius:20px;width:min(480px,94vw);
+        box-shadow:0 24px 60px rgba(27,42,107,.25);overflow:hidden;
+        animation:pm-in .25s ease;
+      }
+      @keyframes pm-in{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+      .pm-header{background:linear-gradient(135deg,#1B2A6B,#2d4494);padding:18px 22px;display:flex;align-items:center;gap:12px}
+      .pm-header h2{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1rem;color:#fff;margin:0;flex:1}
+      .pm-close{background:rgba(255,255,255,.15);border:none;border-radius:8px;width:32px;height:32px;color:#fff;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center}
+      .pm-body{padding:20px 22px}
+      .pm-label{font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;display:block}
+      .pm-input{width:100%;border:1.5px solid #e0e7ff;border-radius:9px;padding:9px 12px;font-size:.88rem;box-sizing:border-box;font-family:inherit;margin-bottom:14px}
+      .pm-input:focus{outline:none;border-color:#1B2A6B;box-shadow:0 0 0 3px rgba(27,42,107,.07)}
+      .pm-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+      .pm-info{background:#f0f4ff;border:1px solid #c7d2fe;border-radius:10px;padding:10px 14px;font-size:.8rem;color:#3730a3;margin-bottom:16px;line-height:1.55}
+      .pm-map-pick{height:200px;border-radius:10px;overflow:hidden;border:1.5px solid #e0e7ff;margin-bottom:14px}
+      .pm-coords{font-size:.72rem;color:#64748b;text-align:center;margin-bottom:14px}
+      .pm-coords span{font-weight:700;color:#1B2A6B}
+      .pm-actions{display:flex;gap:10px;justify-content:flex-end}
+      .pm-btn{padding:9px 22px;border-radius:10px;font-size:.85rem;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;border:none;transition:opacity .15s}
+      .pm-btn-primary{background:linear-gradient(135deg,#1B2A6B,#2d4494);color:#fff}
+      .pm-btn-primary:hover{opacity:.88}
+      .pm-btn-primary:disabled{opacity:.4;cursor:default}
+      .pm-btn-secondary{background:#f1f5f9;color:#475569;border:1.5px solid #e0e7ff}
+      .pm-btn-detect{background:#ecfdf5;color:#059669;border:1.5px solid #6ee7b7;font-size:.78rem;padding:7px 14px}
+
+      /* ── Country filter ── */
+      .country-filter{background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;font-family:'Montserrat',sans-serif;color:var(--navy);cursor:pointer;outline:none}
+
+      /* ── No pins notice ── */
+      .map-no-pins{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:5;pointer-events:none;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid #e0e7ff;border-radius:18px;padding:28px 36px;display:none}
+      .map-no-pins.show{display:block}
+
+      /* cluster override */
+      .marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{border-radius:50%!important}
+      .marker-cluster-small div{background:rgba(27,42,107,.85)!important;color:#fff!important;font-family:'Montserrat',sans-serif!important;font-weight:800!important}
+      .marker-cluster-medium div{background:rgba(27,42,107,.9)!important;color:#fff!important;font-family:'Montserrat',sans-serif!important;font-weight:800!important}
+      .marker-cluster-large div{background:rgba(192,57,43,.88)!important;color:#fff!important;font-family:'Montserrat',sans-serif!important;font-weight:800!important}
+
+
+      /* ── Z-index fix: prevent Leaflet from overlapping navbar dropdowns ── */
+      .leaflet-pane        { z-index: 1 !important; }
+      .leaflet-tile-pane   { z-index: 2 !important; }
+      .leaflet-overlay-pane{ z-index: 3 !important; }
+      .leaflet-marker-pane { z-index: 4 !important; }
+      .leaflet-popup-pane  { z-index: 5 !important; }
+      .leaflet-top,
+      .leaflet-bottom      { z-index: 10 !important; }
+      #alumni-map          { isolation: isolate; }
+      @media(max-width:640px){
+        .map-stats{display:none}
+        .map-topbar{padding:0 14px;gap:10px}
+      }
+    </style>
+
+    <div class="map-shell">
+      <!-- Top bar -->
+      <div class="map-topbar">
+        <div class="map-topbar-title">
+          <span>🌍</span> Alumni World Map
+        </div>
+
+        <!-- Country filter (populated by JS) -->
+        <select class="country-filter" id="countryFilter" onchange="filterByCountry(this.value)">
+          <option value="">All countries</option>
+        </select>
+
+        <!-- Stats -->
+        <div class="map-stats">
+          <div class="map-stat"><span class="val" id="statTotal">—</span><span class="lbl">alumni</span></div>
+          <div class="map-stat"><span class="val" id="statCountries">—</span><span class="lbl">countries</span></div>
+        </div>
+
+        <!-- Pin button — MEZUN only -->
+        <button th:if="${isMezun}"
+                class="pin-btn"
+                th:classappend="${myShowOnMap} ? ' remove' : ''"
+                id="pinBtn"
+                onclick="openPinModal()">
+          <span th:if="${!myShowOnMap}">📍 Pin my location</span>
+          <span th:if="${myShowOnMap}">📍 Update / remove pin</span>
+        </button>
+      </div>
+
+      <!-- Leaflet map -->
+      <div id="alumni-map"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         PIN MODAL (MEZUN only)
+    ══════════════════════════════════════════ -->
+    <div class="pin-modal-overlay" id="pinModal" th:if="${isMezun}"
+         onclick="if(event.target===this)closePinModal()">
+      <div class="pin-modal">
+        <div class="pm-header">
+          <span style="font-size:1.3rem">📍</span>
+          <h2>Place your pin on the map</h2>
+          <button class="pm-close" onclick="closePinModal()">✕</button>
+        </div>
+        <div class="pm-body">
+          <div class="pm-info">
+            Click anywhere on the mini-map below to drop your pin, or use auto-detect.
+            Only your name, faculty, job title, and city will be visible to others.
+          </div>
+
+          <!-- Mini picker map -->
+          <div id="pm-map" class="pm-map-pick"></div>
+          <div class="pm-coords">
+            Selected: <span id="pm-lat-display">—</span>, <span id="pm-lng-display">—</span>
+          </div>
+
+          <!-- City / Country fields -->
+          <div class="pm-row">
+            <div>
+              <label class="pm-label">City</label>
+              <input class="pm-input" id="pm-city" type="text" placeholder="e.g. Bishkek"
+                     th:value="${myCity}"/>
+            </div>
+            <div>
+              <label class="pm-label">Country</label>
+              <input class="pm-input" id="pm-country" type="text" placeholder="e.g. Kyrgyzstan"
+                     th:value="${myCountry}"/>
+            </div>
+          </div>
+
+          <input type="hidden" id="pm-lat" th:value="${myLat}"/>
+          <input type="hidden" id="pm-lng" th:value="${myLng}"/>
+
+          <div class="pm-actions">
+            <!-- Remove pin -->
+            <button class="pm-btn pm-btn-secondary" th:if="${myShowOnMap}"
+                    onclick="removePin()" style="color:#b91c1c;border-color:#fca5a5">
+              🗑 Remove pin
+            </button>
+            <!-- Auto-detect -->
+            <button class="pm-btn pm-btn-detect" onclick="detectLocation()">
+              📡 Auto-detect
+            </button>
+            <button class="pm-btn pm-btn-primary" id="pm-save" onclick="savePin()">
+              Save pin
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+      const IS_MEZUN    = /*[[${isMezun}]]*/ false;
+      const MY_LAT      = /*[[${myLat}]]*/ null;
+      const MY_LNG      = /*[[${myLng}]]*/ null;
+      const MY_SHOW     = /*[[${myShowOnMap}]]*/ false;
+
+      /* ── Main map ── */
+      const map = L.map('alumni-map', {
+        center: [30, 15],
+        zoom: 2,
+        minZoom: 2,
+        maxZoom: 16,
+        zoomControl: false
+      });
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      /* OSM tiles */
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+      }).addTo(map);
+
+      /* Cluster group */
+      const clusterGroup = L.markerClusterGroup({
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        maxClusterRadius: 50
+      });
+      map.addLayer(clusterGroup);
+
+      /* All pin data */
+      let allPins = [];
+
+      /* ── Build custom icon ── */
+      function buildIcon(pin, isMe) {
+        const initials = pin.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+        const imgHtml  = pin.avatarUrl
+                ? `<img src="${pin.avatarUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span class="ini" style="display:none">${initials}</span>`
+                : `<span class="ini">${initials}</span>`;
+        const extra    = isMe ? ' my-pin' : '';
+        return L.divIcon({
+          className: '',
+          html: `<div class="alumni-pin${extra}">${imgHtml}</div>`,
+          iconSize: [36, 36],
+          iconAnchor: [18, 36],
+          popupAnchor: [0, -38]
+        });
+      }
+
+      /* ── Build popup HTML ── */
+      function buildPopup(pin) {
+        const initials = pin.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+        const avatarHtml = pin.avatarUrl
+                ? `<img src="${pin.avatarUrl}" alt="" onerror="this.style.display='none';this.parentElement.textContent='${initials}'"/>`
+                : initials;
+
+        const location = [pin.city, pin.country].filter(Boolean).join(', ');
+        const job      = pin.jobTitle || pin.headline || '';
+        const company  = pin.company ? ` · ${pin.company}` : '';
+        const year     = pin.graduationYear ? `Class of ${pin.graduationYear}` : '';
+
+        return `
+            <div class="alumni-popup">
+                <div class="ap-header">
+                    <div class="ap-avatar">${avatarHtml}</div>
+                    <div>
+                        <div class="ap-name">${esc(pin.name)}</div>
+                        <div class="ap-faculty">${esc(pin.faculty)}${year ? ' · '+year : ''}</div>
+                    </div>
+                </div>
+                <div class="ap-body">
+                    ${location ? `<div class="ap-row"><span class="ap-icon">📍</span><span>${esc(location)}</span></div>` : ''}
+                    ${job      ? `<div class="ap-row"><span class="ap-icon">💼</span><span>${esc(job+company)}</span></div>` : ''}
+                </div>
+                <a href="/profile/${pin.profileId}" class="ap-link">View profile →</a>
+            </div>`;
+      }
+
+      /* ── Load all pins ── */
+      async function loadPins() {
+        try {
+          const res  = await fetch('/mezun/map/pins', { credentials: 'same-origin' });
+          allPins    = await res.json();
+          renderPins(allPins);
+          buildCountryFilter(allPins);
+          document.getElementById('statTotal').textContent     = allPins.length;
+          const countries = new Set(allPins.map(p => p.country).filter(Boolean));
+          document.getElementById('statCountries').textContent = countries.size;
+        } catch(e) { console.error('Map load error', e); }
+      }
+
+      function renderPins(pins) {
+        clusterGroup.clearLayers();
+        pins.forEach(pin => {
+          const isMe = IS_MEZUN && MY_LAT && Math.abs(pin.lat - MY_LAT) < 0.001 && Math.abs(pin.lng - MY_LNG) < 0.001;
+          const marker = L.marker([pin.lat, pin.lng], { icon: buildIcon(pin, isMe) });
+          marker.bindPopup(buildPopup(pin), { maxWidth: 230 });
+          clusterGroup.addLayer(marker);
+        });
+      }
+
+      function buildCountryFilter(pins) {
+        const sel = document.getElementById('countryFilter');
+        const countries = Array.from(new Set(pins.map(function(p){return p.country;}).filter(Boolean))).sort();
+        countries.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c; opt.textContent = c;
+          sel.appendChild(opt);
+        });
+      }
+
+      function filterByCountry(country) {
+        const filtered = country ? allPins.filter(p => p.country === country) : allPins;
+        renderPins(filtered);
+        document.getElementById('statTotal').textContent = filtered.length;
+        if (filtered.length > 0 && country) {
+          const lats = filtered.map(p=>p.lat), lngs = filtered.map(p=>p.lng);
+          var sw = [Math.min.apply(null, lats), Math.min.apply(null, lngs)];
+          var ne = [Math.max.apply(null, lats), Math.max.apply(null, lngs)];
+          map.fitBounds([sw, ne], { padding: [40,40] });
+        }
+      }
+
+      function esc(s) {
+        return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      loadPins();
+
+      /* ══════════════════════════════════════════
+         PIN MODAL (MEZUN only)
+      ══════════════════════════════════════════ */
+      let pmMap = null, pmMarker = null;
+
+      function openPinModal() {
+        document.getElementById('pinModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+
+        // Init mini picker map after modal is visible
+        setTimeout(() => {
+          if (!pmMap) {
+            pmMap = L.map('pm-map', {
+              center: [42.87, 74.59], // Bishkek default
+              zoom: 4,
+              zoomControl: true
+            });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(pmMap);
+
+            pmMap.on('click', function(e) {
+              setPickerPin(e.latlng.lat, e.latlng.lng);
+              reverseGeocode(e.latlng.lat, e.latlng.lng);
+            });
+          }
+
+          // Restore existing pin if any
+          const lat = parseFloat(document.getElementById('pm-lat').value);
+          const lng = parseFloat(document.getElementById('pm-lng').value);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            setPickerPin(lat, lng);
+            pmMap.setView([lat, lng], 6);
+          }
+          pmMap.invalidateSize();
+        }, 120);
+      }
+
+      function closePinModal() {
+        document.getElementById('pinModal').classList.remove('open');
+        document.body.style.overflow = '';
+      }
+
+      function setPickerPin(lat, lng) {
+        document.getElementById('pm-lat').value = lat;
+        document.getElementById('pm-lng').value = lng;
+        document.getElementById('pm-lat-display').textContent = lat.toFixed(5);
+        document.getElementById('pm-lng-display').textContent = lng.toFixed(5);
+        if (pmMarker) pmMap.removeLayer(pmMarker);
+        pmMarker = L.marker([lat, lng]).addTo(pmMap);
+      }
+
+      function reverseGeocode(lat, lng) {
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+          headers: { 'Accept-Language': 'en', 'User-Agent': 'ManasLink/1.0' }
+        })
+                .then(r => r.json())
+                .then(data => {
+                  const addr = data.address || {};
+                  const city    = addr.city || addr.town || addr.village || addr.county || '';
+                  const country = addr.country || '';
+                  if (city)    document.getElementById('pm-city').value    = city;
+                  if (country) document.getElementById('pm-country').value = country;
+                })
+                .catch(() => {});
+      }
+
+      function detectLocation() {
+        if (!navigator.geolocation) return alert('Geolocation not supported by your browser.');
+        navigator.geolocation.getCurrentPosition(pos => {
+          const lat = pos.coords.latitude, lng = pos.coords.longitude;
+          setPickerPin(lat, lng);
+          pmMap.setView([lat, lng], 10);
+          reverseGeocode(lat, lng);
+        }, () => alert('Could not detect location. Please click on the map instead.'));
+      }
+
+      async function savePin() {
+        const lat     = parseFloat(document.getElementById('pm-lat').value);
+        const lng     = parseFloat(document.getElementById('pm-lng').value);
+        const city    = document.getElementById('pm-city').value.trim();
+        const country = document.getElementById('pm-country').value.trim();
+
+        if (isNaN(lat) || isNaN(lng)) {
+          alert('Please click on the map or use Auto-detect to choose your location.');
+          return;
+        }
+
+        const btn = document.getElementById('pm-save');
+        btn.disabled = true; btn.textContent = 'Saving…';
+
+        try {
+          const res  = await fetch('/mezun/map/pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat, lng, city, country })
+          });
+          const data = await res.json();
+          if (data.error) { alert(data.error); }
+          else {
+            closePinModal();
+            loadPins();
+            showToast('📍 Your pin is live on the map!', 'success');
+            const pinBtn = document.getElementById('pinBtn');
+            if (pinBtn) pinBtn.innerHTML = '📍 Update / remove pin';
+          }
+        } catch(e) { alert('Network error. Please try again.'); }
+        btn.disabled = false; btn.textContent = 'Save pin';
+      }
+
+      async function removePin() {
+        if (!confirm('Remove your pin from the alumni map?')) return;
+        try {
+          const res  = await fetch('/mezun/map/pin', { method: 'DELETE', credentials: 'same-origin' });
+          const data = await res.json();
+          if (data.ok) {
+            closePinModal();
+            loadPins();
+            showToast('Pin removed.', 'info');
+            const pinBtn = document.getElementById('pinBtn');
+            if (pinBtn) pinBtn.innerHTML = '📍 Pin my location';
+          }
+        } catch(e) { alert('Network error.'); }
+      }
+
+      /* ── Simple toast ── */
+      function showToast(msg, type) {
+        const t = document.createElement('div');
+        t.style.cssText = `
+                position:fixed;bottom:24px;right:24px;z-index:99999;
+                background:${type==='success'?'#1B2A6B':'#475569'};
+                color:#fff;border-radius:12px;padding:12px 20px;
+                font-family:'Montserrat',sans-serif;font-weight:700;font-size:.85rem;
+                box-shadow:0 8px 24px rgba(0,0,0,.25);animation:pmToastIn .3s ease;
+            `;
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+      }
+      /*]]>*/
+    </script>
+
+  </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

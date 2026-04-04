@@ -1,183 +1,169 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/header :: head('University FAQ Assistant')}"></head>
+<head th:replace="~{fragments/header :: head('University FAQ')}"></head>
 <body>
 <div class="app-shell" id="app-shell">
     <nav th:replace="~{fragments/navbar :: navbar}"></nav>
     <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
     <main class="main-content">
         <style>
-            .faq-page{background:#F2F0EB;min-height:100vh;display:flex;flex-direction:column}
-            .faq-hero{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;padding:24px 28px 20px;position:relative;overflow:hidden;flex-shrink:0}
-            .faq-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 1px,transparent 1px,transparent 10px);pointer-events:none}
-            .faq-hero-inner{position:relative;max-width:860px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-            .chat-wrap{max-width:860px;margin:0 auto;padding:20px 18px;flex:1;display:flex;gap:18px;min-height:0}
-            .chat-col{flex:1;display:flex;flex-direction:column;min-height:0}
-            .quick-col{width:240px;flex-shrink:0}
-            @media(max-width:640px){.quick-col{display:none}}
-            .chat-box{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:4px 0 8px;min-height:300px;max-height:calc(100vh - 300px)}
-            .msg{display:flex;gap:10px;align-items:flex-start}
-            .msg.user{flex-direction:row-reverse}
-            .msg-avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem}
-            .msg-avatar.ai{background:#ede9fe;color:#7c3aed}
-            .msg-avatar.user{background:#7c3aed;color:#fff;font-size:.78rem;font-weight:700}
-            .msg-bubble{max-width:78%;padding:11px 15px;border-radius:16px;font-size:.875rem;line-height:1.65;white-space:pre-wrap}
-            .msg.ai .msg-bubble{background:#fff;border:1px solid #e8e4dc;border-radius:4px 16px 16px 16px;color:#222}
-            .msg.user .msg-bubble{background:#7c3aed;color:#fff;border-radius:16px 4px 16px 16px}
-            .typing{display:none;align-items:center;gap:4px;padding:8px 14px;background:#fff;border:1px solid #e8e4dc;border-radius:16px;width:fit-content}
-            .typing span{width:7px;height:7px;background:#aaa;border-radius:50%;animation:bounce .9s infinite}
-            .typing span:nth-child(2){animation-delay:.15s}
-            .typing span:nth-child(3){animation-delay:.3s}
-            @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
-            .input-row{display:flex;gap:8px;margin-top:14px;align-items:flex-end}
-            .chat-input{flex:1;border:1.5px solid #e8e4dc;border-radius:12px;padding:10px 14px;font-size:.875rem;resize:none;min-height:44px;max-height:120px;font-family:inherit;outline:none;transition:border-color .2s}
-            .chat-input:focus{border-color:#7c3aed}
-            .send-btn{background:#7c3aed;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:600;cursor:pointer;flex-shrink:0}
-            .send-btn:hover{opacity:.88}
-            .send-btn:disabled{opacity:.4;cursor:default}
+            .fq-wrap{background:#f5f3ff;min-height:100vh;display:flex;flex-direction:column}
+            .fq-hero{background:linear-gradient(135deg,#5b21b6,#7c3aed);color:#fff;padding:22px 28px 18px;flex-shrink:0;position:relative;overflow:hidden}
+            .fq-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 500px 300px at 85% 50%,rgba(196,181,253,0.25),transparent);pointer-events:none}
+            .fq-hero-inner{position:relative;max-width:960px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+            .fq-hero-icon{width:48px;height:48px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0}
+            .fq-hero-text h1{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.25rem;margin:0 0 3px;color:#fff}
+            .fq-hero-text p{font-size:.82rem;color:rgba(255,255,255,.75);margin:0}
+            .fq-live{display:flex;align-items:center;gap:6px;margin-left:auto;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 14px;font-size:.72rem;font-weight:700;color:rgba(255,255,255,.9)}
+            .fq-live span{width:7px;height:7px;background:#4ade80;border-radius:50%;animation:fq-pulse 2s infinite;flex-shrink:0}
+            @keyframes fq-pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-            /* Quick questions sidebar */
-            .quick-card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden}
-            .quick-card-title{padding:12px 14px;border-bottom:1px solid #f0ede8;font-size:.8rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em}
-            .quick-btn{display:block;width:100%;text-align:left;padding:10px 14px;font-size:.8rem;color:#374151;background:transparent;border:none;border-bottom:1px solid #f0ede8;cursor:pointer;transition:background .15s;line-height:1.4}
-            .quick-btn:last-child{border-bottom:none}
-            .quick-btn:hover{background:#f5f3ff;color:#7c3aed}
-            .online-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;display:inline-block;animation:pulse 2s infinite}
-            @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+            .fq-body{max-width:960px;margin:0 auto;padding:16px 20px;flex:1;display:flex;gap:18px;min-height:0}
+            .fq-chat-col{flex:1;display:flex;flex-direction:column;min-height:0}
+            .fq-side-col{width:220px;flex-shrink:0}
+            @media(max-width:700px){.fq-side-col{display:none}.fq-body{padding:10px}}
+
+            .fq-chatbox{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:6px 0;min-height:340px;max-height:calc(100vh - 300px)}
+
+            .fq-msg{display:flex;gap:10px;align-items:flex-start;animation:fq-in .25s ease}
+            @keyframes fq-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+            .fq-msg.user{flex-direction:row-reverse}
+            .fq-avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem}
+            .fq-avatar.ai{background:#ede9fe;color:#7c3aed;border:1.5px solid #ddd6fe}
+            .fq-avatar.user{background:#7c3aed;color:#fff;font-size:.75rem;font-weight:800}
+            .fq-bubble{max-width:78%;padding:12px 16px;border-radius:18px;font-size:.875rem;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+            .fq-msg.ai .fq-bubble{background:#fff;border:1.5px solid #e5e7eb;border-radius:4px 18px 18px 18px;color:#1e293b;box-shadow:0 2px 8px rgba(91,33,182,.06)}
+            .fq-msg.user .fq-bubble{background:linear-gradient(135deg,#5b21b6,#7c3aed);color:#fff;border-radius:18px 4px 18px 18px}
+
+            .fq-typing{display:none;align-items:center;gap:5px;padding:10px 16px;background:#fff;border:1.5px solid #e5e7eb;border-radius:18px;width:fit-content;box-shadow:0 2px 8px rgba(91,33,182,.06)}
+            .fq-typing span{width:7px;height:7px;background:#c4b5fd;border-radius:50%;animation:fq-bounce .9s infinite}
+            .fq-typing span:nth-child(2){animation-delay:.15s}
+            .fq-typing span:nth-child(3){animation-delay:.3s}
+            @keyframes fq-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+
+            .fq-input-row{display:flex;gap:10px;margin-top:12px;align-items:flex-end;padding:12px 14px;background:#fff;border-radius:16px;border:1.5px solid #ddd6fe;box-shadow:0 4px 16px rgba(91,33,182,.06)}
+            .fq-input{flex:1;border:none;outline:none;font-family:inherit;font-size:.9rem;resize:none;min-height:42px;max-height:120px;overflow-y:auto;color:#1e293b;background:transparent;line-height:1.5}
+            .fq-input::placeholder{color:#c4b5fd}
+            .fq-send{background:linear-gradient(135deg,#5b21b6,#7c3aed);color:#fff;border:none;border-radius:12px;padding:10px 22px;font-size:.9rem;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;flex-shrink:0;transition:opacity .2s}
+            .fq-send:hover{opacity:.88}
+            .fq-send:disabled{opacity:.4;cursor:default}
+            .fq-clear{background:transparent;border:1.5px solid #ddd6fe;color:#a78bfa;border-radius:10px;padding:10px 13px;cursor:pointer;font-size:.82rem;transition:all .15s}
+            .fq-clear:hover{border-color:#7c3aed;color:#7c3aed}
+
+            /* Sidebar quick questions */
+            .fq-side-card{background:#fff;border:1.5px solid #ddd6fe;border-radius:16px;overflow:hidden;margin-bottom:14px}
+            .fq-side-title{padding:12px 14px;border-bottom:1px solid #f5f3ff;font-family:'Montserrat',sans-serif;font-size:.78rem;font-weight:800;color:#5b21b6;text-transform:uppercase;letter-spacing:.05em}
+            .fq-quick-btn{display:block;width:100%;text-align:left;padding:10px 14px;font-size:.8rem;color:#4c1d95;background:transparent;border:none;border-bottom:1px solid #f5f3ff;cursor:pointer;transition:background .15s;line-height:1.45;font-family:inherit}
+            .fq-quick-btn:last-child{border-bottom:none}
+            .fq-quick-btn:hover{background:#f5f3ff;color:#7c3aed}
         </style>
 
-        <div class="faq-page">
-            <div class="faq-hero">
-                <div class="faq-hero-inner">
-                    <div style="flex:1">
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                            <span class="online-dot"></span>
-                            <span style="font-size:.75rem;color:rgba(255,255,255,.7)">Online 24/7</span>
-                        </div>
-                        <h1 style="font-size:1.4rem;font-weight:700;margin:0 0 4px">🎓 University FAQ Assistant</h1>
-                        <p style="font-size:.875rem;color:rgba(255,255,255,.72);margin:0">
-                            Ask anything about Manas University — enrollment, exams, facilities, procedures
-                        </p>
+        <div class="fq-wrap">
+            <div class="fq-hero">
+                <div class="fq-hero-inner">
+                    <div class="fq-hero-icon">🏛️</div>
+                    <div class="fq-hero-text">
+                        <h1>University FAQ Bot</h1>
+                        <p>Ask anything about procedures, deadlines, departments &amp; campus life</p>
                     </div>
-                    <button style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:7px 14px;font-size:.8rem;cursor:pointer"
-                            onclick="clearFaqChat()">Clear chat</button>
+                    <div class="fq-live"><span></span> Live · AI-powered</div>
                 </div>
             </div>
 
-            <div class="chat-wrap">
-                <!-- Quick questions sidebar -->
-                <div class="quick-col">
-                    <div class="quick-card">
-                        <div class="quick-card-title">Quick Questions</div>
-                        <button class="quick-btn" onclick="quickAsk('How do I register for courses?')">📋 Course registration</button>
-                        <button class="quick-btn" onclick="quickAsk('What are the scholarship requirements?')">🎓 Scholarships</button>
-                        <button class="quick-btn" onclick="quickAsk('How do I apply for dormitory housing?')">🏠 Dormitory application</button>
-                        <button class="quick-btn" onclick="quickAsk('What documents do I need for enrollment?')">📄 Enrollment documents</button>
-                        <button class="quick-btn" onclick="quickAsk('How does the grading system work?')">📊 Grading system</button>
-                        <button class="quick-btn" onclick="quickAsk('What student clubs are available?')">🎯 Student clubs</button>
-                        <button class="quick-btn" onclick="quickAsk('How do I get a transcript or certificate?')">📜 Transcripts</button>
-                        <button class="quick-btn" onclick="quickAsk('What are the library opening hours?')">📚 Library hours</button>
-                        <button class="quick-btn" onclick="quickAsk('How do I appeal an exam grade?')">⚖️ Grade appeal</button>
-                        <button class="quick-btn" onclick="quickAsk('How do I contact my faculty dean?')">📞 Faculty contacts</button>
+            <div class="fq-body">
+                <!-- Chat -->
+                <div class="fq-chat-col">
+                    <div class="fq-chatbox" id="chatBox">
+                        <div class="fq-msg ai" id="welcomeMsg">
+                            <div class="fq-avatar ai">🏛️</div>
+                            <div class="fq-bubble">Hello! I'm the Manas University FAQ Assistant 👋<br><br>Ask me anything about:<br>• Registration &amp; enrollment<br>• Exams &amp; academic calendar<br>• Scholarships &amp; tuition<br>• Dormitories &amp; campus services<br>• Departments &amp; contacts<br><br>I understand KG, RU, TR &amp; EN!</div>
+                        </div>
+                    </div>
+                    <div class="fq-typing" id="typing"><span></span><span></span><span></span></div>
+                    <div class="fq-input-row">
+                        <textarea class="fq-input" id="chatInput" placeholder="Ask about registration, exams, scholarships…" rows="1"
+                                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
+                        <button class="fq-clear" onclick="clearChat()" title="Clear">↺</button>
+                        <button class="fq-send" id="sendBtn" onclick="sendMsg()">Send ↑</button>
                     </div>
                 </div>
 
-                <!-- Chat column -->
-                <div class="chat-col">
-                    <div class="chat-box" id="faqChatBox">
-                        <div class="msg ai">
-                            <div class="msg-avatar ai">🎓</div>
-                            <div class="msg-bubble">
-                                Hello! 👋 I'm the Manas University virtual assistant, available 24/7.
-
-                                I can help you with:
-                                • Course registration &amp; enrollment
-                                • Exam schedules &amp; grades
-                                • Scholarships &amp; financial aid
-                                • Dormitory applications
-                                • Document requests
-                                • Campus services &amp; contacts
-
-                                What would you like to know?
-                            </div>
-                        </div>
-                    </div>
-                    <div class="typing" id="faqTyping">
-                        <span></span><span></span><span></span>
-                    </div>
-                    <div class="input-row">
-          <textarea class="chat-input" id="faqInput" placeholder="Type your question…" rows="1"
-                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFaq()}"></textarea>
-                        <button class="send-btn" id="faqSendBtn" onclick="sendFaq()">Ask ↑</button>
+                <!-- Quick questions sidebar -->
+                <div class="fq-side-col">
+                    <div class="fq-side-card">
+                        <div class="fq-side-title">💬 Quick Questions</div>
+                        <button class="fq-quick-btn" onclick="quickAsk('How do I register for courses?')">How to register for courses?</button>
+                        <button class="fq-quick-btn" onclick="quickAsk('When is the exam session this semester?')">When is the exam session?</button>
+                        <button class="fq-quick-btn" onclick="quickAsk('How can I apply for a scholarship?')">How to apply for scholarship?</button>
+                        <button class="fq-quick-btn" onclick="quickAsk('What are the dormitory rules and costs?')">Dormitory info &amp; costs</button>
+                        <button class="fq-quick-btn" onclick="quickAsk('How do I get my academic transcript?')">Get academic transcript</button>
+                        <button class="fq-quick-btn" onclick="quickAsk('What are the library opening hours?')">Library opening hours</button>
+                        <button class="fq-quick-btn" onclick="quickAsk('How to contact the dean\'s office?')">Contact dean's office</button>
+                        <button class="fq-quick-btn" onclick="quickAsk('What clubs and activities are available on campus?')">Campus clubs &amp; activities</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <script>
-            let faqHistory = [];
+            let history = [];
 
             function quickAsk(q) {
-                document.getElementById('faqInput').value = q;
-                sendFaq();
+                document.getElementById('chatInput').value = q;
+                sendMsg();
             }
-
-            function appendFaqMsg(role, text) {
-                const box = document.getElementById('faqChatBox');
+            function clearChat() {
+                history = [];
+                const box = document.getElementById('chatBox');
+                box.innerHTML = '';
+                appendMsg('ai', 'Chat cleared! How can I help you? 😊');
+            }
+            function appendMsg(role, text) {
+                const box = document.getElementById('chatBox');
                 const div = document.createElement('div');
-                div.className = 'msg ' + role;
+                div.className = 'fq-msg ' + role;
                 const av = document.createElement('div');
-                av.className = 'msg-avatar ' + role;
-                av.textContent = role === 'ai' ? '🎓' : 'ME';
+                av.className = 'fq-avatar ' + role;
+                av.textContent = role === 'ai' ? '🏛️' : 'ME';
                 const bub = document.createElement('div');
-                bub.className = 'msg-bubble';
-                bub.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                bub.className = 'fq-bubble';
+                bub.innerHTML = escHtml(text)
+                    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+                    .replace(/`([^`]+)`/g,'<code style="background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:.82rem">$1</code>')
+                    .replace(/\n/g,'<br>');
                 div.appendChild(av); div.appendChild(bub);
                 box.appendChild(div);
                 box.scrollTop = box.scrollHeight;
             }
-
-            async function sendFaq() {
-                const input = document.getElementById('faqInput');
-                const btn   = document.getElementById('faqSendBtn');
-                const q = input.value.trim();
-                if (!q) return;
+            function escHtml(s) {
+                return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+            async function sendMsg() {
+                const input = document.getElementById('chatInput');
+                const btn = document.getElementById('sendBtn');
+                const text = input.value.trim();
+                if (!text) return;
                 input.value = ''; input.style.height = 'auto';
-                appendFaqMsg('user', q);
-                faqHistory.push({ role: 'user', content: q });
+                appendMsg('user', text);
+                history.push({ role:'user', content:text });
                 btn.disabled = true;
-                document.getElementById('faqTyping').style.display = 'flex';
+                document.getElementById('typing').style.display = 'flex';
                 try {
-                    const res = await fetch('/ai/faq/ask', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ question: q, history: faqHistory.slice(0,-1) })
+                    const res = await fetch('/ai/faq/chat', {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ messages: history })
                     });
                     const data = await res.json();
-                    document.getElementById('faqTyping').style.display = 'none';
-                    if (data.error) { appendFaqMsg('ai', '⚠️ ' + data.error); }
-                    else {
-                        appendFaqMsg('ai', data.reply);
-                        faqHistory.push({ role: 'assistant', content: data.reply });
-                        if (faqHistory.length > 20) faqHistory = faqHistory.slice(-20);
-                    }
+                    document.getElementById('typing').style.display = 'none';
+                    if (data.reply) { appendMsg('ai', data.reply); history.push({role:'assistant',content:data.reply}); }
+                    else appendMsg('ai', '⚠️ ' + (data.error || 'Something went wrong.'));
                 } catch(e) {
-                    document.getElementById('faqTyping').style.display = 'none';
-                    appendFaqMsg('ai', '⚠️ Connection error. Please try again.');
+                    document.getElementById('typing').style.display = 'none';
+                    appendMsg('ai','⚠️ Connection error. Please try again.');
                 }
                 btn.disabled = false; input.focus();
             }
-
-            function clearFaqChat() {
-                faqHistory = [];
-                document.getElementById('faqChatBox').innerHTML = `
-        <div class="msg ai">
-          <div class="msg-avatar ai">🎓</div>
-          <div class="msg-bubble">Chat cleared. How can I help you?</div>
-        </div>`;
-            }
-
-            document.getElementById('faqInput').addEventListener('input', function() {
+            document.getElementById('chatInput').addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = Math.min(this.scrollHeight, 120) + 'px';
             });

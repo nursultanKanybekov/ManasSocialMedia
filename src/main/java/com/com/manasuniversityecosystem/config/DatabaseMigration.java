@@ -81,6 +81,16 @@ public class DatabaseMigration implements ApplicationRunner {
                         + "{'en':'Game Champion','ru':'Чемпион игр','ky':'Оюн Чемпиону'}::jsonb, "
                         + "{'en':'Won 10 multiplayer games'}::jsonb, 'PLATINUM') ON CONFLICT (code) DO NOTHING",
 
+
+                // ── Alumni World Map columns (profile table) ─────────────────
+                "ALTER TABLE profile ADD COLUMN IF NOT EXISTS map_lat     DOUBLE PRECISION",
+                "ALTER TABLE profile ADD COLUMN IF NOT EXISTS map_lng     DOUBLE PRECISION",
+                "ALTER TABLE profile ADD COLUMN IF NOT EXISTS map_city    VARCHAR(200)",
+                "ALTER TABLE profile ADD COLUMN IF NOT EXISTS map_country VARCHAR(100)",
+                // show_on_map: DEFAULT false required so existing rows get false, not NULL
+                "ALTER TABLE profile ADD COLUMN IF NOT EXISTS show_on_map BOOLEAN NOT NULL DEFAULT false",
+                "CREATE INDEX IF NOT EXISTS idx_profile_show_on_map ON profile (show_on_map) WHERE show_on_map = true",
+
                 "INSERT INTO badge (id, code, name_i18n, description_i18n, tier) "
                         + "VALUES (gen_random_uuid(), 'QUIZ_MASTER', "
                         + "{'en':'Quiz Master','ru':'Мастер викторины','ky':'Викторина Устасы'}::jsonb, "

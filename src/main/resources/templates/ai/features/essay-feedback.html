@@ -7,318 +7,262 @@
     <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
     <main class="main-content">
         <style>
-            .es-page{background:#F2F0EB;min-height:100vh;padding:0 0 60px}
-            .es-hero{background:linear-gradient(135deg,#002366,#1a3f8f);color:#fff;padding:28px 28px 22px;position:relative;overflow:hidden}
-            .es-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 10px);pointer-events:none}
-            .es-body{max-width:860px;margin:0 auto;padding:24px 18px}
-            .card{background:#fff;border:1.5px solid #e8e4dc;border-radius:14px;overflow:hidden;margin-bottom:20px}
-            .card-header{padding:14px 20px;border-bottom:1px solid #f0ede8;background:#fafaf8;display:flex;justify-content:space-between;align-items:center}
-            .card-header h3{margin:0;font-size:.95rem;font-weight:700}
-            .card-body{padding:18px 20px}
-            .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
-            .form-group{flex:1;min-width:180px}
-            .form-group label{display:block;font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
-            .form-control{border:1.5px solid #e8e4dc;border-radius:8px;padding:8px 12px;font-size:.875rem;width:100%;box-sizing:border-box}
-            .form-control:focus{outline:none;border-color:#002366}
-            textarea.essay-input{min-height:220px;resize:vertical;font-family:inherit}
-            .char-count{font-size:.72rem;color:#aaa;text-align:right;margin-top:3px}
-            .btn-analyse{background:#002366;color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:.9rem;font-weight:700;cursor:pointer;transition:opacity .2s;margin-top:4px}
-            .btn-analyse:hover{opacity:.88}
-            .btn-analyse:disabled{opacity:.4;cursor:default}
-            .loading-bar{height:4px;background:linear-gradient(90deg,#002366,#4f46e5,#002366);background-size:200%;border-radius:2px;animation:load 1.5s infinite;display:none;margin-top:10px}
-            @keyframes load{0%{background-position:0%}100%{background-position:200%}}
+            .ef-wrap{background:#f0f4ff;min-height:100vh;padding-bottom:60px}
+            .ef-hero{background:linear-gradient(135deg,#0369a1,#0284c7);color:#fff;padding:26px 28px 22px;position:relative;overflow:hidden}
+            .ef-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 500px 300px at 85% 50%,rgba(125,211,252,0.25),transparent);pointer-events:none}
+            .ef-hero-inner{position:relative;max-width:880px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+            .ef-hero-icon{width:48px;height:48px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0}
+            .ef-hero-text h1{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.25rem;margin:0 0 3px;color:#fff}
+            .ef-hero-text p{font-size:.82rem;color:rgba(255,255,255,.75);margin:0}
+
+            .ef-body{max-width:880px;margin:0 auto;padding:24px 20px}
+
+            .ef-card{background:#fff;border:1.5px solid #e0e7ff;border-radius:18px;overflow:hidden;margin-bottom:20px;box-shadow:0 2px 12px rgba(27,42,107,.06)}
+            .ef-card-head{padding:14px 20px;border-bottom:1px solid #f0f4ff;background:#fafbff;display:flex;justify-content:space-between;align-items:center}
+            .ef-card-head h3{margin:0;font-family:'Montserrat',sans-serif;font-weight:800;font-size:.9rem;color:#1B2A6B;display:flex;align-items:center;gap:8px}
+            .ef-card-body{padding:20px}
+
+            .ef-form-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+            .ef-fg{flex:1;min-width:160px}
+            .ef-fg label{display:block;font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+            .ef-ctrl{border:1.5px solid #e0e7ff;border-radius:10px;padding:9px 12px;font-size:.875rem;width:100%;box-sizing:border-box;font-family:inherit;transition:border-color .2s;outline:none;background:#fff;color:#1e293b}
+            .ef-ctrl:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.08)}
+            textarea.ef-ctrl{min-height:200px;resize:vertical;line-height:1.65}
+            .ef-char{font-size:.7rem;color:#94a3b8;text-align:right;margin-top:3px}
+
+            .ef-btn{background:linear-gradient(135deg,#0369a1,#0284c7);color:#fff;border:none;border-radius:12px;padding:12px 28px;font-size:.9rem;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;transition:opacity .2s;margin-top:6px}
+            .ef-btn:hover{opacity:.88}
+            .ef-btn:disabled{opacity:.4;cursor:default}
+            .ef-loadbar{height:3px;background:linear-gradient(90deg,#0284c7,#38bdf8,#0284c7);background-size:200%;border-radius:2px;animation:ef-load 1.5s infinite;display:none;margin-top:12px;border-radius:10px}
+            @keyframes ef-load{0%{background-position:0%}100%{background-position:200%}}
 
             /* Results */
-            .results{display:none}
-            .score-ring-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0}
-            .score-ring{width:110px;height:110px;position:relative}
-            .score-ring svg{transform:rotate(-90deg)}
-            .score-ring .ring-bg{fill:none;stroke:#e8e4dc;stroke-width:10}
-            .score-ring .ring-fill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .8s ease}
-            .score-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:#002366}
-            .score-label{font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em}
+            .ef-results{display:none}
+            .ef-score-wrap{display:flex;align-items:center;gap:28px;padding:8px 0;flex-wrap:wrap}
+            .ef-ring{width:100px;height:100px;position:relative;flex-shrink:0}
+            .ef-ring svg{transform:rotate(-90deg)}
+            .ef-ring .rbg{fill:none;stroke:#e0e7ff;stroke-width:10}
+            .ef-ring .rfill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .9s ease}
+            .ef-ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-size:1.4rem;font-weight:800;color:#0284c7}
+            .ef-score-info .ef-score-label{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.2rem;color:#1B2A6B;margin-bottom:4px}
+            .ef-score-info .ef-score-sub{font-size:.82rem;color:#64748b}
 
-            .grade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
-            .grade-item{background:#f8f7f4;border-radius:10px;padding:12px 14px;text-align:center}
-            .grade-item .g-name{font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-            .grade-item .g-bar{height:6px;background:#e8e4dc;border-radius:3px;overflow:hidden;margin-bottom:6px}
-            .grade-item .g-fill{height:100%;border-radius:3px;transition:width .6s ease}
-            .grade-item .g-score{font-size:1rem;font-weight:800;color:#002366}
+            .ef-grade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:16px}
+            .ef-grade-item{background:#f8faff;border:1px solid #e0e7ff;border-radius:12px;padding:12px 14px;text-align:center}
+            .ef-grade-item .gn{font-size:.68rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+            .ef-grade-item .gb{height:5px;background:#e0e7ff;border-radius:3px;overflow:hidden;margin-bottom:6px}
+            .ef-grade-item .gf{height:100%;border-radius:3px;transition:width .8s ease}
+            .ef-grade-item .gv{font-family:'Montserrat',sans-serif;font-size:.95rem;font-weight:800;color:#0284c7}
 
-            .tag-list{display:flex;flex-direction:column;gap:6px}
-            .tag-item{display:flex;align-items:flex-start;gap:8px;font-size:.875rem;line-height:1.5}
-            .tag-icon{font-size:.95rem;min-width:20px;margin-top:1px}
+            .ef-tag{display:flex;flex-direction:column;gap:8px}
+            .ef-tag-item{display:flex;align-items:flex-start;gap:10px;font-size:.875rem;line-height:1.55}
+            .ef-tag-item .ei{font-size:1rem;min-width:20px;margin-top:1px}
 
-            .risk-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:700}
+            .risk-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:700;font-family:'Montserrat',sans-serif}
             .risk-LOW{background:#dcfce7;color:#15803d}
             .risk-MEDIUM{background:#fef9c3;color:#a16207}
             .risk-HIGH{background:#fee2e2;color:#b91c1c}
 
-            .rewritten-box{background:#f8f7ff;border:1.5px solid #c7d2fe;border-radius:10px;padding:14px 16px;font-size:.875rem;line-height:1.7;color:#1e1b4b;white-space:pre-wrap}
+            .ef-rewritten{background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:12px;padding:16px 18px;font-size:.875rem;line-height:1.75;color:#0c4a6e;white-space:pre-wrap}
+            .ef-summary{font-size:.9rem;line-height:1.75;color:#334155}
 
-            .summary-text{font-size:.9rem;line-height:1.7;color:#444}
+            .ef-btn-reset{background:#fff;border:1.5px solid #e0e7ff;color:#64748b;border-radius:12px;padding:10px 22px;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .15s;margin-top:6px;font-family:inherit}
+            .ef-btn-reset:hover{border-color:#0284c7;color:#0284c7}
 
-            .btn-reset{background:#fff;border:1.5px solid #e8e4dc;color:#444;border-radius:10px;padding:9px 20px;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px}
-            .btn-reset:hover{border-color:#002366;color:#002366}
+            @media(max-width:600px){.ef-hero{padding:16px}.ef-body{padding:14px}.ef-score-wrap{flex-direction:column;align-items:flex-start}}
         </style>
 
-        <div class="es-page">
-            <!-- Hero -->
-            <div class="es-hero">
-                <div style="max-width:860px;margin:0 auto;position:relative">
-                    <h1 style="font-size:1.4rem;font-weight:700;margin:0 0 4px">✍️ AI Essay Feedback</h1>
-                    <p style="font-size:.875rem;color:rgba(255,255,255,.72);margin:0">
-                        Paste your essay → get instant score, detailed grades, and improvement tips
-                    </p>
+        <div class="ef-wrap">
+            <div class="ef-hero">
+                <div class="ef-hero-inner">
+                    <div class="ef-hero-icon">✍️</div>
+                    <div class="ef-hero-text">
+                        <h1>AI Essay Feedback</h1>
+                        <p>Paste your essay → get instant score, detailed grades &amp; improvement tips</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="es-body">
-
-                <!-- Input form -->
-                <div class="card" id="inputCard">
-                    <div class="card-header">
-                        <h3>📝 Submit Your Essay</h3>
+            <div class="ef-body">
+                <!-- Input card -->
+                <div class="ef-card" id="inputCard">
+                    <div class="ef-card-head">
+                        <h3>📄 Your Essay</h3>
+                        <span style="font-size:.78rem;color:#94a3b8">Minimum 100 words recommended</span>
                     </div>
-                    <div class="card-body">
-                        <div class="form-row">
-                            <div class="form-group" style="min-width:200px">
+                    <div class="ef-card-body">
+                        <div class="ef-form-row">
+                            <div class="ef-fg">
                                 <label>Essay Type</label>
-                                <select class="form-control" id="essayType">
-                                    <option value="Academic Essay">Academic Essay</option>
-                                    <option value="Argumentative Essay">Argumentative Essay</option>
-                                    <option value="Persuasive Essay">Persuasive Essay</option>
-                                    <option value="Descriptive Essay">Descriptive Essay</option>
-                                    <option value="Narrative Essay">Narrative Essay</option>
-                                    <option value="Analytical Essay">Analytical Essay</option>
-                                    <option value="Expository Essay">Expository Essay</option>
-                                    <option value="Research Paper">Research Paper</option>
+                                <select class="ef-ctrl" id="essayType">
+                                    <option value="academic">Academic Essay</option>
+                                    <option value="argumentative">Argumentative</option>
+                                    <option value="narrative">Narrative</option>
+                                    <option value="descriptive">Descriptive</option>
+                                    <option value="expository">Expository</option>
+                                </select>
+                            </div>
+                            <div class="ef-fg">
+                                <label>Language</label>
+                                <select class="ef-ctrl" id="essayLang">
+                                    <option value="en">English</option>
+                                    <option value="ru">Russian</option>
+                                    <option value="ky">Kyrgyz</option>
+                                    <option value="tr">Turkish</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="ef-fg">
                             <label>Essay Text</label>
-                            <textarea class="form-control essay-input" id="essayText"
-                                      oninput="updateCount()"
-                                      placeholder="Paste your essay here (minimum 50 characters)…"></textarea>
-                            <div class="char-count"><span id="charCount">0</span> characters</div>
+                            <textarea class="ef-ctrl" id="essayText" placeholder="Paste or type your essay here…" oninput="updateCharCount(this)"></textarea>
+                            <div class="ef-char" id="charCount">0 words</div>
                         </div>
-                        <button class="btn-analyse" id="analyseBtn" onclick="analyseEssay()">
-                            🔍 Analyse Essay
-                        </button>
-                        <div class="loading-bar" id="loadingBar"></div>
+                        <button class="ef-btn" id="analyseBtn" onclick="analyseEssay()">✨ Analyse Essay</button>
+                        <div class="ef-loadbar" id="loadbar"></div>
                     </div>
                 </div>
 
-                <!-- Results (hidden until analysed) -->
-                <div class="results" id="resultsArea">
+                <!-- Results -->
+                <div class="ef-results" id="resultsWrap">
 
-                    <!-- Overall score -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>📊 Overall Score</h3>
-                            <span id="resultEssayType" style="font-size:.8rem;color:#888"></span>
-                        </div>
-                        <div class="card-body" style="display:flex;align-items:center;gap:28px;flex-wrap:wrap">
-                            <div class="score-ring-wrap">
-                                <div class="score-ring">
-                                    <svg viewBox="0 0 100 100" width="110" height="110">
-                                        <circle class="ring-bg" cx="50" cy="50" r="42"/>
-                                        <circle class="ring-fill" id="ringFill" cx="50" cy="50" r="42"
-                                                stroke="#002366"
-                                                stroke-dasharray="263.9"
-                                                stroke-dashoffset="263.9"/>
+                    <!-- Score -->
+                    <div class="ef-card">
+                        <div class="ef-card-head"><h3>🏆 Overall Score</h3></div>
+                        <div class="ef-card-body">
+                            <div class="ef-score-wrap">
+                                <div class="ef-ring">
+                                    <svg viewBox="0 0 100 100" width="100" height="100">
+                                        <circle class="rbg" cx="50" cy="50" r="40"/>
+                                        <circle class="rfill" id="scoreRing" cx="50" cy="50" r="40" stroke="#0284c7" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
                                     </svg>
-                                    <div class="score-num" id="overallScore">—</div>
+                                    <div class="ef-ring-num" id="scoreNum">–</div>
                                 </div>
-                                <div class="score-label">Overall</div>
+                                <div class="ef-score-info">
+                                    <div class="ef-score-label" id="scoreGrade">Analysing…</div>
+                                    <div class="ef-score-sub" id="scoreSub">AI-powered essay evaluation</div>
+                                </div>
                             </div>
-                            <div style="flex:1;min-width:200px">
-                                <div class="summary-text" id="summaryText"></div>
-                            </div>
+                            <div class="ef-grade-grid" id="gradeGrid"></div>
                         </div>
                     </div>
 
-                    <!-- Detailed grades -->
-                    <div class="card">
-                        <div class="card-header"><h3>🎯 Detailed Grades</h3></div>
-                        <div class="card-body">
-                            <div class="grade-grid" id="gradeGrid"></div>
+                    <!-- Feedback -->
+                    <div class="ef-card">
+                        <div class="ef-card-head"><h3>💬 Detailed Feedback</h3></div>
+                        <div class="ef-card-body">
+                            <div class="ef-summary" id="summaryText"></div>
                         </div>
                     </div>
 
-                    <!-- Strengths & Improvements -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap">
-                        <div class="card">
-                            <div class="card-header"><h3>✅ Strengths</h3></div>
-                            <div class="card-body">
-                                <div class="tag-list" id="strengthsList"></div>
-                            </div>
+                    <!-- Strengths & Weaknesses -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" class="ef-two-col">
+                        <div class="ef-card" style="margin:0">
+                            <div class="ef-card-head"><h3>✅ Strengths</h3></div>
+                            <div class="ef-card-body"><div class="ef-tag" id="strengthsList"></div></div>
                         </div>
-                        <div class="card">
-                            <div class="card-header"><h3>🔧 Areas to Improve</h3></div>
-                            <div class="card-body">
-                                <div class="tag-list" id="improvementsList"></div>
-                            </div>
+                        <div class="ef-card" style="margin:0">
+                            <div class="ef-card-head"><h3>⚠️ Improvements</h3></div>
+                            <div class="ef-card-body"><div class="ef-tag" id="weaknessesList"></div></div>
                         </div>
                     </div>
 
-                    <!-- Plagiarism -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>🔎 Plagiarism Risk</h3>
-                            <span id="riskBadge" class="risk-badge"></span>
+                    <!-- Plagiarism risk -->
+                    <div class="ef-card">
+                        <div class="ef-card-head">
+                            <h3>🔍 Originality Check</h3>
+                            <span class="risk-badge" id="riskBadge">–</span>
                         </div>
-                        <div class="card-body">
-                            <p id="plagiarismNote" style="margin:0;font-size:.875rem;color:#555;line-height:1.6"></p>
+                        <div class="ef-card-body">
+                            <div class="ef-summary" id="riskText"></div>
                         </div>
                     </div>
 
                     <!-- Rewritten intro -->
-                    <div class="card">
-                        <div class="card-header"><h3>✨ Suggested Introduction Rewrite</h3></div>
-                        <div class="card-body">
-                            <div class="rewritten-box" id="rewrittenIntro"></div>
+                    <div class="ef-card">
+                        <div class="ef-card-head"><h3>✨ Suggested Improvement</h3></div>
+                        <div class="ef-card-body">
+                            <div class="ef-rewritten" id="rewrittenBox"></div>
                         </div>
                     </div>
 
-                    <!-- Reset -->
-                    <div style="text-align:center">
-                        <button class="btn-reset" onclick="resetForm()">← Analyse Another Essay</button>
-                    </div>
+                    <button class="ef-btn-reset" onclick="resetForm()">← Analyse Another Essay</button>
                 </div>
-
             </div>
         </div>
 
         <script>
-            function updateCount() {
-                document.getElementById('charCount').textContent =
-                    document.getElementById('essayText').value.length;
+            function updateCharCount(ta) {
+                const words = ta.value.trim().split(/\s+/).filter(w=>w.length>0).length;
+                document.getElementById('charCount').textContent = words + ' words';
             }
-
             async function analyseEssay() {
                 const text = document.getElementById('essayText').value.trim();
                 const type = document.getElementById('essayType').value;
-                if (text.length < 50) {
-                    alert('Please write at least 50 characters before analysing.');
-                    return;
-                }
-
+                const lang = document.getElementById('essayLang').value;
+                if (!text || text.length < 50) { alert('Please enter at least a few sentences.'); return; }
                 const btn = document.getElementById('analyseBtn');
-                const bar = document.getElementById('loadingBar');
                 btn.disabled = true;
-                btn.textContent = '⏳ Analysing…';
-                bar.style.display = 'block';
-
+                document.getElementById('loadbar').style.display = 'block';
                 try {
                     const res = await fetch('/ai/essay/analyse', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({text, type})
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ essayText:text, essayType:type, language:lang })
                     });
                     const data = await res.json();
-                    bar.style.display = 'none';
-
-                    if (data.error) {
-                        alert('Error: ' + data.error);
-                        btn.disabled = false;
-                        btn.textContent = '🔍 Analyse Essay';
-                        return;
-                    }
-
-                    renderResults(data, type);
-                } catch (e) {
-                    bar.style.display = 'none';
-                    alert('Network error. Please try again.');
-                    btn.disabled = false;
-                    btn.textContent = '🔍 Analyse Essay';
+                    document.getElementById('loadbar').style.display = 'none';
+                    if (data.error) { alert('Error: ' + data.error); btn.disabled=false; return; }
+                    renderResults(data);
+                } catch(e) {
+                    document.getElementById('loadbar').style.display = 'none';
+                    alert('Connection error. Please try again.'); btn.disabled=false;
                 }
             }
-
-            function renderResults(d, type) {
-                // Overall score ring
-                const score = d.overallScore || 0;
-                document.getElementById('overallScore').textContent = score;
-                document.getElementById('resultEssayType').textContent = type;
-                // Circumference = 2π × 42 ≈ 263.9
-                const circ = 263.9;
-                const offset = circ - (score / 100) * circ;
-                const ring = document.getElementById('ringFill');
-                ring.style.strokeDashoffset = circ; // start at 0
-                setTimeout(() => ring.style.strokeDashoffset = offset, 50);
-
-                // Color ring by score
-                ring.style.stroke = score >= 75 ? '#16a34a' : score >= 50 ? '#d97706' : '#dc2626';
-
-                // Summary
-                document.getElementById('summaryText').textContent = d.summary || '';
-
-                // Detailed grades
-                const grades = d.grades || {};
-                const gradeNames = {
-                    grammar: 'Grammar', structure: 'Structure',
-                    clarity: 'Clarity', content: 'Content', originality: 'Originality'
-                };
-                const gradeColors = {
-                    grammar: '#3b82f6', structure: '#8b5cf6',
-                    clarity: '#10b981', content: '#f59e0b', originality: '#ef4444'
-                };
-                const gradeGrid = document.getElementById('gradeGrid');
-                gradeGrid.innerHTML = Object.entries(gradeNames).map(([key, label]) => {
-                    const val = grades[key] || 0;
-                    const pct = val * 10;
-                    return `<div class="grade-item">
-                        <div class="g-name">${label}</div>
-                        <div class="g-bar"><div class="g-fill" style="width:0%;background:${gradeColors[key]}"
-                             data-pct="${pct}"></div></div>
-                        <div class="g-score">${val}<span style="font-size:.7rem;color:#aaa;font-weight:400">/10</span></div>
-                    </div>`;
-                }).join('');
-                // Animate bars after render
-                setTimeout(() => {
-                    document.querySelectorAll('.g-fill').forEach(el => {
-                        el.style.width = el.dataset.pct + '%';
-                    });
-                }, 80);
-
-                // Strengths
-                const sList = document.getElementById('strengthsList');
-                sList.innerHTML = (d.strengths || []).map(s =>
-                    `<div class="tag-item"><span class="tag-icon">✅</span><span>${s}</span></div>`
-                ).join('');
-
-                // Improvements
-                const iList = document.getElementById('improvementsList');
-                iList.innerHTML = (d.improvements || []).map(i =>
-                    `<div class="tag-item"><span class="tag-icon">🔧</span><span>${i}</span></div>`
-                ).join('');
-
-                // Plagiarism
-                const risk = d.plagiarismRisk || 'LOW';
-                const badge = document.getElementById('riskBadge');
-                badge.textContent = risk === 'LOW' ? '🟢 Low Risk'
-                    : risk === 'HIGH' ? '🔴 High Risk' : '🟡 Medium Risk';
-                badge.className = 'risk-badge risk-' + risk;
-                document.getElementById('plagiarismNote').textContent = d.plagiarismNote || '';
-
-                // Rewritten intro
-                document.getElementById('rewrittenIntro').textContent = d.rewrittenIntro || '';
-
-                // Show results
+            function renderResults(d) {
                 document.getElementById('inputCard').style.display = 'none';
-                document.getElementById('resultsArea').style.display = 'block';
-                window.scrollTo({top: 0, behavior: 'smooth'});
+                document.getElementById('resultsWrap').style.display = 'block';
+                const score = d.overallScore || 0;
+                document.getElementById('scoreNum').textContent = score;
+                const offset = 251.2 - (251.2 * score / 100);
+                document.getElementById('scoreRing').style.strokeDashoffset = offset;
+                const grade = score >= 90 ? 'Excellent' : score >= 75 ? 'Good' : score >= 60 ? 'Satisfactory' : 'Needs Work';
+                document.getElementById('scoreGrade').textContent = grade;
+                document.getElementById('scoreSub').textContent = 'Score: ' + score + '/100';
+                // Grade grid
+                const grades = d.grades || {};
+                const grid = document.getElementById('gradeGrid');
+                grid.innerHTML = Object.entries(grades).map(([k,v])=>`
+                    <div class="ef-grade-item">
+                        <div class="gn">${k}</div>
+                        <div class="gb"><div class="gf" style="width:${v}%;background:#0284c7"></div></div>
+                        <div class="gv">${v}</div>
+                    </div>`).join('');
+                document.getElementById('summaryText').textContent = d.summary || '';
+                // Strengths
+                const sl = document.getElementById('strengthsList');
+                sl.innerHTML = (d.strengths||[]).map(s=>`<div class="ef-tag-item"><span class="ei">✅</span>${s}</div>`).join('');
+                // Weaknesses
+                const wl = document.getElementById('weaknessesList');
+                wl.innerHTML = (d.weaknesses||[]).map(w=>`<div class="ef-tag-item"><span class="ei">⚠️</span>${w}</div>`).join('');
+                // Risk
+                const risk = d.plagiarismRisk || 'LOW';
+                const rb = document.getElementById('riskBadge');
+                rb.className = 'risk-badge risk-' + risk;
+                rb.textContent = (risk==='LOW'?'✅ Low Risk':risk==='MEDIUM'?'⚠️ Medium Risk':'🚨 High Risk');
+                document.getElementById('riskText').textContent = d.plagiarismNote || '';
+                document.getElementById('rewrittenBox').textContent = d.rewrittenIntro || d.suggestion || '';
             }
-
             function resetForm() {
-                document.getElementById('resultsArea').style.display = 'none';
                 document.getElementById('inputCard').style.display = 'block';
+                document.getElementById('resultsWrap').style.display = 'none';
                 document.getElementById('analyseBtn').disabled = false;
-                document.getElementById('analyseBtn').textContent = '🔍 Analyse Essay';
-                window.scrollTo({top: 0, behavior: 'smooth'});
+                document.getElementById('essayText').value = '';
+                document.getElementById('charCount').textContent = '0 words';
             }
         </script>
+
+        <style>
+            @media(max-width:580px){.ef-two-col{grid-template-columns:1fr!important}}
+        </style>
     </main>
 </div>
 <div th:replace="~{fragments/footer :: footer}"></div>

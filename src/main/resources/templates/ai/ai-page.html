@@ -1,7 +1,207 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head('AI Tools')}"></head>
 <body>
-<div class="header">AI Assistant</div>
-<iframe src="https://poe.com" style="width:100%; height:90vh; border:none;"></iframe>
+<div class="app-shell" id="app-shell">
+    <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main-content">
+        <style>
+            .ai-hub { background: #f0f4ff; min-height: 100vh; padding-bottom: 60px; }
+            .aih-hero {
+                background: linear-gradient(135deg, #1B2A6B 0%, #2d4494 60%, #3b5bbf 100%);
+                padding: 48px 32px 52px; position: relative; overflow: hidden;
+            }
+            .aih-hero::before {
+                content: ''; position: absolute; inset: 0; pointer-events: none;
+                background: radial-gradient(ellipse 700px 400px at 80% 50%, rgba(99,130,255,0.25) 0%, transparent 70%),
+                            radial-gradient(ellipse 400px 300px at 10% 80%, rgba(192,57,43,0.15) 0%, transparent 70%);
+            }
+            .aih-hero-inner { position: relative; max-width: 1000px; margin: 0 auto; display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
+            .aih-hero-text { flex: 1; min-width: 280px; }
+            .aih-hero-badge {
+                display: inline-flex; align-items: center; gap: 6px;
+                background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+                border-radius: 20px; padding: 5px 14px;
+                font-size: .72rem; font-weight: 700; color: rgba(255,255,255,0.9);
+                letter-spacing: .08em; text-transform: uppercase; margin-bottom: 14px;
+            }
+            .aih-hero-badge span { width:7px; height:7px; background:#4ade80; border-radius:50%; animation: aih-pulse 2s infinite; flex-shrink:0; }
+            @keyframes aih-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+            .aih-hero h1 { font-family:'Montserrat',sans-serif; font-size:clamp(1.6rem,3vw,2.4rem); font-weight:800; color:#fff; margin:0 0 10px; line-height:1.2; }
+            .aih-hero h1 em { font-style:normal; color:#93c5fd; }
+            .aih-hero p { font-size:.95rem; color:rgba(255,255,255,.72); margin:0; max-width:480px; line-height:1.65; }
+            .aih-stats { display:flex; gap:28px; flex-wrap:wrap; margin-top:24px; }
+            .aih-stat .val { font-family:'Montserrat',sans-serif; font-weight:800; font-size:1.5rem; color:#fff; }
+            .aih-stat .lbl { font-size:.72rem; color:rgba(255,255,255,.6); letter-spacing:.05em; }
+            .aih-hero-visual {
+                width:160px; height:160px; border-radius:50%; flex-shrink:0;
+                background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.15);
+                display:flex; align-items:center; justify-content:center; font-size:5rem;
+                box-shadow: 0 0 60px rgba(147,197,253,0.3);
+            }
+            @media(max-width:640px){.aih-hero-visual{display:none} .aih-hero{padding:28px 18px 36px}}
+
+            .aih-body { max-width:1000px; margin:0 auto; padding:32px 20px; }
+            .aih-tip {
+                background:linear-gradient(135deg,#eef2ff,#f5f3ff); border:1.5px solid #c7d2fe;
+                border-radius:16px; padding:18px 22px; display:flex; align-items:center; gap:14px; margin-bottom:28px;
+            }
+            .aih-tip-icon { font-size:1.8rem; flex-shrink:0; }
+            .aih-tip-text { font-size:.875rem; color:#3730a3; line-height:1.6; }
+            .aih-tip-text strong { font-family:'Montserrat',sans-serif; display:block; margin-bottom:2px; }
+
+            .aih-section-title {
+                font-family:'Montserrat',sans-serif; font-weight:800; font-size:.9rem; color:#1B2A6B;
+                letter-spacing:.05em; text-transform:uppercase; margin-bottom:14px;
+                display:flex; align-items:center; gap:10px;
+            }
+            .aih-section-title::after { content:''; flex:1; height:1.5px; background:linear-gradient(90deg,#dde4ff,transparent); }
+
+            .aih-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin-bottom:32px; }
+
+            .aih-card {
+                background:#fff; border:1.5px solid #e0e7ff; border-radius:18px;
+                overflow:hidden; text-decoration:none; color:inherit;
+                transition:all .22s ease; display:flex; flex-direction:column;
+                box-shadow:0 2px 12px rgba(27,42,107,0.06);
+            }
+            .aih-card:hover { transform:translateY(-5px); box-shadow:0 16px 40px rgba(27,42,107,0.14); border-color:transparent; }
+            .aih-card-top { padding:22px 22px 16px; display:flex; align-items:flex-start; gap:14px; }
+            .aih-card-icon { width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; }
+            .aih-card-info h3 { font-family:'Montserrat',sans-serif; font-weight:800; font-size:.975rem; color:#1a1a2e; margin:0 0 5px; }
+            .aih-card-info p { font-size:.82rem; color:#64748b; margin:0; line-height:1.55; }
+            .aih-card-bottom {
+                margin-top:auto; padding:12px 22px; border-top:1px solid #f0f4ff;
+                background:#fafbff; display:flex; align-items:center; justify-content:space-between;
+            }
+            .aih-card-tag { font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 10px; border-radius:20px; }
+            .aih-card-arrow { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.85rem; transition:transform .2s; }
+            .aih-card:hover .aih-card-arrow { transform:translateX(4px); }
+
+            .c-navy .aih-card-icon { background:#eef2ff; }
+            .c-navy .aih-card-tag  { background:#eef2ff; color:#1B2A6B; }
+            .c-navy .aih-card-arrow{ background:#1B2A6B; color:#fff; }
+            .c-violet .aih-card-icon{ background:#f5f3ff; }
+            .c-violet .aih-card-tag { background:#f5f3ff; color:#7c3aed; }
+            .c-violet .aih-card-arrow{ background:#7c3aed; color:#fff; }
+            .c-green .aih-card-icon { background:#ecfdf5; }
+            .c-green .aih-card-tag  { background:#ecfdf5; color:#059669; }
+            .c-green .aih-card-arrow{ background:#059669; color:#fff; }
+            .c-amber .aih-card-icon { background:#fffbeb; }
+            .c-amber .aih-card-tag  { background:#fffbeb; color:#d97706; }
+            .c-amber .aih-card-arrow{ background:#d97706; color:#fff; }
+            .c-sky .aih-card-icon   { background:#f0f9ff; }
+            .c-sky .aih-card-tag    { background:#f0f9ff; color:#0284c7; }
+            .c-sky .aih-card-arrow  { background:#0284c7; color:#fff; }
+
+            @media(max-width:600px){ .aih-body{padding:18px 14px;} .aih-grid{grid-template-columns:1fr;} }
+        </style>
+
+        <div class="ai-hub">
+            <div class="aih-hero">
+                <div class="aih-hero-inner">
+                    <div class="aih-hero-text">
+                        <div class="aih-hero-badge"><span></span> AI Powered · Gemini</div>
+                        <h1>Your <em>AI Tools</em> Hub</h1>
+                        <p>Smart academic assistants built for Manas University. Study smarter, write better, and navigate your career — all in one place.</p>
+                        <div class="aih-stats">
+                            <div class="aih-stat"><div class="val">5</div><div class="lbl">AI Tools</div></div>
+                            <div class="aih-stat"><div class="val">4</div><div class="lbl">Languages</div></div>
+                            <div class="aih-stat"><div class="val">24/7</div><div class="lbl">Available</div></div>
+                        </div>
+                    </div>
+                    <div class="aih-hero-visual">🤖</div>
+                </div>
+            </div>
+
+            <div class="aih-body">
+                <div class="aih-tip">
+                    <div class="aih-tip-icon">💡</div>
+                    <div class="aih-tip-text">
+                        <strong>Pro Tip</strong>
+                        All tools understand Kyrgyz, Russian, Turkish &amp; English — ask in any language!
+                    </div>
+                </div>
+
+                <div class="aih-section-title">📚 Study Tools</div>
+                <div class="aih-grid">
+                    <a href="/ai/study" class="aih-card c-navy">
+                        <div class="aih-card-top">
+                            <div class="aih-card-icon">🎓</div>
+                            <div class="aih-card-info">
+                                <h3>Study Assistant</h3>
+                                <p>Ask anything about your courses. Explanations, worked examples, and exam prep tailored to your enrolled classes.</p>
+                            </div>
+                        </div>
+                        <div class="aih-card-bottom">
+                            <span class="aih-card-tag">Course-aware</span>
+                            <div class="aih-card-arrow">→</div>
+                        </div>
+                    </a>
+                    <a href="/ai/flashcards" class="aih-card c-amber">
+                        <div class="aih-card-top">
+                            <div class="aih-card-icon">🃏</div>
+                            <div class="aih-card-info">
+                                <h3>AI Flashcards</h3>
+                                <p>Paste your notes and instantly generate interactive flip cards for spaced repetition learning.</p>
+                            </div>
+                        </div>
+                        <div class="aih-card-bottom">
+                            <span class="aih-card-tag">Spaced Repetition</span>
+                            <div class="aih-card-arrow">→</div>
+                        </div>
+                    </a>
+                    <a href="/ai/essay" class="aih-card c-sky">
+                        <div class="aih-card-top">
+                            <div class="aih-card-icon">✍️</div>
+                            <div class="aih-card-info">
+                                <h3>Essay Feedback</h3>
+                                <p>Instant AI scoring, detailed grade breakdown, plagiarism risk, and improvement suggestions.</p>
+                            </div>
+                        </div>
+                        <div class="aih-card-bottom">
+                            <span class="aih-card-tag">Writing Coach</span>
+                            <div class="aih-card-arrow">→</div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="aih-section-title">🚀 Support &amp; Career</div>
+                <div class="aih-grid">
+                    <a href="/ai/faq" class="aih-card c-violet">
+                        <div class="aih-card-top">
+                            <div class="aih-card-icon">🏛️</div>
+                            <div class="aih-card-info">
+                                <h3>University FAQ</h3>
+                                <p>Instant answers about procedures, deadlines, departments, and campus life.</p>
+                            </div>
+                        </div>
+                        <div class="aih-card-bottom">
+                            <span class="aih-card-tag">24/7 Support</span>
+                            <div class="aih-card-arrow">→</div>
+                        </div>
+                    </a>
+                    <a href="/ai/career-advisor"
+                       sec:authorize="hasAnyRole('ROLE_STUDENT','ROLE_TEACHER','ROLE_ADMIN','ROLE_SUPER_ADMIN')"
+                       class="aih-card c-green">
+                        <div class="aih-card-top">
+                            <div class="aih-card-icon">📈</div>
+                            <div class="aih-card-info">
+                                <h3>Career Advisor</h3>
+                                <p>Discover careers matching your skills. Get personalized roadmaps and salary insights.</p>
+                            </div>
+                        </div>
+                        <div class="aih-card-bottom">
+                            <span class="aih-card-tag">Personalized</span>
+                            <div class="aih-card-arrow">→</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
 </body>
 </html>
