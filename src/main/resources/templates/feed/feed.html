@@ -783,15 +783,71 @@
     async function submitPost() {
         const content = document.getElementById('postContent').value.trim();
         if (!content) { showError('Post content cannot be empty.'); return; }
-        const btn = document.getElementById('postSubmitBtn'); btn.disabled = true; btn.textContent = 'Posting…';
+
+        const btn = document.getElementById('postSubmitBtn');
+        btn.disabled = true;
+
+        // ── Step 1: Content moderation ──────────────────────────────
+        btn.textContent = '🔍 Checking…';
+        try {
+            const modForm = new FormData();
+            modForm.append('content', content);
+
+            // Resize image to ≤512 px and attach as base64 for moderation
+            const imgFile = document.getElementById('postImage').files[0];
+            if (imgFile) {
+                const smallBase64 = await resizeImageForModeration(imgFile, 512);
+                if (smallBase64) modForm.append('imageBase64', smallBase64);
+            }
+
+            const modHeaders = {};
+            if (csrfToken && csrfHeader) modHeaders[csrfHeader] = csrfToken;
+
+            const modRes = await fetch('/feed/post/moderate',
+                { method: 'POST', headers: modHeaders, body: modForm });
+
+            if (modRes.ok) {
+                const modData = await modRes.json();
+                if (!modData.allowed) {
+                    showModerationError(modData.reason ||
+                        'Your post violates our community guidelines.');
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Post';
+                    return;
+                }
+            }
+            // If moderation endpoint fails (network error etc.) we fail open
+            // so genuine users are not blocked by infrastructure issues.
+        } catch (modErr) {
+            console.warn('Moderation pre-check failed, proceeding:', modErr);
+        }
+
+        // ── Step 2: Actual post submission ──────────────────────────
+        btn.textContent = 'Posting…';
         const formData = new FormData();
         formData.append('content', content);
         formData.append('postType', document.getElementById('postType').value);
-        const imgFile = document.getElementById('postImage').files[0];
-        if (imgFile) formData.append('image', imgFile);
+        const imgFile2 = document.getElementById('postImage').files[0];
+        if (imgFile2) formData.append('image', imgFile2);
+        // NOTE: do NOT set Content-Type header — browser sets it automatically
+        // with the correct multipart boundary when using FormData
         try {
-            const headers = {}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
-            const res = await fetch('/feed/post/create', { method: 'POST', headers, body: formData });
+            const headers = {};
+            if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+            const res = await fetch('/feed/post/create',
+                { method: 'POST', headers, body: formData });
+
+            // Server-side moderation rejection
+            if (res.status === 422 || res.status === 400) {
+                try {
+                    const data = await res.json();
+                    showModerationError(data.error || 'Your post violates our community guidelines.');
+                } catch(_) {
+                    showModerationError('Your post violates our community guidelines.');
+                }
+                return;
+            }
+
             if (!res.ok) throw new Error('err');
             const html = await res.text();
             const list = document.getElementById('feed-list');
@@ -802,6 +858,41 @@
             cancelPost();
         } catch (err) { showError('Failed to post. Please try again.'); }
         finally { btn.disabled = false; btn.textContent = '🚀 Post'; }
+    }
+
+    /**
+     * Resize an image File to maxSide × maxSide and return a data-URI string
+     * suitable for sending to the moderation endpoint.
+     */
+    function resizeImageForModeration(file, maxSide) {
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+                    const w = Math.round(img.width  * scale);
+                    const h = Math.round(img.height * scale);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.75)); // full data-URI
+                };
+                img.onerror = () => resolve(null);
+                img.src = e.target.result;
+            };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function showModerationError(msg) {
+        const el = document.getElementById('postError');
+        el.innerHTML = `<span style="font-size:16px;">🚫</span> <strong>Content blocked:</strong> ${msg}`;
+        el.style.display = 'block';
+        el.style.background = 'rgba(239,68,68,0.10)';
+        el.style.borderColor = 'rgba(239,68,68,0.40)';
+        // Don't auto-hide — let the user read and edit their post
     }
     function showError(msg) {
         const el = document.getElementById('postError'); el.textContent = msg; el.style.display = 'block';

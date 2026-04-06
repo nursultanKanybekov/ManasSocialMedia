@@ -130,8 +130,14 @@ public class ChatController {
     }
 
     @PostMapping("/faculty")
-    public String openFacultyChat(@AuthenticationPrincipal UserDetailsImpl principal) {
+    public String openFacultyChat(@AuthenticationPrincipal UserDetailsImpl principal,
+                                  org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
         AppUser user = userService.getById(principal.getId());
+        if (user.getFaculty() == null) {
+            ra.addFlashAttribute("errorMsg",
+                    "⚠️ You don't have a faculty assigned yet. Please contact your administrator.");
+            return "redirect:/chat";
+        }
         ChatRoom room = chatService.getOrCreateFacultyRoom(user);
         return "redirect:/chat/faculty-group/" + room.getId();
     }
@@ -139,8 +145,14 @@ public class ChatController {
     @GetMapping("/faculty-group/{roomId}")
     public String facultyGroup(@PathVariable UUID roomId,
                                @AuthenticationPrincipal UserDetailsImpl principal,
+                               org.springframework.web.servlet.mvc.support.RedirectAttributes ra,
                                Model model) {
         AppUser currentUser = userService.getById(principal.getId());
+        if (currentUser.getFaculty() == null) {
+            ra.addFlashAttribute("errorMsg",
+                    "⚠️ You don't have a faculty assigned yet. Please contact your administrator.");
+            return "redirect:/chat";
+        }
         ChatRoom room = chatService.getOrCreateFacultyRoom(currentUser);
         chatService.joinRoom(currentUser, room.getId());
         List<AppUser> facultyMembers = currentUser.getFaculty() != null
@@ -167,6 +179,8 @@ public class ChatController {
                 url = cloudinaryService.uploadImage(file, "chat/images", null);
             } else if ("VOICE".equalsIgnoreCase(type)) {
                 url = cloudinaryService.uploadAudio(file, "chat/voice");
+            } else if ("VIDEO".equalsIgnoreCase(type)) {
+                url = cloudinaryService.uploadVideo(file, "chat/videos");
             } else {
                 url = cloudinaryService.uploadDocument(file, "chat/files");
             }

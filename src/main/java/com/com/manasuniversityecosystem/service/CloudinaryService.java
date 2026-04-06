@@ -105,6 +105,24 @@ public class CloudinaryService {
         return url;
     }
 
+    /**
+     * Uploads a video file (webm, mp4, etc.) to Cloudinary.
+     * resource_type must be "video" — "auto" silently fails for large blobs.
+     */
+    @SuppressWarnings("unchecked")
+    public String uploadVideo(MultipartFile file, String folder) throws IOException {
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("File is empty.");
+        Map<String, Object> options = new HashMap<>();
+        options.put("folder",        folder);
+        options.put("resource_type", "video");
+        options.put("chunk_size",    6_000_000); // 6 MB chunks for large files
+        Map<String, Object> result = (Map<String, Object>)
+                cloudinary.uploader().upload(file.getBytes(), options);
+        String url = (String) result.get("secure_url");
+        log.info("Cloudinary video upload OK — folder={} url={}", folder, url);
+        return url;
+    }
+
     /** Soft-deletes an asset from Cloudinary (ignores errors). */
     public void deleteImage(String publicId) {
         try {

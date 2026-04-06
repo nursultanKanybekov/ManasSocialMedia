@@ -326,7 +326,8 @@ public class AiFeaturesController {
                     strengths.isBlank()  ? "Not specified"        : strengths,
                     targetRole.isBlank() ? "Not specified"        : targetRole);
 
-            String raw = geminiService.generatePrecise(system, userMsg);
+            // generateLarge uses 4096 tokens — career JSON with 3 careers + steps can be long
+            String raw = geminiService.generateLarge(system, userMsg);
             String json = raw.replaceAll("(?s)```json\\s*", "")
                     .replaceAll("(?s)```\\s*", "")
                     .trim();

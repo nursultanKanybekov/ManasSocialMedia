@@ -112,6 +112,7 @@ public class ProfileService {
             String url = cloudinaryService.uploadImage(file, "manas/avatars", publicId);
             Profile profile = getByUserId(user.getId());
             profile.setAvatarUrl(url);
+            profile.setCustomAvatar(true);   // preserve this avatar across OBIS re-logins
             profileRepo.save(profile);
             log.info("Avatar uploaded for user {}: {}", user.getEmail(), url);
             return url;

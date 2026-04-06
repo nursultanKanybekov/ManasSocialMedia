@@ -77,7 +77,7 @@ app:
   gemini:
     api-key: AIzaSyACV9S3vsdIhZWl4CaZUReMWE-QWi3FpTg
   groq:
-    api-key: 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
+    api-key: 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
   base-url: ${APP_BASE_URL:http://localhost:8081}
   recaptcha:
     site-key: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI

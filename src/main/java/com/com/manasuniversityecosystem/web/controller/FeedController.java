@@ -7,6 +7,7 @@ import com.com.manasuniversityecosystem.domain.enums.PostType;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.service.CloudinaryService;
 import com.com.manasuniversityecosystem.service.UserService;
+import com.com.manasuniversityecosystem.service.social.ContentModerationService;
 import com.com.manasuniversityecosystem.service.social.PostService;
 import com.com.manasuniversityecosystem.web.dto.social.CreateCommentRequest;
 import com.com.manasuniversityecosystem.web.dto.social.CreatePostRequest;
@@ -32,6 +33,7 @@ public class FeedController {
     private final PostService postService;
     private final UserService userService;
     private final CloudinaryService cloudinaryService;
+    private final ContentModerationService moderationService;
 
     @GetMapping("/posts")
     public String getPosts(@RequestParam(defaultValue = "0") int page,
@@ -64,17 +66,83 @@ public class FeedController {
         return "feed/fragments/post-list :: postList";
     }
 
-    @PostMapping("/post/create")
+    /**
+     * Pre-submission content moderation.
+     * Called by the frontend before the actual post is created.
+     * Accepts text + optional base64 data-URI image (resized client-side to ≤512 px).
+     */
+    @PostMapping("/post/moderate")
+    @ResponseBody
+    public ResponseEntity<java.util.Map<String, Object>> moderatePost(
+            @RequestParam("content") String content,
+            @RequestParam(value = "imageBase64", required = false) String imageBase64,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+
+        ContentModerationService.ModerationResult result;
+
+        if (imageBase64 != null && !imageBase64.isBlank()) {
+            try {
+                // imageBase64 is a full data-URI: "data:image/jpeg;base64,/9j/..."
+                String b64data = imageBase64.contains(",")
+                        ? imageBase64.substring(imageBase64.indexOf(',') + 1)
+                        : imageBase64;
+                String mime = imageBase64.startsWith("data:") && imageBase64.contains(";")
+                        ? imageBase64.substring(5, imageBase64.indexOf(';'))
+                        : "image/jpeg";
+                byte[] imageBytes = java.util.Base64.getDecoder().decode(b64data);
+                result = moderationService.moderateTextAndImage(content, imageBytes, mime);
+            } catch (Exception e) {
+                log.warn("Pre-check: could not decode imageBase64, falling back to text-only: {}", e.getMessage());
+                result = moderationService.moderateText(content);
+            }
+        } else {
+            result = moderationService.moderateText(content);
+        }
+
+        if (result.allowed()) {
+            return ResponseEntity.ok(java.util.Map.of("allowed", true));
+        } else {
+            return ResponseEntity.ok(java.util.Map.of(
+                    "allowed", false,
+                    "reason",  result.reason()
+            ));
+        }
+    }
+
+    @PostMapping(value = "/post/create", consumes = "multipart/form-data")
     public String createPost(@RequestParam("content") String content,
                              @RequestParam(value = "postType", defaultValue = "GENERAL") String postTypeStr,
                              @RequestParam(value = "image", required = false) MultipartFile image,
                              @AuthenticationPrincipal UserDetailsImpl principal,
                              @RequestHeader(value = "Accept-Language", defaultValue = "en") String lang,
-                             Model model) {
+                             jakarta.servlet.http.HttpServletResponse httpResp,
+                             Model model) throws java.io.IOException {
 
         if (content == null || content.isBlank()) {
-            model.addAttribute("error", "Post content cannot be empty.");
-            return "feed/fragments/post-error :: error";
+            writeJsonError(httpResp, 400, "Post content cannot be empty.");
+            return null;
+        }
+
+        // ── Server-side content moderation (cannot be bypassed by the client) ──
+        try {
+            ContentModerationService.ModerationResult mod;
+            if (image != null && !image.isEmpty() && image.getSize() <= 10L * 1024 * 1024) {
+                String mime = image.getContentType() != null ? image.getContentType() : "image/jpeg";
+                mod = moderationService.moderateTextAndImage(content, image.getBytes(), mime);
+            } else {
+                mod = moderationService.moderateText(content);
+            }
+            if (!mod.allowed()) {
+                String reason = mod.reason() != null ? mod.reason()
+                        : "Your post violates our community guidelines.";
+                writeJsonError(httpResp, 422, reason);
+                return null;
+            }
+        } catch (Exception e) {
+            log.error("Server-side moderation threw unexpected exception: {}", e.getMessage(), e);
+            // Fail closed — block when moderation itself crashes
+            writeJsonError(httpResp, 422, "Content could not be verified. Please try again.");
+            return null;
         }
 
         AppUser user = userService.getById(principal.getId());
@@ -106,8 +174,18 @@ public class FeedController {
         model.addAttribute("currentUserId", principal.getId());
         model.addAttribute("isAdmin", principal.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN")));
-        model.addAttribute("liked",         false);
+        model.addAttribute("liked", false);
         return "feed/fragments/post-card :: postCard";
+    }
+
+    /** Write a JSON error body and set the HTTP status. */
+    private void writeJsonError(jakarta.servlet.http.HttpServletResponse resp,
+                                int status, String message) throws java.io.IOException {
+        String escaped = message.replace("\\", "\\\\").replace("\"", "\\\"");
+        resp.setStatus(status);
+        resp.setContentType("application/json;charset=UTF-8");
+        resp.getWriter().write("{\"error\":\"" + escaped + "\"}");
+        resp.getWriter().flush();
     }
 
     @PostMapping("/post/{id}/edit")

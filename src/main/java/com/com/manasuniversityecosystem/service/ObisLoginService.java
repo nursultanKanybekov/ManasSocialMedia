@@ -115,8 +115,8 @@ public class ObisLoginService {
         // Update profile
         if (user.getProfile() != null) {
             buildHeadline(user.getProfile(), info);
-            // Update avatar if OBIS has one and profile doesn't have a custom one
-            if (info.getAvatarUrl() != null) {
+            // Update avatar from OBIS only if user has NOT set a custom one
+            if (info.getAvatarUrl() != null && !user.getProfile().isCustomAvatar()) {
                 user.getProfile().setAvatarUrl(info.getAvatarUrl());
             }
         }

@@ -41,6 +41,11 @@ public class Profile {
     @Column(length = 500)
     private String avatarUrl;
 
+    /** True when user has manually uploaded their own avatar (overrides OBIS/MABIS sync). */
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    @Builder.Default
+    private boolean customAvatar = false;
+
     @Column(length = 300)
     private String headline;
 
