@@ -106,21 +106,29 @@ public class CloudinaryService {
     }
 
     /**
-     * Uploads a video file (webm, mp4, etc.) to Cloudinary.
-     * resource_type must be "video" — "auto" silently fails for large blobs.
+     * Uploads a video file (webm, mp4, etc.) to Cloudinary using chunked uploadLarge.
+     * Never loads the entire file into memory — uses a temp file for streaming.
      */
     @SuppressWarnings("unchecked")
     public String uploadVideo(MultipartFile file, String folder) throws IOException {
         if (file == null || file.isEmpty()) throw new IllegalArgumentException("File is empty.");
-        Map<String, Object> options = new HashMap<>();
-        options.put("folder",        folder);
-        options.put("resource_type", "video");
-        options.put("chunk_size",    6_000_000); // 6 MB chunks for large files
-        Map<String, Object> result = (Map<String, Object>)
-                cloudinary.uploader().upload(file.getBytes(), options);
-        String url = (String) result.get("secure_url");
-        log.info("Cloudinary video upload OK — folder={} url={}", folder, url);
-        return url;
+
+        // Write multipart bytes to a real temp file so uploadLarge can seek/chunk it
+        java.io.File tmp = java.io.File.createTempFile("cv_upload_", ".tmp");
+        try {
+            file.transferTo(tmp);
+            Map<String, Object> options = new HashMap<>();
+            options.put("folder",        folder);
+            options.put("resource_type", "video");
+            options.put("chunk_size",    6_000_000); // 6 MB per chunk
+            Map<String, Object> result = (Map<String, Object>)
+                    cloudinary.uploader().uploadLarge(tmp, options);
+            String url = (String) result.get("secure_url");
+            log.info("Cloudinary video upload OK — folder={} url={}", folder, url);
+            return url;
+        } finally {
+            tmp.delete();
+        }
     }
 
     /** Soft-deletes an asset from Cloudinary (ignores errors). */

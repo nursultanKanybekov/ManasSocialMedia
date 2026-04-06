@@ -32,6 +32,11 @@ public class DatabaseMigration implements ApplicationRunner {
                 "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS reply_to_sender_name VARCHAR(100)",
                 "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS forwarded_from VARCHAR(100)",
 
+                // ── Fix chat_message message_type constraint (add VIDEO, CIRCLE_VIDEO) ──
+                "ALTER TABLE chat_message DROP CONSTRAINT IF EXISTS chat_message_message_type_check",
+                "ALTER TABLE chat_message ADD CONSTRAINT chat_message_message_type_check "
+                        + "CHECK (message_type IN ('TEXT','FILE','IMAGE','VOICE','VIDEO','CIRCLE_VIDEO','SYSTEM','POST_SHARE','CALL_EVENT'))",
+
                 // ── Fix point_transaction reason constraint ───────────────────
                 "ALTER TABLE point_transaction DROP CONSTRAINT IF EXISTS point_transaction_reason_check",
                 "ALTER TABLE point_transaction ADD CONSTRAINT point_transaction_reason_check "

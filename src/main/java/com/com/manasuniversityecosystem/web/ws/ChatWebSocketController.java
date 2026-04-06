@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Controller;
 
@@ -32,10 +33,15 @@ public class ChatWebSocketController {
     private final SimpMessagingTemplate messaging;
 
     private UserDetailsImpl extractPrincipal(Principal principal) {
-        if (principal instanceof UsernamePasswordAuthenticationToken token) {
-            return (UserDetailsImpl) token.getPrincipal();
+        // Accept any AbstractAuthenticationToken — covers UsernamePasswordAuthenticationToken,
+        // RememberMeAuthenticationToken, OAuth2AuthenticationToken, etc.
+        if (principal instanceof AbstractAuthenticationToken token
+                && token.getPrincipal() instanceof UserDetailsImpl details) {
+            return details;
         }
-        throw new IllegalStateException("Unexpected principal type: " + principal.getClass());
+        throw new IllegalStateException(
+                "Cannot extract UserDetailsImpl from principal type: "
+                        + (principal != null ? principal.getClass().getName() : "null"));
     }
 
     /** Client publishes to: /app/chat.send/{roomId} */

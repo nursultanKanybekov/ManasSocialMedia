@@ -1459,6 +1459,11 @@
                                box-shadow:0 4px 18px rgba(0,0,0,.25);"
                         onclick="this.paused?this.play():this.pause()"></video>`;
         }
+        if (type === 'VIDEO') {
+            return `<video src="${esc(content)}" controls playsinline
+                        style="max-width:320px;width:100%;border-radius:12px;display:block;
+                               background:#000;box-shadow:0 4px 18px rgba(0,0,0,.2);"></video>`;
+        }
         if (type === 'FILE') {
             const name = decodeURIComponent(content.split('/').pop().split('?')[0]);
             return `<a href="${esc(content)}" target="_blank" class="msg-file" download>
@@ -1498,7 +1503,7 @@
         if (!textEl) return;
         const type = row.dataset.msgType || 'TEXT';
         const content = row.dataset.content || '';
-        if (type === 'IMAGE' || type === 'VOICE' || type === 'FILE' || type === 'POST_SHARE' || type === 'CIRCLE_VIDEO') {
+        if (type === 'IMAGE' || type === 'VOICE' || type === 'VIDEO' || type === 'FILE' || type === 'POST_SHARE' || type === 'CIRCLE_VIDEO') {
             textEl.innerHTML = renderMsgContent(content, type);
         }
         // SYSTEM rows that are call messages → blue pill (📞 / 📵 / 📹)

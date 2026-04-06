@@ -86,6 +86,6 @@ public class ChatMessage {
     }
 
     public enum MessageType {
-        TEXT, FILE, IMAGE, VOICE, SYSTEM, POST_SHARE, CALL_EVENT
+        TEXT, FILE, IMAGE, VOICE, VIDEO, CIRCLE_VIDEO, SYSTEM, POST_SHARE, CALL_EVENT
     }
 }
