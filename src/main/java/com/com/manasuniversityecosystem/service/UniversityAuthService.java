@@ -56,6 +56,8 @@ public class UniversityAuthService {
     private static final String BASE_URL        = "https://obistest.manas.edu.kg";
     private static final String LOGIN_URL       = BASE_URL + "/site/login";
     private static final String PROFILE_URL     = BASE_URL + "/s-main/view";
+    private static final String UNIV_TAB_URL    = BASE_URL + "/s-main/view"; // POST with type=11
+    private static final String UNIV_TAB_MODEL  = "app\\models\\student\\SUniv";
 
     // Login page indicator — present ONLY on login page, absent after successful auth
     private static final String LOGIN_INDICATOR = "Системага кирүү";
@@ -112,7 +114,7 @@ public class UniversityAuthService {
                 profileHtml = fetchPage(client, PROFILE_URL);
             }
 
-            ObisStudentInfo info = scrapeProfile(profileHtml, username);
+            ObisStudentInfo info = scrapeProfile(client, profileHtml, username);
             log.info("OBIS: scraped — name='{}' id='{}' year={} admYear={}",
                     info.getFullName(), info.getStudentId(),
                     info.getStudyYear(), info.getAdmissionYear());
@@ -192,7 +194,8 @@ public class UniversityAuthService {
      *  - Study year:    Calculated from admission year
      *  - Email:         .info_text text
      */
-    private ObisStudentInfo scrapeProfile(String html, String obisUsername) {
+    private ObisStudentInfo scrapeProfile(CloseableHttpClient client,
+                                          String html, String obisUsername) {
         Document doc = Jsoup.parse(html, BASE_URL);
 
         // ── Full name ──────────────────────────────────────────────────────────
@@ -312,6 +315,79 @@ public class UniversityAuthService {
             }
         }
 
+        // ── Faculty + programmeYears fallback: fetch type=11 ─────────────────────
+        // The initial login page (type=1) shows personal data — no faculty field.
+        // Faculty and programme info live on the university-info tab (type=11).
+        // We always fetch it to ensure we get both faculty AND programme duration.
+        Integer programmeYears = null;
+        if (!isBlank(studentId)) {
+            log.debug("OBIS: fetching type=11 tab for '{}'", obisUsername);
+            try {
+                String univHtml = fetchUniversityTab(client, doc, studentId);
+                if (univHtml != null) {
+                    Document univDoc = Jsoup.parse(univHtml, BASE_URL);
+
+                    // ── Faculty from type=11 if still missing ──────────────────
+                    if (isBlank(facultyName)) {
+                        for (String label : new String[]{"Факультети", "Факультет", "Факультеті"}) {
+                            facultyName = getTableRowValue(univDoc, label);
+                            if (!isBlank(facultyName)) break;
+                        }
+                        if (isBlank(facultyName)) {
+                            for (Element row : univDoc.select("table tbody tr")) {
+                                Element th = row.selectFirst("th");
+                                Element td = row.selectFirst("td");
+                                if (th != null && td != null
+                                        && th.text().trim().toLowerCase().contains("факульт")) {
+                                    String v = td.text().trim();
+                                    if (!isBlank(v) && !v.equals("(not set)")) {
+                                        facultyName = v;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        log.info("OBIS: type=11 faculty result: '{}'", facultyName);
+                    }
+
+                    // ── Programme duration from type=11 ───────────────────────
+                    // Strategy 1: "Курсу" row gives current year-of-study;
+                    //   combined with admissionYear we can compute total programme length
+                    //   but we still need to know when they finish — use programme name keywords.
+                    // Strategy 2: Programme name keywords (most reliable):
+                    //   "магистр/master/магистратура" → 2 years
+                    //   "докторантура/PhD/phd"        → 3–4 years  → use 4
+                    //   everything else (bachelor)    → 4 years
+                    String programmeName = getTableRowValue(univDoc, "Программасы");
+                    if (isBlank(programmeName)) programmeName = getTableRowValue(univDoc, "Бөлүмү");
+                    if (!isBlank(programmeName)) {
+                        String pLower = programmeName.toLowerCase();
+                        if (pLower.contains("магистр") || pLower.contains("master")) {
+                            programmeYears = 2;
+                        } else if (pLower.contains("доктор") || pLower.contains("phd")) {
+                            programmeYears = 4;
+                        } else {
+                            programmeYears = 4; // default: bachelor
+                        }
+                        log.debug("OBIS: programme='{}' → programmeYears={}", programmeName, programmeYears);
+                    }
+
+                    // Strategy 3: Кирүү жылы (admission year in univ table, cross-check)
+                    if (admissionYear == null) {
+                        String entryYearStr = getTableRowValue(univDoc, "Кирүү жылы");
+                        if (!isBlank(entryYearStr)) {
+                            try { admissionYear = Integer.parseInt(entryYearStr.trim()); }
+                            catch (NumberFormatException ignored) {}
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("OBIS: type=11 fetch failed for '{}': {}", obisUsername, e.getMessage());
+            }
+        }
+
+        if (programmeYears == null) programmeYears = 4; // safe default
+
         log.debug("OBIS scrape result — name='{}' id='{}' admYear={} studyYear={} faculty='{}' avatar={}",
                 fullName, studentId, admissionYear, studyYear, facultyName,
                 avatarUrl != null ? "present" : "absent");
@@ -324,6 +400,7 @@ public class UniversityAuthService {
                 .admissionYear(admissionYear)
                 .studyYear(studyYear)
                 .facultyName(facultyName)
+                .programmeYears(programmeYears)
                 .obisUsername(obisUsername)
                 .build();
     }
@@ -374,6 +451,52 @@ public class UniversityAuthService {
             }
         }
         return null;
+    }
+
+    /**
+     * Fetches the "Университеттеги маалыматтар" tab (type=11) via POST.
+     *
+     * Mimics what the browser does when clicking the mortarboard tab:
+     *   POST /s-main/view
+     *   Body: numara=<studentId>&model=app\models\student\SUniv&type=11&_csrf=<token>
+     *
+     * The CSRF token is extracted from the already-parsed initial profile page.
+     * Returns the raw HTML of the university-info tab, or null on failure.
+     */
+    private String fetchUniversityTab(CloseableHttpClient client,
+                                      Document profileDoc,
+                                      String studentId) throws Exception {
+        // Extract CSRF from the already-loaded page (meta tag or hidden input)
+        String csrf = null;
+        Element csrfMeta = profileDoc.selectFirst("meta[name=csrf-token]");
+        if (csrfMeta != null) csrf = csrfMeta.attr("content");
+        if (isBlank(csrf)) {
+            Element csrfInput = profileDoc.selectFirst("input[name=_csrf]");
+            if (csrfInput != null) csrf = csrfInput.val();
+        }
+        if (isBlank(csrf)) {
+            log.warn("OBIS: cannot fetch type=11 tab — no CSRF token on profile page");
+            return null;
+        }
+
+        HttpPost post = new HttpPost(UNIV_TAB_URL);
+        setHeaders(post, PROFILE_URL);
+        // Yii2 PJAX expects these exact field names (same as data-params JSON in the nav link)
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("_csrf",   csrf));
+        params.add(new BasicNameValuePair("numara",  studentId));
+        params.add(new BasicNameValuePair("model",   UNIV_TAB_MODEL));
+        params.add(new BasicNameValuePair("type",    "11"));
+        post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+
+        try (CloseableHttpResponse response = client.execute(post)) {
+            int code = response.getCode();
+            log.debug("OBIS: type=11 POST status={}", code);
+            if (code >= 200 && code < 400) {
+                return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            }
+            return null;
+        }
     }
 
     private String fetchPage(CloseableHttpClient client, String url) throws Exception {

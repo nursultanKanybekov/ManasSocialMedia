@@ -10,6 +10,7 @@ import com.com.manasuniversityecosystem.repository.UserRepository;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.service.notification.NotificationService;
 import com.com.manasuniversityecosystem.web.dto.auth.ObisStudentInfo;
+import com.com.manasuniversityecosystem.service.GraduationDetectionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class ObisLoginService {
     private final UserRepository      userRepo;
     private final FacultyRepository   facultyRepo;
     private final NotificationService notificationService;
+    private final GraduationDetectionService graduationDetectionService;
 
     @Transactional
     public AppUser loginOrRegister(ObisStudentInfo info, HttpServletRequest request) {
@@ -51,6 +53,9 @@ public class ObisLoginService {
                 .orElseGet(() -> createNew(email, info));
 
         programmaticLogin(user, request);
+
+        // Check graduation on every OBIS login — fast no-op if already MEZUN or not due
+        graduationDetectionService.checkAndPromote(user, info);
 
         log.info("OBIS login complete: id={} email={} name='{}' year={}",
                 user.getId(), email, user.getFullName(), info.getStudyYear());
@@ -71,6 +76,7 @@ public class ObisLoginService {
                 .role(UserRole.STUDENT)
                 .status(UserStatus.ACTIVE)       // OBIS verified — skip secretary queue
                 .studentIdNumber(info.getStudentId())
+                .admissionYear(info.getAdmissionYear())
                 .universityVerified(true)
                 .obisUsername(info.getObisUsername())
                 .faculty(faculty)
@@ -100,6 +106,10 @@ public class ObisLoginService {
         user.setStudentIdNumber(info.getStudentId());
         user.setUniversityVerified(true);
         user.setObisUsername(info.getObisUsername());
+        // Sync admissionYear — always authoritative from OBIS
+        if (info.getAdmissionYear() != null) {
+            user.setAdmissionYear(info.getAdmissionYear());
+        }
 
         // Re-activate if was pending
         if (user.getStatus() == UserStatus.PENDING) {

@@ -1,5 +1,6 @@
 package com.com.manasuniversityecosystem.security;
 
+import com.com.manasuniversityecosystem.service.GraduationDetectionService;
 import com.com.manasuniversityecosystem.domain.enums.PointReason;
 import com.com.manasuniversityecosystem.service.LoginAttemptService;
 import com.com.manasuniversityecosystem.repository.UserRepository;
@@ -21,6 +22,7 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final UserRepository userRepository;
     private final GamificationService gamificationService;
+    private final GraduationDetectionService graduationDetectionService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -35,11 +37,17 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
             session.removeAttribute(LoginAttemptService.SESSION_KEY_CAPTCHA);
         }
 
-        // Award daily login points
+        // Award daily login points + check graduation status
         String username = authentication.getName();
-        userRepository.findByEmail(username).ifPresent(user ->
-                gamificationService.awardPoints(user, PointReason.LOGIN, null)
-        );
+        userRepository.findByEmail(username).ifPresent(user -> {
+            gamificationService.awardPoints(user, PointReason.LOGIN, null);
+            // Run graduation check for ALL users on every login.
+            // For OBIS users: admissionYear is set from OBIS scrape — check is precise.
+            // For manual STUDENT users: admissionYear is null → check is a no-op
+            //   (they are caught by the nightly scan if admissionYear ever gets set,
+            //    or they can self-promote by re-registering via OBIS).
+            graduationDetectionService.checkAndPromote(user, null);
+        });
 
         boolean isSuperAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));

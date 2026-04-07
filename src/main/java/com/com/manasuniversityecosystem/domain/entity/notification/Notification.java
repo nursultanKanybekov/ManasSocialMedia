@@ -51,6 +51,9 @@ public class Notification {
         // Faculty
         NEW_FACULTY_DETECTED,   // superadmin notified when OBIS returns unknown faculty name
 
+        // Graduation
+        GRADUATION_DETECTED,    // student notified when auto-promoted to MEZUN
+
         // Exam schedule
         EXAM_TODAY              // student/teacher notified when they have an exam today
     }

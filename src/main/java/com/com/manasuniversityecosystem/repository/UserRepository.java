@@ -81,4 +81,25 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
                               @Param("graduationYear") Integer graduationYear,
                               @Param("name") String name,
                               Pageable pageable);
+    @Query("""
+            SELECT u FROM AppUser u
+            WHERE u.role = com.com.manasuniversityecosystem.domain.enums.UserRole.STUDENT
+            AND u.status = com.com.manasuniversityecosystem.domain.enums.UserStatus.ACTIVE
+            AND u.admissionYear IS NOT NULL
+            AND (u.admissionYear + :programmeYears) < :currentAcademicYear
+            """)
+    List<AppUser> findStudentsToGraduate(@Param("programmeYears") int programmeYears,
+                                         @Param("currentAcademicYear") int currentAcademicYear);
+
+    @Query("""
+            SELECT u FROM AppUser u
+            WHERE u.id = :id
+            AND u.role = com.com.manasuniversityecosystem.domain.enums.UserRole.STUDENT
+            AND u.admissionYear IS NOT NULL
+            AND (u.admissionYear + :programmeYears) < :currentAcademicYear
+            """)
+    java.util.Optional<AppUser> findStudentToGraduateById(
+            @Param("id") UUID id,
+            @Param("programmeYears") int programmeYears,
+            @Param("currentAcademicYear") int currentAcademicYear);
 }

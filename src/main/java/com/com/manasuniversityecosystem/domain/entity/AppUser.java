@@ -52,6 +52,14 @@ public class AppUser {
 
     private Integer graduationYear;
 
+    /** Year the student was admitted — sourced from OBIS, used for graduation detection */
+    @Column(name = "admission_year")
+    private Integer admissionYear;
+
+    /** Set when the system auto-promotes a STUDENT to MEZUN — audit trail */
+    @Column(name = "graduation_detected_at")
+    private java.time.LocalDateTime graduationDetectedAt;
+
     @Column(length = 100)
     private String studentIdNumber;
 

@@ -242,6 +242,32 @@ public class NotificationService {
         log.info("[Faculty] New faculty detected from OBIS: '{}' — superadmins notified.", facultyName);
     }
 
+    // ── Graduation ────────────────────────────────────────────
+
+    /**
+     * Sent to the student when they are auto-promoted to MEZUN.
+     */
+    @Async @Transactional
+    public void notifyGraduationDetected(UUID userId, int graduationYear) {
+        String msg = "🎓 Congratulations! You have been recognized as a graduate (Mezun) "
+                + "of the class of " + graduationYear + ". "
+                + "Your role has been updated from Student to Mezun.";
+        saveNotification(userId, null, NotifType.GRADUATION_DETECTED, msg, "/profile", "🎓");
+    }
+
+    /**
+     * Sent to all SUPER_ADMINs when a student is auto-promoted to MEZUN.
+     */
+    @Async @Transactional
+    public void notifySuperAdminsGraduationDetected(String fullName, String email, int graduationYear) {
+        String msg = "🎓 Student auto-promoted to Mezun: " + fullName
+                + " (" + email + "), graduation year " + graduationYear + ".";
+        userRepo.findByRole(UserRole.SUPER_ADMIN).forEach(sa ->
+                saveNotification(sa.getId(), null,
+                        NotifType.GRADUATION_DETECTED, msg, "/super-admin/users", "🎓"));
+        log.info("[GradDetect] Superadmins notified: {} promoted to Mezun ({})", fullName, graduationYear);
+    }
+
     // ── System / Badge ────────────────────────────────────────
 
     @Async @Transactional

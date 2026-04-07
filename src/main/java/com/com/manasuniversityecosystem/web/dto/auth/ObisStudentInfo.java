@@ -35,6 +35,13 @@ public class ObisStudentInfo {
     /** Faculty name as it appears on OBIS portal — authoritative source */
     private String facultyName;
 
+    /**
+     * Programme duration in years scraped from OBIS (e.g. 4 for bachelor, 2 for master).
+     * Used by graduation detection: student graduates when currentAcademicYear > admissionYear + programmeYears.
+     * Defaults to 4 if not determinable.
+     */
+    private Integer programmeYears;
+
     /** OBIS username used to authenticate */
     private String obisUsername;
 }

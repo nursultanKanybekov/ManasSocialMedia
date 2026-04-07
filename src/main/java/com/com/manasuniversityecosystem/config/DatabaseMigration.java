@@ -32,23 +32,23 @@ public class DatabaseMigration implements ApplicationRunner {
                 "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS reply_to_sender_name VARCHAR(100)",
                 "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS forwarded_from VARCHAR(100)",
 
-                // ── Fix chat_message message_type constraint (add VIDEO, CIRCLE_VIDEO) ──
-                "ALTER TABLE chat_message DROP CONSTRAINT IF EXISTS chat_message_message_type_check",
-                "ALTER TABLE chat_message ADD CONSTRAINT chat_message_message_type_check "
-                        + "CHECK (message_type IN ('TEXT','FILE','IMAGE','VOICE','VIDEO','CIRCLE_VIDEO','SYSTEM','POST_SHARE','CALL_EVENT'))",
+                // ── Graduation detection support ──────────────────────────────────────
+                "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS admission_year INTEGER",
+                "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS graduation_detected_at TIMESTAMP",
 
                 // ── Fix point_transaction reason constraint ───────────────────
                 "ALTER TABLE point_transaction DROP CONSTRAINT IF EXISTS point_transaction_reason_check",
                 "ALTER TABLE point_transaction ADD CONSTRAINT point_transaction_reason_check "
                         + "CHECK (reason IN ('POST','COMMENT','LIKE_RECEIVED','MENTOR','QUIZ','JOB_HELP','LOGIN','QUIZ_PASS','GAME_WIN'))",
 
-                // ── Fix notification type constraint (add PASSWORD_RESET_REQUEST) ──
+                // ── Fix notification type constraint (add GRADUATION_DETECTED) ────
                 "ALTER TABLE notification DROP CONSTRAINT IF EXISTS notification_type_check",
                 "ALTER TABLE notification ADD CONSTRAINT notification_type_check "
                         + "CHECK (type IN ('ACCOUNT_REGISTERED','ACCOUNT_APPROVED','ACCOUNT_REJECTED','ACCOUNT_SUSPENDED',"
                         + "'ROLE_CHANGED','POST_LIKED','POST_COMMENTED','POST_CREATED','JOB_APPLIED','APPLICATION_STATUS',"
                         + "'JOB_POSTED','MENTORSHIP_REQUESTED','MENTORSHIP_ACCEPTED','MENTORSHIP_DECLINED',"
-                        + "'MENTORSHIP_COMPLETED','BADGE_EARNED','SYSTEM','PASSWORD_RESET_REQUEST'))",
+                        + "'MENTORSHIP_COMPLETED','BADGE_EARNED','SYSTEM','PASSWORD_RESET_REQUEST',"
+                        + "'NEW_FACULTY_DETECTED','GRADUATION_DETECTED','EXAM_TODAY'))",
 
                 // ── Seed badges ───────────────────────────────────────────────
                 "INSERT INTO badge (id, code, name_i18n, description_i18n, tier) "
