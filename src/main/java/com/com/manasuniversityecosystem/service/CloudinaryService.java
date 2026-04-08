@@ -1,7 +1,6 @@
 package com.com.manasuniversityecosystem.service;
 
 import com.cloudinary.Cloudinary;
-import com.cloudinary.Transformation;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -53,11 +52,7 @@ public class CloudinaryService {
         options.put("folder",        folder);
         options.put("overwrite",     true);
         options.put("resource_type", "image");
-
-        // Transformation must be a Transformation object, NOT a plain Map
-        options.put("transformation", new Transformation()
-                .quality("auto")
-                .fetchFormat("auto"));
+        options.put("quality",       "auto"); // compress on upload, valid upload param
 
         if (publicId != null) {
             options.put("public_id", publicId);
