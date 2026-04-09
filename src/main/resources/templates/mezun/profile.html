@@ -1,328 +1,319 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/header :: head(${mezun.fullName})}"></head>
 <style>
-    /* ══════════════════════════════════════════════════════
-       ALUMNI PROFILE — Mobile-first redesign
-    ══════════════════════════════════════════════════════ */
-
-    .ap-wrap {
-        max-width: 720px;
-        margin: 0 auto;
-    }
-
-    /* ── Back link ── */
-    .ap-back {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        color: #1b2a6b;
-        font-family: Montserrat, sans-serif;
-        font-weight: 700;
-        font-size: 13px;
-        text-decoration: none;
-        margin-bottom: 18px;
-        padding: 7px 14px 7px 10px;
-        background: white;
-        border-radius: 10px;
-        border: 1.5px solid #e0e3ef;
-        transition: background .15s, border-color .15s;
-        box-shadow: 0 1px 4px rgba(27,42,107,0.05);
-    }
-    .ap-back:hover { background: #e8ecf8; border-color: #1b2a6b; }
-    .ap-back svg { flex-shrink: 0; }
-
-    /* ── Hero card ── */
-    .ap-hero {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 4px 24px rgba(27,42,107,0.10);
-        border: 1.5px solid #f0f2f8;
-        overflow: hidden;
-        margin-bottom: 16px;
-    }
-
-    .ap-hero-banner {
-        height: 88px;
-        background: linear-gradient(135deg, #1b2a6b 0%, #2d43a6 50%, #4a5fbe 100%);
-        position: relative;
-        overflow: hidden;
-    }
-    .ap-hero-banner::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.07)' stroke-width='1'%3E%3Cpolygon points='30,3 57,17 57,43 30,57 3,43 3,17'/%3E%3Cpolygon points='30,13 47,22 47,38 30,47 13,38 13,22'/%3E%3C/g%3E%3C/svg%3E");
-        background-size: 60px 60px;
-    }
-
-    .ap-hero-body {
-        padding: 0 24px 24px;
-        position: relative;
-    }
-
-    /* Avatar overlapping banner */
-    .ap-avatar-wrap {
-        position: relative;
-        display: inline-block;
-        margin-top: -42px;
-        margin-bottom: 12px;
-    }
-    .ap-avatar {
-        width: 84px;
-        height: 84px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 4px solid white;
-        display: block;
-        box-shadow: 0 4px 16px rgba(27,42,107,0.18);
-    }
-
-    /* Name + action row */
-    .ap-name-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 10px;
-    }
-    .ap-name {
-        font-family: Montserrat, sans-serif;
-        font-weight: 900;
-        font-size: 20px;
-        color: #1b2a6b;
-        margin: 0 0 3px;
-        line-height: 1.2;
-    }
-    .ap-headline {
-        font-size: 13px;
-        color: #8a91a8;
-        margin: 0;
-    }
-
-    .ap-message-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 10px 18px;
-        background: #1b2a6b;
-        color: white;
-        border-radius: 11px;
-        font-family: Montserrat, sans-serif;
-        font-weight: 700;
-        font-size: 13px;
-        text-decoration: none;
-        flex-shrink: 0;
-        transition: background .15s, transform .12s, box-shadow .15s;
-        box-shadow: 0 3px 12px rgba(27,42,107,0.25);
-    }
-    .ap-message-btn:hover {
-        background: #2d43a6;
-        transform: translateY(-1px);
-        box-shadow: 0 5px 18px rgba(27,42,107,0.3);
-    }
-
-    /* Tag chips */
-    .ap-tags {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .ap-tag {
-        font-size: 12px;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-family: Montserrat, sans-serif;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .ap-tag--faculty { background: #e8ecf8; color: #1b2a6b; }
-    .ap-tag--year    { background: #fce4ec; color: #c0392b; }
-    .ap-tag--pts     { background: #fff3e0; color: #e65100; }
-
-    /* ── Bio section ── */
-    .ap-section {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(27,42,107,0.07);
-        border: 1.5px solid #f0f2f8;
-        padding: 20px 24px;
-        margin-bottom: 16px;
-    }
-    .ap-section-title {
-        font-family: Montserrat, sans-serif;
-        font-weight: 800;
-        font-size: 13px;
-        color: #1b2a6b;
-        margin: 0 0 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding-bottom: 12px;
-        border-bottom: 1.5px solid #f0f2f8;
-    }
-    .ap-section-title::before {
-        content: '';
-        width: 4px;
-        height: 16px;
-        background: #c0392b;
-        border-radius: 2px;
-        display: block;
-        flex-shrink: 0;
-    }
-    .ap-bio-text {
-        font-size: 14px;
-        color: #2c3e50;
-        line-height: 1.7;
-        margin: 0;
-    }
-
-    /* ── Mobile bottom action bar ── */
-    .ap-mobile-actions {
-        display: none;
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        background: white;
-        border-top: 1.5px solid #e0e3ef;
-        padding: 12px 16px;
-        padding-bottom: calc(12px + env(safe-area-inset-bottom));
-        z-index: 100;
-        gap: 10px;
-        box-shadow: 0 -4px 20px rgba(27,42,107,0.10);
-    }
-    .ap-mobile-btn {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 13px;
-        border-radius: 12px;
-        font-family: Montserrat, sans-serif;
-        font-weight: 700;
-        font-size: 14px;
-        text-decoration: none;
-        cursor: pointer;
-        border: none;
-        transition: background .15s, transform .1s;
-    }
-    .ap-mobile-btn--primary {
-        background: #1b2a6b;
-        color: white;
-        box-shadow: 0 3px 12px rgba(27,42,107,0.25);
-    }
-    .ap-mobile-btn--primary:hover  { background: #2d43a6; }
-    .ap-mobile-btn--primary:active { transform: scale(0.98); }
-    .ap-mobile-btn--secondary {
-        background: #f0f2f8;
-        color: #1b2a6b;
-    }
-    .ap-mobile-btn--secondary:hover  { background: #e0e3ef; }
-
-    /* ══ RESPONSIVE ══ */
-    @media (max-width: 600px) {
-        .ap-hero-body { padding: 0 16px 20px; }
-        .ap-name { font-size: 18px; }
-
-        /* Move message btn to fixed bottom bar on mobile */
-        .ap-message-btn { display: none; }
-        .ap-mobile-actions { display: flex; }
-
-        /* Give space for bottom action bar */
-        .main-content { padding-bottom: 90px !important; }
-
-        .ap-section { padding: 16px; }
-        .ap-back { margin-bottom: 14px; }
-    }
-
-    @media (max-width: 420px) {
-        .ap-avatar { width: 72px; height: 72px; }
-        .ap-hero-banner { height: 70px; }
-        .ap-avatar-wrap { margin-top: -36px; }
-        .ap-name { font-size: 17px; }
-        .ap-tags { gap: 6px; }
-        .ap-tag { font-size: 11px; padding: 3px 10px; }
+    .ap-wrap { max-width: 900px; margin: 0 auto; }
+    .ap-back { display:inline-flex;align-items:center;gap:6px;color:#1b2a6b;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;margin-bottom:18px;padding:7px 14px 7px 10px;background:white;border-radius:10px;border:1.5px solid #e0e3ef;box-shadow:0 1px 4px rgba(27,42,107,0.05);transition:background .15s,border-color .15s; }
+    .ap-back:hover { background:#e8ecf8;border-color:#1b2a6b; }
+    .ap-hero { background:white;border-radius:20px;box-shadow:0 4px 24px rgba(27,42,107,0.10);border:1.5px solid #f0f2f8;overflow:hidden;margin-bottom:20px; }
+    .ap-hero-banner { height:110px;background:linear-gradient(135deg,#1b2a6b 0%,#2d43a6 50%,#4a5fbe 100%);position:relative;overflow:hidden; }
+    .ap-hero-banner::before { content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.07)' stroke-width='1'%3E%3Cpolygon points='30,3 57,17 57,43 30,57 3,43 3,17'/%3E%3C/g%3E%3C/svg%3E");background-size:60px; }
+    .ap-hero-body { padding:0 28px 24px;position:relative; }
+    .ap-avatar-wrap { position:relative;display:inline-block;margin-top:-46px;margin-bottom:12px; }
+    .ap-avatar { width:90px;height:90px;border-radius:50%;object-fit:cover;border:4px solid white;display:block;box-shadow:0 4px 16px rgba(27,42,107,0.18); }
+    .ap-name-row { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px; }
+    .ap-name { font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;color:#1b2a6b;margin:0 0 3px; }
+    .ap-sub  { font-size:13px;color:#64748b;margin:0 0 2px; }
+    .ap-tags { display:flex;gap:8px;flex-wrap:wrap;margin-top:8px; }
+    .ap-tag  { font-size:12px;padding:4px 12px;border-radius:20px;font-family:Montserrat,sans-serif;font-weight:700;display:inline-flex;align-items:center;gap:5px; }
+    .t-faculty  { background:#e8ecf8;color:#1b2a6b; }
+    .t-year     { background:#fce4ec;color:#c0392b; }
+    .t-pts      { background:#fff3e0;color:#e65100; }
+    .t-gender   { background:#f0f4ff;color:#3730a3;border:1.5px solid #c7d2fe; }
+    .t-verified { background:#ecfdf5;color:#065f46;border:1.5px solid #6ee7b7; }
+    .t-work     { background:#f0fdf4;color:#166534; }
+    .ap-actions { display:flex;gap:10px;flex-wrap:wrap; }
+    .ap-btn { display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:11px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;cursor:pointer;border:none;transition:all .15s; }
+    .ap-btn-primary { background:#1b2a6b;color:#fff;box-shadow:0 3px 12px rgba(27,42,107,0.25); }
+    .ap-btn-primary:hover { background:#2d43a6;transform:translateY(-1px); }
+    .ap-btn-outline { background:#f0f2f8;color:#1b2a6b;border:1.5px solid #e0e3ef; }
+    .ap-btn-outline:hover { background:#e0e3ef; }
+    .ap-body { display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start; }
+    .ap-card { background:white;border-radius:16px;box-shadow:0 2px 12px rgba(27,42,107,0.07);border:1.5px solid #f0f2f8;padding:20px 24px;margin-bottom:16px; }
+    .ap-card-title { font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;color:#1b2a6b;margin:0 0 14px;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1.5px solid #f0f2f8; }
+    .ap-card-title::before { content:'';width:4px;height:16px;background:#c0392b;border-radius:2px;display:block;flex-shrink:0; }
+    .info-row { display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f7f8fc;gap:12px; }
+    .info-row:last-child { border-bottom:none; }
+    .info-lbl { font-size:12px;color:#8a91a8;font-weight:700;flex-shrink:0; }
+    .info-val { font-size:13px;color:#1b2a6b;font-weight:600;text-align:right; }
+    .ap-tl { display:flex;flex-direction:column;gap:14px; }
+    .ap-tl-item { display:flex;gap:12px; }
+    .ap-dot { width:10px;height:10px;border-radius:50%;background:#1b2a6b;box-shadow:0 0 0 3px #e8ecf8;flex-shrink:0;margin-top:4px; }
+    .ap-dot-edu { background:#7c3aed;box-shadow:0 0 0 3px #ede9fe; }
+    .tl-title { font-size:14px;font-weight:700;color:#1b2a6b;margin-bottom:2px; }
+    .tl-sub   { font-size:12px;color:#64748b;margin-bottom:2px; }
+    .tl-date  { font-size:11px;color:#94a3b8; }
+    .tl-desc  { font-size:12px;color:#374151;margin-top:4px;line-height:1.5; }
+    .ap-skills { display:flex;flex-wrap:wrap;gap:8px; }
+    .ap-skill  { background:#eef1fb;color:#1b2a6b;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;font-family:Montserrat,sans-serif; }
+    .ap-badges { display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:10px; }
+    .ap-badge-item { display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center; }
+    .ap-badge-icon { width:36px;height:36px;border-radius:50%;object-fit:cover; }
+    .ap-badge-fb   { width:36px;height:36px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:18px; }
+    .ap-badge-name { font-size:10px;font-weight:700;color:#1b2a6b;font-family:Montserrat,sans-serif; }
+    .ap-badge-tier { font-size:9px;color:#94a3b8;font-weight:600; }
+    .ap-lang-item  { display:flex;justify-content:space-between;align-items:center;margin-bottom:8px; }
+    .ap-lang-name  { font-size:13px;font-weight:600;color:#1b2a6b; }
+    .ap-lang-level { font-size:11px;color:#64748b;background:#f0f2f8;padding:2px 8px;border-radius:10px;font-weight:600; }
+    .ap-social-link { display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f7f8fc;border-radius:10px;text-decoration:none;font-size:13px;font-weight:600;color:#1b2a6b;margin-bottom:6px;transition:background .15s; }
+    .ap-social-link:hover { background:#e8ecf8; }
+    .ap-posts-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px; }
+    .ap-post-tile  { border-radius:10px;overflow:hidden;aspect-ratio:1;background:#f0f2f8;text-decoration:none;display:block; }
+    .ap-post-tile img { width:100%;height:100%;object-fit:cover; }
+    .ap-post-txt { padding:10px;font-size:11px;color:#374151;line-height:1.4;overflow:hidden;height:100%; }
+    .ap-cert-item { display:flex;gap:10px;align-items:flex-start;margin-bottom:10px; }
+    .ap-cert-name { font-size:13px;font-weight:700;color:#1b2a6b; }
+    .ap-cert-meta { font-size:11px;color:#8a91a8; }
+    .ap-mobile-bar { display:none; }
+    @media(max-width:768px) {
+        .ap-body { grid-template-columns:1fr; }
+        .ap-hero-body { padding:0 16px 20px; }
+        .ap-name { font-size:18px; }
+        .desktop-hide { display:none; }
+        .ap-mobile-bar { display:flex;position:fixed;bottom:0;left:0;right:0;background:white;border-top:1.5px solid #e0e3ef;padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));z-index:100;gap:10px;box-shadow:0 -4px 20px rgba(27,42,107,0.10); }
+        .main-content { padding-bottom:90px !important; }
     }
 </style>
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 <main class="main-content">
-    <div class="ap-wrap">
+<div class="ap-wrap">
 
-        <!-- Back link -->
-        <a th:href="@{/mezun}" class="ap-back">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <polyline points="15 18 9 12 15 6"/>
-            </svg>
-            <span th:text="#{mezun.back}">Back to Alumni</span>
-        </a>
+    <a th:href="@{/mezun}" class="ap-back">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        <span th:text="#{mezun.back}">Back to Alumni</span>
+    </a>
 
-        <!-- ── Hero card ── -->
-        <div class="ap-hero">
-            <div class="ap-hero-banner"></div>
-            <div class="ap-hero-body">
-                <div class="ap-avatar-wrap">
-                    <img th:src="${mezun.profile != null and mezun.profile.avatarUrl != null ? mezun.profile.avatarUrl : '/images/default-avatar.svg'}"
-                         class="ap-avatar" alt="avatar"/>
+    <!-- HERO -->
+    <div class="ap-hero">
+        <div class="ap-hero-banner"></div>
+        <div class="ap-hero-body">
+            <div class="ap-avatar-wrap">
+                <img th:src="${profile != null and profile.avatarUrl != null ? profile.avatarUrl : '/images/default-avatar.svg'}"
+                     class="ap-avatar" alt="avatar"/>
+            </div>
+            <div class="ap-name-row">
+                <div>
+                    <h1 class="ap-name" th:text="${mezun.fullName}">Full Name</h1>
+                    <p th:if="${mezun.firstName != null or mezun.lastName != null}" class="ap-sub"
+                       th:text="${(mezun.firstName ?: '') + ' ' + (mezun.lastName ?: '')}"></p>
+                    <p th:if="${profile != null and profile.headline != null}" class="ap-sub" th:text="${profile.headline}"></p>
+                    <p th:if="${profile != null and (profile.currentJobTitle != null or profile.currentCompany != null)}" class="ap-sub">
+                        💼 <span th:if="${profile.currentJobTitle}" th:text="${profile.currentJobTitle}"></span>
+                        <span th:if="${profile.currentJobTitle != null and profile.currentCompany != null}"> at </span>
+                        <span th:if="${profile.currentCompany}" th:text="${profile.currentCompany}"></span>
+                    </p>
+                    <p th:if="${profile != null and profile.location != null}" class="ap-sub">📍 <span th:text="${profile.location}"></span></p>
                 </div>
-
-                <div class="ap-name-row">
-                    <div>
-                        <h1 class="ap-name" th:text="${mezun.fullName}">Full Name</h1>
-                        <p th:if="${mezun.profile != null and mezun.profile.headline != null}"
-                           class="ap-headline" th:text="${mezun.profile.headline}">Headline</p>
+                <div class="ap-actions desktop-hide">
+                    <form th:unless="${isOwn}" th:action="@{/chat/direct/{id}(id=${mezun.id})}" method="post" style="display:inline">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="ap-btn ap-btn-primary">
+                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                            <span th:text="#{profile.send_message}">Message</span>
+                        </button>
+                    </form>
+                    <div sec:authorize="hasRole('STUDENT')" th:unless="${isOwn}">
+                        <button class="ap-btn ap-btn-outline"
+                                hx-post="/career/mentorship/request"
+                                th:attr="hx-vals=|{&quot;mentorId&quot;: &quot;${mezun.id}&quot;}|"
+                                hx-target="#mentorship-status" hx-swap="innerHTML"
+                                th:text="#{profile.request_mentorship}">Ask Mentorship</button>
+                        <div id="mentorship-status"></div>
                     </div>
-                    <!-- Desktop message button (hidden on mobile) -->
-                    <a th:href="@{/chat}" class="ap-message-btn" th:text="#{profile.message}">
-                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                        </svg>
-                        Message
+                    <th:block th:if="${isOwn}">
+                        <a th:href="@{/profile/me/edit}" class="ap-btn ap-btn-outline">✏️ Edit Profile</a>
+                    </th:block>
+                </div>
+            </div>
+            <div class="ap-tags">
+                <span th:if="${mezun.gender != null}" class="ap-tag t-gender" th:text="${mezun.gender}"></span>
+                <span th:if="${mezun.faculty != null}" class="ap-tag t-faculty">🏛 <span th:text="${mezun.faculty.name}"></span></span>
+                <span th:if="${mezun.graduationYear != null}" class="ap-tag t-year">🎓 <span th:text="'Class of ' + ${mezun.graduationYear}"></span></span>
+                <span th:if="${mezun.workPlace != null}" class="ap-tag t-work">💼 <span th:text="${mezun.workPlace}"></span></span>
+                <span class="ap-tag t-pts">🏆 <span th:text="${(profile != null ? profile.totalPoints : 0) + ' pts'}"></span></span>
+                <span th:if="${mezun.universityVerified}" class="ap-tag t-verified">✅ University Verified</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="ap-body">
+
+        <!-- LEFT -->
+        <div>
+            <div th:if="${profile != null and profile.bio != null and !#strings.isEmpty(profile.bio)}" class="ap-card">
+                <div class="ap-card-title">👤 About</div>
+                <p style="font-size:14px;color:#374151;line-height:1.7;margin:0;" th:text="${profile.bio}"></p>
+            </div>
+
+            <div th:if="${profile != null and profile.workExperience != null and !profile.workExperience.isEmpty()}" class="ap-card">
+                <div class="ap-card-title">💼 Work Experience</div>
+                <div class="ap-tl">
+                    <div th:each="job : ${profile.workExperience}" class="ap-tl-item">
+                        <div class="ap-dot"></div>
+                        <div>
+                            <div class="tl-title" th:text="${job['title']}">Title</div>
+                            <div class="tl-sub"><span th:text="${job['company']}">Co</span><span th:if="${job['location'] != null and !job['location'].isEmpty()}"> · <span th:text="${job['location']}">Loc</span></span></div>
+                            <div class="tl-date"><span th:text="${job['startDate']}"></span><span th:if="${job['current'] == 'true'}"> — Present</span><span th:if="${job['current'] != 'true' and job['endDate'] != null and !job['endDate'].isEmpty()}"> — <span th:text="${job['endDate']}"></span></span></div>
+                            <p th:if="${job['description'] != null and !job['description'].isEmpty()}" class="tl-desc" th:text="${job['description']}"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${profile != null and profile.educationList != null and !profile.educationList.isEmpty()}" class="ap-card">
+                <div class="ap-card-title">🎓 Education</div>
+                <div class="ap-tl">
+                    <div th:each="edu : ${profile.educationList}" class="ap-tl-item">
+                        <div class="ap-dot ap-dot-edu"></div>
+                        <div>
+                            <div class="tl-title"><span th:text="${edu['degree']}"></span><span th:if="${edu['field'] != null and !edu['field'].isEmpty()}"> · <span th:text="${edu['field']}"></span></span></div>
+                            <div class="tl-sub" th:text="${edu['institution']}"></div>
+                            <div class="tl-date"><span th:text="${edu['startDate']}"></span><span th:if="${edu['endDate'] != null and !edu['endDate'].isEmpty()}"> — <span th:text="${edu['endDate']}"></span></span><span th:if="${edu['gpa'] != null and !edu['gpa'].isEmpty()}"> · GPA: <span th:text="${edu['gpa']}"></span></span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${profile != null and profile.certifications != null and !profile.certifications.isEmpty()}" class="ap-card">
+                <div class="ap-card-title">🏅 Certifications</div>
+                <div th:each="cert : ${profile.certifications}" class="ap-cert-item">
+                    <div style="font-size:20px;flex-shrink:0;">🏅</div>
+                    <div><div class="ap-cert-name" th:text="${cert['name']}"></div>
+                    <div class="ap-cert-meta"><span th:if="${cert['issuer'] != null}" th:text="${cert['issuer']}"></span><span th:if="${cert['year'] != null}"> · <span th:text="${cert['year']}"></span></span></div></div>
+                </div>
+            </div>
+
+            <div th:if="${postCount != null and postCount > 0}" class="ap-card">
+                <div class="ap-card-title">📸 Posts <span style="margin-left:auto;font-size:11px;background:#eef1fb;color:#1b2a6b;padding:2px 10px;border-radius:20px;font-weight:700;" th:text="${postCount}">0</span></div>
+                <div class="ap-posts-grid">
+                    <a th:each="post : ${recentPosts}" th:href="@{/profile/{id}/posts(id=${mezun.id})}" class="ap-post-tile">
+                        <img th:if="${post.imageUrl != null}" th:src="${post.imageUrl}" alt="" loading="lazy"/>
+                        <div th:if="${post.imageUrl == null}" class="ap-post-txt">
+                            <span style="font-size:9px;font-weight:800;font-family:Montserrat,sans-serif;color:#8a91a8;display:block;margin-bottom:4px;" th:text="${post.postType}">POST</span>
+                            <span th:text="${#strings.abbreviate(post.getLocalizedContent(lang), 80)}"></span>
+                        </div>
                     </a>
                 </div>
+                <a th:href="@{/profile/{id}/posts(id=${mezun.id})}" style="display:block;text-align:center;margin-top:12px;font-size:12px;font-weight:700;font-family:Montserrat,sans-serif;color:#1b2a6b;text-decoration:none;">See all posts →</a>
+            </div>
+        </div>
 
-                <div class="ap-tags">
-                    <span th:if="${mezun.faculty != null}" class="ap-tag ap-tag--faculty">
-                        🏛 <span th:text="${mezun.faculty.name}">Faculty</span>
-                    </span>
-                    <span th:if="${mezun.graduationYear != null}" class="ap-tag ap-tag--year">
-                        🎓 <span th:text="'Class of ' + ${mezun.graduationYear}">Class of 2020</span>
-                    </span>
-                    <span class="ap-tag ap-tag--pts">
-                        🏆 <span th:text="${(mezun.profile != null ? mezun.profile.totalPoints : 0) + ' pts'}">0 pts</span>
-                    </span>
+        <!-- RIGHT -->
+        <div>
+            <div class="ap-card">
+                <div class="ap-card-title">🪪 Personal Information</div>
+                <div th:if="${mezun.firstName != null or mezun.lastName != null}" class="info-row">
+                    <span class="info-lbl">Full Name</span>
+                    <span class="info-val" th:text="${(mezun.firstName ?: '') + ' ' + (mezun.lastName ?: '')}"></span>
+                </div>
+                <div th:if="${mezun.gender != null}" class="info-row">
+                    <span class="info-lbl">Gender</span><span class="info-val" th:text="${mezun.gender}"></span>
+                </div>
+                <div th:if="${mezun.faculty != null}" class="info-row">
+                    <span class="info-lbl">Faculty</span><span class="info-val" th:text="${mezun.faculty.name}"></span>
+                </div>
+                <div th:if="${mezun.graduationYear != null}" class="info-row">
+                    <span class="info-lbl">Graduation Year</span><span class="info-val" th:text="${mezun.graduationYear}"></span>
+                </div>
+                <div th:if="${mezun.workPlace != null}" class="info-row">
+                    <span class="info-lbl">Place of Work</span><span class="info-val" th:text="${mezun.workPlace}"></span>
+                </div>
+                <div th:if="${profile != null and profile.phone != null}" class="info-row">
+                    <span class="info-lbl">Phone</span><span class="info-val" th:text="${profile.phone}"></span>
+                </div>
+                <div th:if="${profile != null and profile.location != null}" class="info-row">
+                    <span class="info-lbl">Location</span><span class="info-val" th:text="${profile.location}"></span>
+                </div>
+                <div th:if="${profile != null and profile.dateOfBirth != null}" class="info-row">
+                    <span class="info-lbl">Date of Birth</span><span class="info-val" th:text="${profile.dateOfBirth}"></span>
+                </div>
+                <div th:if="${profile != null and profile.nationality != null}" class="info-row">
+                    <span class="info-lbl">Nationality</span><span class="info-val" th:text="${profile.nationality}"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-lbl">Points</span><span class="info-val" th:text="${profile != null ? profile.totalPoints : 0}"></span>
+                </div>
+                <div th:if="${profile != null and profile.rankPosition != null}" class="info-row">
+                    <span class="info-lbl">Rank</span><span class="info-val" th:text="'#' + ${profile.rankPosition}"></span>
+                </div>
+                <div th:if="${mezun.universityVerified}" class="info-row">
+                    <span class="info-lbl">Verified</span><span class="info-val" style="color:#065f46;">✅ University Verified</span>
+                </div>
+                <div th:if="${profile != null and profile.website != null}" class="info-row">
+                    <span class="info-lbl">Website</span>
+                    <a th:href="${profile.website}" target="_blank" class="info-val" style="color:#1b2a6b;" th:text="${profile.website}"></a>
+                </div>
+            </div>
+
+            <div th:if="${profile != null and profile.skills != null and !profile.skills.isEmpty()}" class="ap-card">
+                <div class="ap-card-title">⚡ Skills</div>
+                <div class="ap-skills">
+                    <span th:each="s : ${profile.skills}" class="ap-skill" th:text="${s}">Skill</span>
+                </div>
+            </div>
+
+            <div th:if="${profile != null and profile.languages != null and !profile.languages.isEmpty()}" class="ap-card">
+                <div class="ap-card-title">🌍 Languages</div>
+                <div th:each="l : ${profile.languages}" class="ap-lang-item">
+                    <span class="ap-lang-name" th:text="${l['language']}">Language</span>
+                    <span class="ap-lang-level" th:text="${l['level']}">Level</span>
+                </div>
+            </div>
+
+            <div th:if="${userBadges != null and !#lists.isEmpty(userBadges)}" class="ap-card">
+                <div class="ap-card-title">🏆 Badges</div>
+                <div class="ap-badges">
+                    <div th:each="ub : ${userBadges}" class="ap-badge-item" th:title="${ub.badge.getLocalizedDescription(lang)}">
+                        <img th:if="${ub.badge.iconUrl != null}" th:src="${ub.badge.iconUrl}" class="ap-badge-icon" alt=""/>
+                        <div th:if="${ub.badge.iconUrl == null}" class="ap-badge-fb">🏅</div>
+                        <div class="ap-badge-name" th:text="${ub.badge.getLocalizedName(lang)}">Badge</div>
+                        <div class="ap-badge-tier" th:text="${ub.badge.tier}">BRONZE</div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${profile != null and profile.socialLinks != null and !#maps.isEmpty(profile.socialLinks)}" class="ap-card">
+                <div class="ap-card-title">🔗 Links</div>
+                <div th:each="entry : ${profile.socialLinks}">
+                    <th:block th:with="
+                        rawVal=${entry.value},keyLower=${#strings.toLowerCase(entry.key)},
+                        isTelegram=${#strings.contains(keyLower,'telegram') or #strings.contains(keyLower,'tg')},
+                        isWhatsapp=${#strings.contains(keyLower,'whatsapp')},
+                        isPhone=${#strings.startsWith(rawVal,'+') or #strings.startsWith(rawVal,'00')},
+                        startsWithAt=${#strings.startsWith(rawVal,'@')},
+                        strippedAt=${startsWithAt ? #strings.substring(rawVal,1) : rawVal},
+                        hasScheme=${#strings.startsWith(rawVal,'http://') or #strings.startsWith(rawVal,'https://')},
+                        safeUrl=${hasScheme ? rawVal : (isTelegram ? ('https://t.me/' + strippedAt) : (isWhatsapp ? ('https://wa.me/' + strippedAt) : (isPhone ? ('tel:' + rawVal) : ('https://' + rawVal))))}">
+                        <a th:href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="ap-social-link">
+                            <span th:text="${entry.key}">Platform</span>
+                            <span style="margin-left:auto;opacity:.4;">↗</span>
+                        </a>
+                    </th:block>
                 </div>
             </div>
         </div>
 
-        <!-- ── Bio section ── -->
-        <div th:if="${mezun.profile != null and mezun.profile.bio != null}" class="ap-section">
-            <h3 class="ap-section-title" th:text="#{profile.about}">About</h3>
-            <p class="ap-bio-text" th:text="${mezun.profile.bio}">Bio</p>
-        </div>
+    </div><!-- /body -->
+</div><!-- /wrap -->
 
-    </div><!-- /.ap-wrap -->
-
-    <!-- ── Mobile fixed bottom action bar ── -->
-    <div class="ap-mobile-actions">
-        <a th:href="@{/mezun}" class="ap-mobile-btn ap-mobile-btn--secondary">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                <polyline points="15 18 9 12 15 6"/>
-            </svg>
-            Back
-        </a>
-        <a th:href="@{/chat}" class="ap-mobile-btn ap-mobile-btn--primary">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-            </svg>
-            <span th:text="#{profile.message}">Message</span>
-        </a>
-    </div>
-
+<!-- Mobile bar -->
+<div class="ap-mobile-bar" th:unless="${isOwn}">
+    <a th:href="@{/mezun}" class="ap-btn ap-btn-outline" style="flex:1;justify-content:center;">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+    </a>
+    <form th:action="@{/chat/direct/{id}(id=${mezun.id})}" method="post" style="flex:1;">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="ap-btn ap-btn-primary" style="width:100%;justify-content:center;">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <span th:text="#{profile.send_message}">Message</span>
+        </button>
+    </form>
+</div>
 </main>
 </body>
 </html>

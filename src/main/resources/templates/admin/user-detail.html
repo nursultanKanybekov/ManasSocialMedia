@@ -3,7 +3,6 @@
 <head th:replace="~{fragments/header :: head('Admin - User Detail')}"></head>
 <body class="app-layout">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<!-- layout-body removed: sidebar is now fixed positioned -->
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 <main class="main-content">
 
@@ -16,8 +15,6 @@
 
         <!-- Profile header with avatar -->
         <div style="display:flex;align-items:center;gap:24px;margin-bottom:24px;padding-bottom:24px;border-bottom:1.5px solid #e8eaf0;">
-
-            <!-- Avatar -->
             <div style="flex-shrink:0;">
                 <div style="width:88px;height:88px;border-radius:50%;overflow:hidden;
                             border:3px solid #e8eaf0;background:#eef1fb;
@@ -30,8 +27,6 @@
                           style="font-family:Montserrat,sans-serif;font-weight:800;font-size:28px;color:#1B2A6B;">NU</span>
                 </div>
             </div>
-
-            <!-- Name + meta -->
             <div>
                 <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:22px;color:#1B2A6B;margin-bottom:4px;"
                      th:text="${user.fullName}">Full Name</div>
@@ -44,26 +39,116 @@
             </div>
         </div>
 
-        <div class="user-info-grid">
-            <div><strong>Email:</strong> <span th:text="${user.email}">email</span></div>
-            <div><strong>Role:</strong> <span class="role-badge" th:text="${user.role}">ROLE</span></div>
-            <div><strong>Status:</strong> <span class="status-badge" th:text="${user.status}">STATUS</span></div>
-            <div><strong>Faculty:</strong> <span th:text="${user.faculty != null ? user.faculty.name : '-'}">Faculty</span></div>
-            <div><strong>Student ID:</strong> <span th:text="${user.studentIdNumber ?: '-'}">ID</span></div>
-            <div><strong>Joined:</strong> <span th:text="${#temporals.format(user.createdAt, 'dd MMM yyyy')}">Date</span></div>
+        <!-- Full User Information Grid -->
+        <h4 style="font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;color:#1B2A6B;margin-bottom:14px;">👤 Personal Information</h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:24px;">
+            <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">First Name</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.firstName ?: '-'}">-</div>
+            </div>
+            <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Last Name</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.lastName ?: '-'}">-</div>
+            </div>
+            <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Gender</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.gender ?: '-'}">-</div>
+            </div>
+            <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Email</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.email}">-</div>
+            </div>
+            <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Role</div>
+                <span class="role-badge" th:text="${user.role}">ROLE</span>
+            </div>
+            <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Status</div>
+                <span class="status-badge" th:text="${user.status}">STATUS</span>
+            </div>
+            <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Faculty</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.faculty != null ? user.faculty.name : '-'}">-</div>
+            </div>
+            <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Student ID</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.studentIdNumber ?: '-'}">-</div>
+            </div>
+            <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Joined</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${#temporals.format(user.createdAt, 'dd MMM yyyy')}">-</div>
+            </div>
+            <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">University Verified</div>
+                <div style="font-size:14px;font-weight:600;" th:text="${user.universityVerified ? '✅ Yes' : '❌ No'}">-</div>
+            </div>
+            <!-- MEZUN-specific -->
+            <div th:if="${user.graduationYear != null}" style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Graduation Year</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.graduationYear}">-</div>
+            </div>
+            <div th:if="${user.workPlace != null}" style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Place of Work</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.workPlace}">-</div>
+            </div>
+            <!-- EMPLOYER-specific -->
+            <div th:if="${user.companyName != null}" style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Company</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.companyName}">-</div>
+            </div>
+            <div th:if="${user.companyField != null}" style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Field of Operation</div>
+                <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.companyField}">-</div>
+            </div>
+            <div th:if="${user.companyDocumentUrl != null}" style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Employment Proof</div>
+                <a th:href="${user.companyDocumentUrl}" target="_blank"
+                   style="font-size:13px;color:#1b2a6b;font-weight:600;text-decoration:underline;">📎 View Document</a>
+            </div>
+        </div>
+
+        <!-- Profile Info -->
+        <div th:if="${user.profile != null}">
+            <h4 style="font-family:Montserrat,sans-serif;font-weight:700;font-size:14px;color:#1B2A6B;margin-bottom:14px;">📋 Profile Details</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:24px;">
+                <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                    <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Points</div>
+                    <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.profile.totalPoints ?: 0}">0</div>
+                </div>
+                <div th:if="${user.profile.phone != null}" style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                    <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Phone</div>
+                    <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.profile.phone}">-</div>
+                </div>
+                <div th:if="${user.profile.location != null}" style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                    <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Location</div>
+                    <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.profile.location}">-</div>
+                </div>
+                <div th:if="${user.profile.headline != null}" style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                    <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Headline</div>
+                    <div style="font-size:14px;color:#1b2a6b;font-weight:600;" th:text="${user.profile.headline}">-</div>
+                </div>
+                <div th:if="${user.profile.currentJobTitle != null}" style="background:#f7f8fc;border-radius:10px;padding:12px 16px;">
+                    <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Current Position</div>
+                    <div style="font-size:14px;color:#1b2a6b;font-weight:600;"
+                         th:text="${user.profile.currentJobTitle + (user.profile.currentCompany != null ? ' at ' + user.profile.currentCompany : '')}">-</div>
+                </div>
+            </div>
+            <div th:if="${user.profile.bio != null and !#strings.isEmpty(user.profile.bio)}"
+                 style="background:#f7f8fc;border-radius:10px;padding:14px 16px;margin-bottom:24px;">
+                <div style="font-size:11px;color:#8a91a8;font-weight:700;text-transform:uppercase;margin-bottom:8px;">Bio</div>
+                <div style="font-size:13px;color:#374151;line-height:1.6;" th:text="${user.profile.bio}">-</div>
+            </div>
         </div>
 
         <hr/>
         <h4 th:text="#{table.actions}">Actions</h4>
 
-        <!-- SUPER_ADMIN: show read-only notice, hide all action buttons -->
         <div th:if="${targetIsSuperAdmin}"
              style="background:#fef9c3;border:1.5px solid #fbbf24;border-radius:10px;padding:14px 18px;color:#92400e;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;">
             <span style="font-size:20px;">🔒</span>
             <span>Super Admin accounts cannot be modified by Admin users. Only another Super Admin can manage this account.</span>
         </div>
 
-        <!-- Normal users: show all action buttons -->
         <div class="action-buttons" th:unless="${targetIsSuperAdmin}">
             <!-- Activate -->
             <form th:action="@{/admin/users/{id}/activate(id=${user.id})}" method="post" style="display:inline">
@@ -80,11 +165,13 @@
                         onclick="return confirm('Suspend this user?')" th:text="#{admin.suspend}">Suspend</button>
             </form>
 
-            <!-- Change Role (SUPER_ADMIN option excluded) -->
+            <!-- Change Role -->
             <form th:action="@{/admin/users/{id}/role(id=${user.id})}" method="post" style="display:inline">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <select name="role" class="form-control" style="display:inline;width:auto">
                     <option value="STUDENT">STUDENT</option>
+                    <option value="TEACHER">TEACHER</option>
+                    <option value="FACULTY_ADMIN">FACULTY_ADMIN</option>
                     <option value="MEZUN">MEZUN</option>
                     <option value="EMPLOYER">EMPLOYER</option>
                     <option value="SECRETARY">SECRETARY</option>
@@ -105,18 +192,16 @@
         </div>
     </div>
 
-    <!-- Password Reset — SUPER_ADMIN only -->
+    <!-- Password Reset -->
     <div class="form-card" style="margin-top:20px;"
          sec:authorize="hasAnyRole('ADMIN','SUPER_ADMIN')">
         <h4 style="margin-bottom:16px;">🔑 Reset Password</h4>
-
         <div th:if="${successMsg != null}"
              style="background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:10px;padding:12px 16px;color:#065f46;margin-bottom:14px;font-size:14px;"
              th:text="${successMsg}"></div>
         <div th:if="${errorMsg != null}"
              style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:10px;padding:12px 16px;color:#991b1b;margin-bottom:14px;font-size:14px;"
              th:text="${errorMsg}"></div>
-
         <form th:action="@{/admin/users/{id}/reset-password(id=${user.id})}" method="post"
               onsubmit="return confirm('Reset password for this user?')">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>

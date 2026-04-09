@@ -40,6 +40,14 @@ public class JobListing {
     private AppUser postedBy;
 
     /**
+     * Optional: faculty whose students/alumni this job is aimed at.
+     * When set, faculty admins of that faculty will be notified.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_faculty_id")
+    private com.com.manasuniversityecosystem.domain.entity.Faculty targetFaculty;
+
+    /**
      * JSONB i18n title:
      * {"en": "Java Backend Developer", "ru": "Java разработчик", "ky": "Java иштеп чыгуучу", "tr": "Java Geliştirici"}
      */

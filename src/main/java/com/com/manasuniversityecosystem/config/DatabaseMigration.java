@@ -23,6 +23,18 @@ public class DatabaseMigration implements ApplicationRunner {
                 "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS university_verified BOOLEAN NOT NULL DEFAULT FALSE",
                 "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS obis_username VARCHAR(100)",
 
+                // ── New user identity fields (Phase 2 additions) ─────────────
+                "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS first_name VARCHAR(100)",
+                "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS last_name  VARCHAR(100)",
+                "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS gender     VARCHAR(20)",
+                "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS company_field VARCHAR(200)",
+                "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS work_place    VARCHAR(300)",
+
+                // ── Job listing: target faculty for notifications ──────────────
+                "ALTER TABLE job_listing ADD COLUMN IF NOT EXISTS target_faculty_id UUID",
+                "ALTER TABLE job_listing ADD CONSTRAINT IF NOT EXISTS fk_job_target_faculty "
+                        + "FOREIGN KEY (target_faculty_id) REFERENCES faculty(id) ON DELETE SET NULL",
+
                 // ── chat_message columns ──────────────────────────────────────
                 "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS is_edited BOOLEAN NOT NULL DEFAULT FALSE",
                 "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP",

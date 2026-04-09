@@ -4,6 +4,7 @@ package com.com.manasuniversityecosystem.web.controller;
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
 import com.com.manasuniversityecosystem.domain.enums.UserRole;
 import com.com.manasuniversityecosystem.domain.enums.UserStatus;
+import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.repository.UserRepository;
 import com.com.manasuniversityecosystem.repository.social.PostRepository;
 import com.com.manasuniversityecosystem.service.social.PostService;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -39,12 +41,14 @@ public class AdminController {
     private final UserService         userService;
     private final EmailService        emailService;
     private final GamificationService gamificationService;
-    private final UserRepository userRepo;
-    private final PostRepository postRepo;
-    private final ExcelImportService excelImportService;
-    private final PostService postService;
-    private final OnlineUserTracker onlineUserTracker;
-    private final TranslationService translationService;
+    private final UserRepository      userRepo;
+    private final FacultyRepository   facultyRepo;
+    private final PostRepository      postRepo;
+    private final ExcelImportService  excelImportService;
+    private final PostService         postService;
+    private final OnlineUserTracker   onlineUserTracker;
+    private final TranslationService  translationService;
+    private final PasswordEncoder     passwordEncoder;
 
     @GetMapping
     public String dashboard(Model model) {
@@ -300,7 +304,7 @@ public class AdminController {
                     com.com.manasuniversityecosystem.domain.entity.AppUser.builder()
                             .fullName(fullName.trim())
                             .email(email.trim())
-                            .passwordHash(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password))
+                            .passwordHash(passwordEncoder.encode(password))
                             .role(com.com.manasuniversityecosystem.domain.enums.UserRole.SECRETARY)
                             .status(com.com.manasuniversityecosystem.domain.enums.UserStatus.ACTIVE)
                             .build();
@@ -314,6 +318,65 @@ public class AdminController {
             ra.addFlashAttribute("errorMsg", e.getMessage());
         }
         return "redirect:/admin/create-secretary";
+    }
+
+    // ─────────────────────────── FACULTY ADMIN ──────────────────────────
+
+    // GET /admin/create-faculty-admin
+    @GetMapping("/create-faculty-admin")
+    public String createFacultyAdminForm(Model model) {
+        model.addAttribute("faculties", facultyRepo.findAllByOrderByNameAsc());
+        model.addAttribute("facultyAdmins",
+                userRepo.findByRole(com.com.manasuniversityecosystem.domain.enums.UserRole.FACULTY_ADMIN));
+        return "admin/create-faculty-admin";
+    }
+
+    // POST /admin/create-faculty-admin
+    @PostMapping("/create-faculty-admin")
+    public String createFacultyAdmin(@RequestParam String firstName,
+                                     @RequestParam String lastName,
+                                     @RequestParam String email,
+                                     @RequestParam String password,
+                                     @RequestParam String gender,
+                                     @RequestParam UUID   facultyId,
+                                     RedirectAttributes ra) {
+        try {
+            if (userRepo.existsByEmail(email.trim().toLowerCase())) {
+                ra.addFlashAttribute("errorMsg", "Email already registered.");
+                return "redirect:/admin/create-faculty-admin";
+            }
+            com.com.manasuniversityecosystem.domain.entity.Faculty faculty =
+                    facultyRepo.findById(facultyId)
+                            .orElseThrow(() -> new IllegalArgumentException("Faculty not found."));
+
+            String fn       = firstName.trim();
+            String ln       = lastName.trim();
+            String fullName = (fn + " " + ln).trim();
+
+            com.com.manasuniversityecosystem.domain.entity.AppUser fa =
+                    com.com.manasuniversityecosystem.domain.entity.AppUser.builder()
+                            .fullName(fullName)
+                            .firstName(fn)
+                            .lastName(ln)
+                            .gender(gender)
+                            .email(email.trim().toLowerCase())
+                            .passwordHash(passwordEncoder.encode(password))
+                            .role(com.com.manasuniversityecosystem.domain.enums.UserRole.FACULTY_ADMIN)
+                            .status(com.com.manasuniversityecosystem.domain.enums.UserStatus.ACTIVE)
+                            .faculty(faculty)
+                            .build();
+            com.com.manasuniversityecosystem.domain.entity.Profile profile =
+                    com.com.manasuniversityecosystem.domain.entity.Profile.builder()
+                            .user(fa).totalPoints(0).build();
+            fa.setProfile(profile);
+            userRepo.save(fa);
+            log.info("[Admin] Faculty Admin created: {} for faculty {}", email, faculty.getName());
+            ra.addFlashAttribute("successMsg",
+                    "Faculty Admin account created: " + fullName + " (" + faculty.getName() + ")");
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/admin/create-faculty-admin";
     }
 
     // POST /admin/news/{id}/delete  — delete a news post

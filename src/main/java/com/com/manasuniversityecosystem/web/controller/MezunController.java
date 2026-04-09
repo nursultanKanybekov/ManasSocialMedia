@@ -1,9 +1,15 @@
 package com.com.manasuniversityecosystem.web.controller;
 
 import com.com.manasuniversityecosystem.domain.entity.AppUser;
+import com.com.manasuniversityecosystem.domain.entity.Profile;
+import com.com.manasuniversityecosystem.repository.gamification.UserBadgeRepository;
+import com.com.manasuniversityecosystem.repository.career.JobApplicationRepository;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.service.MezunService;
+import com.com.manasuniversityecosystem.service.ProfileService;
 import com.com.manasuniversityecosystem.service.UserService;
+import com.com.manasuniversityecosystem.service.career.JobService;
+import com.com.manasuniversityecosystem.service.social.PostService;
 import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,9 +25,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MezunController {
 
-    private final MezunService mezunService;
-    private final UserService userService;
-    private final FacultyRepository facultyRepo;
+    private final MezunService           mezunService;
+    private final UserService            userService;
+    private final ProfileService         profileService;
+    private final FacultyRepository      facultyRepo;
+    private final UserBadgeRepository    userBadgeRepo;
+    private final PostService            postService;
+    private final JobService             jobService;
+    private final JobApplicationRepository jobApplicationRepo;
 
     @GetMapping
     public String catalog(@RequestParam(required = false) UUID facultyId,
@@ -49,12 +60,35 @@ public class MezunController {
 
     @GetMapping("/{id}")
     public String profile(@PathVariable UUID id,
+                          @RequestParam(defaultValue = "en") String lang,
                           @AuthenticationPrincipal UserDetailsImpl principal,
                           Model model) {
         AppUser currentUser = userService.getById(principal.getId());
-        AppUser mezun = userService.getById(id);
-        model.addAttribute("currentUser", currentUser);
-        model.addAttribute("mezun", mezun);
+        AppUser mezun       = userService.getById(id);
+        Profile profile     = profileService.getByUserId(id);
+
+        boolean isOwn = principal.getId().equals(id);
+
+        // Can view CV: self, or employer/admin with a shared job application
+        boolean viewerIsEmployer = false;
+        try {
+            viewerIsEmployer = currentUser.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.EMPLOYER
+                    || currentUser.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.ADMIN
+                    || currentUser.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.SUPER_ADMIN;
+        } catch (Exception ignored) {}
+        boolean canViewCv = isOwn || (viewerIsEmployer &&
+                jobApplicationRepo.existsByApplicantIdAndJobPosterId(id, principal.getId()));
+
+        model.addAttribute("currentUser",  currentUser);
+        model.addAttribute("mezun",        mezun);
+        model.addAttribute("profile",      profile);
+        model.addAttribute("userBadges",   userBadgeRepo.findByUserIdWithBadge(id));
+        model.addAttribute("postCount",    postService.countUserPosts(id));
+        model.addAttribute("recentPosts",  postService.getUserPosts(id, 0, 6).getContent());
+        model.addAttribute("isOwn",        isOwn);
+        model.addAttribute("canViewCv",    canViewCv);
+        model.addAttribute("lang",         lang);
         return "mezun/profile";
     }
 }
+

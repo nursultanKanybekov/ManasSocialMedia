@@ -85,6 +85,13 @@ public class ProfileController {
         model.addAttribute("isOwn",        isOwn);
         model.addAttribute("canViewCv",    canViewCv);
         model.addAttribute("lang",         lang);
+
+        // For employer profiles: show their posted jobs
+        if (profileUser.getRole() == com.com.manasuniversityecosystem.domain.enums.UserRole.EMPLOYER || isOwn) {
+            try {
+                model.addAttribute("employerJobs", jobService.getMyJobs(userId));
+            } catch (Exception ignored) {}
+        }
         return "profile/view";
     }
 
@@ -97,10 +104,16 @@ public class ProfileController {
         // Pre-populate DTO so th:field bindings show existing values
         com.com.manasuniversityecosystem.web.dto.profile.ProfileUpdateRequest prefilled =
                 new com.com.manasuniversityecosystem.web.dto.profile.ProfileUpdateRequest();
+        prefilled.setFirstName(user.getFirstName());
+        prefilled.setLastName(user.getLastName());
+        prefilled.setGender(user.getGender());
         prefilled.setFullName(user.getFullName());
         prefilled.setEmail(user.getEmail());
         prefilled.setGraduationYear(user.getGraduationYear());
         if (user.getFaculty() != null) prefilled.setFacultyId(user.getFaculty().getId());
+        prefilled.setWorkPlace(user.getWorkPlace());
+        prefilled.setCompanyField(user.getCompanyField());
+        prefilled.setCompanyName(user.getCompanyName());
         prefilled.setBio(profile.getBio());
         prefilled.setHeadline(profile.getHeadline());
         prefilled.setCurrentJobTitle(profile.getCurrentJobTitle());

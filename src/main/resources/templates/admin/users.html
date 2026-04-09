@@ -94,6 +94,13 @@
                             <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;"
                                  th:text="${user.fullName}">Name</div>
                             <div style="font-size:11px;color:#8a91a8;" th:text="${user.email}">email</div>
+                            <!-- Extra info: gender, company, workplace -->
+                            <div th:if="${user.gender != null}"
+                                 style="font-size:10px;color:#94a3b8;" th:text="'⚧ ' + ${user.gender}">Gender</div>
+                            <div th:if="${user.companyName != null}"
+                                 style="font-size:10px;color:#64748b;" th:text="'🏢 ' + ${user.companyName} + (${user.companyField != null} ? ' · ' + ${user.companyField} : '')">Company</div>
+                            <div th:if="${user.workPlace != null}"
+                                 style="font-size:10px;color:#64748b;" th:text="'💼 ' + ${user.workPlace}">WorkPlace</div>
                         </div>
                     </div>
                 </td>
@@ -105,7 +112,11 @@
                              ? 'background:#1b2a6b;color:#fff;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;'
                              : (${user.role.name() == 'MEZUN'}
                              ? 'background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;'
-                             : 'background:#f0f2f8;color:#1b2a6b;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;')">ROLE</span>
+                             : (${user.role.name() == 'FACULTY_ADMIN'}
+                             ? 'background:#f3e8ff;color:#6b21a8;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;'
+                             : (${user.role.name() == 'TEACHER'}
+                             ? 'background:#ecfdf5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;'
+                             : 'background:#f0f2f8;color:#1b2a6b;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;')))">ROLE</span>
                 </td>
 
                 <!-- Status -->

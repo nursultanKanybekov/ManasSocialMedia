@@ -45,6 +45,12 @@
                             <span class="pv-role-badge" th:text="${profileUser.role}">STUDENT</span>
                             <span class="pv-faculty-badge" th:if="${profileUser.faculty != null}" th:text="${profileUser.faculty.name}">Faculty</span>
                             <span class="pv-grad-badge" th:if="${profileUser.graduationYear != null}" th:text="'Class of ' + ${profileUser.graduationYear}">Class of 2020</span>
+                            <!-- Gender badge -->
+                            <span th:if="${profileUser.gender != null}"
+                                  style="display:inline-flex;align-items:center;gap:4px;background:#f0f4ff;
+                                         color:#3730a3;border:1.5px solid #c7d2fe;border-radius:20px;
+                                         padding:3px 10px;font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;"
+                                  th:text="${profileUser.gender}">MALE</span>
                             <!-- University verified badge -->
                             <span th:if="${profileUser.universityVerified}"
                                   style="display:inline-flex;align-items:center;gap:4px;background:#ecfdf5;
@@ -52,6 +58,18 @@
                                          padding:3px 10px;font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;">
                                 ✅ University Verified
                             </span>
+                        </div>
+                        <!-- Employer info line -->
+                        <div th:if="${profileUser.companyName != null}"
+                             style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:13px;color:#374151;">
+                            🏢 <span th:text="${profileUser.companyName}">Company</span>
+                            <span th:if="${profileUser.companyField != null}"
+                                  style="color:#8a91a8;"> · <span th:text="${profileUser.companyField}">Field</span></span>
+                        </div>
+                        <!-- Mezun work place line -->
+                        <div th:if="${profileUser.workPlace != null}"
+                             style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:13px;color:#374151;">
+                            💼 Works at: <span th:text="${profileUser.workPlace}">Place</span>
                         </div>
                         <div class="pv-job-line" th:if="${profile.currentJobTitle != null or profile.currentCompany != null}">
                             &#128188;
@@ -190,6 +208,77 @@
 
             <!-- RIGHT -->
             <div class="pv-right">
+
+                <!-- Personal Information card — always visible -->
+                <div class="pv-card">
+                    <div class="pv-card-title">🪪 Personal Information</div>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Full Name</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;" th:text="${profileUser.fullName}">-</span>
+                        </div>
+                        <div th:if="${profileUser.firstName != null or profileUser.lastName != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">First / Last Name</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;"
+                                  th:text="${(profileUser.firstName ?: '') + ' ' + (profileUser.lastName ?: '')}">-</span>
+                        </div>
+                        <div th:if="${profileUser.gender != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Gender</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;" th:text="${profileUser.gender}">-</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Role</span>
+                            <span class="pv-role-badge" th:text="${profileUser.role}">-</span>
+                        </div>
+                        <div th:if="${profileUser.faculty != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Faculty</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;" th:text="${profileUser.faculty.name}">-</span>
+                        </div>
+                        <div th:if="${profileUser.graduationYear != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Graduation Year</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;" th:text="${profileUser.graduationYear}">-</span>
+                        </div>
+                        <div th:if="${profileUser.workPlace != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Place of Work</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;text-align:right;max-width:160px;" th:text="${profileUser.workPlace}">-</span>
+                        </div>
+                        <div th:if="${profileUser.companyName != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Company</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;" th:text="${profileUser.companyName}">-</span>
+                        </div>
+                        <div th:if="${profileUser.companyField != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Field of Operation</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;" th:text="${profileUser.companyField}">-</span>
+                        </div>
+                        <div th:if="${profile.phone != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Phone</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;" th:text="${profile.phone}">-</span>
+                        </div>
+                        <div th:if="${profile.location != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Location</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;" th:text="${profile.location}">-</span>
+                        </div>
+                        <div th:if="${profile.dateOfBirth != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f2f8;padding-bottom:8px;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Date of Birth</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;" th:text="${profile.dateOfBirth}">-</span>
+                        </div>
+                        <div th:if="${profile.nationality != null}"
+                             style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:12px;color:#8a91a8;font-weight:700;">Nationality</span>
+                            <span style="font-size:13px;color:#1b2a6b;font-weight:600;" th:text="${profile.nationality}">-</span>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="pv-card" th:if="${!#lists.isEmpty(profile.skills)}">
                     <div class="pv-card-title">&#9889; <span th:text="#{profile.skills}">Skills</span></div>

@@ -6,6 +6,7 @@ import com.com.manasuniversityecosystem.domain.entity.career.JobApplication;
 import com.com.manasuniversityecosystem.domain.entity.career.JobListing;
 import com.com.manasuniversityecosystem.domain.enums.JobType;
 import com.com.manasuniversityecosystem.domain.enums.PointReason;
+import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.repository.career.JobApplicationRepository;
 import com.com.manasuniversityecosystem.repository.career.JobRepository;
 import com.com.manasuniversityecosystem.service.gamification.GamificationService;
@@ -31,11 +32,18 @@ public class JobService {
     private final JobApplicationRepository applicationRepo;
     private final GamificationService gamificationService;
     private final NotificationService notificationService;
+    private final FacultyRepository facultyRepo;
 
     // ── JOB LISTINGS ─────────────────────────────────────────
 
     @Transactional
     public JobListing createJob(AppUser poster, CreateJobRequest req) {
+        // Resolve optional target faculty
+        com.com.manasuniversityecosystem.domain.entity.Faculty targetFaculty = null;
+        if (req.getTargetFacultyId() != null) {
+            targetFaculty = facultyRepo.findById(req.getTargetFacultyId()).orElse(null);
+        }
+
         JobListing job = JobListing.builder()
                 .postedBy(poster)
                 .titleI18n(req.getTitleI18n())
@@ -44,11 +52,21 @@ public class JobService {
                 .location(req.getLocation())
                 .salaryRange(req.getSalaryRange())
                 .deadline(req.getDeadline())
+                .targetFaculty(targetFaculty)
                 .isActive(true)
                 .build();
         jobRepo.save(job);
-        notificationService.notifyNewJob(poster.getId(), job.getId(),
-                req.getTitleI18n().getOrDefault("en", "New job"));
+
+        String title = req.getTitleI18n().getOrDefault("en", "New job");
+
+        // Notify students/mezuns (available in CareerHub for all)
+        notificationService.notifyNewJob(poster.getId(), job.getId(), title);
+
+        // Notify faculty admins of the targeted faculty
+        if (targetFaculty != null) {
+            notificationService.notifyFacultyAdminsNewJob(poster.getId(), job.getId(), title, targetFaculty.getId());
+        }
+
         log.info("Job posted by {}: {}", poster.getEmail(), req.getTitleI18n());
         return job;
     }

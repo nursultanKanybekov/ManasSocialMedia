@@ -73,6 +73,21 @@
                 </div>
             </div>
 
+            <!-- Target Faculty -->
+            <div class="form-group">
+                <label>Target Faculty <span style="font-size:12px;color:#8a91a8;font-weight:400;">(optional — select to notify that faculty's administration)</span></label>
+                <select name="targetFacultyId" class="form-control">
+                    <option value="">— All faculties / General posting —</option>
+                    <option th:each="f : ${faculties}"
+                            th:value="${f.id}"
+                            th:text="${f.name}">Faculty</option>
+                </select>
+                <small style="color:#94a3b8;font-size:11px;margin-top:4px;display:block;">
+                    📢 When a faculty is selected, its Faculty Administration will receive a notification.
+                    The job will still be visible to everyone in CareerHub.
+                </small>
+            </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary" th:text="#{career.job.submit}">Post Job</button>
                 <a th:href="@{/career/jobs}" class="btn btn-outline" th:text="#{common.cancel}">Cancel</a>

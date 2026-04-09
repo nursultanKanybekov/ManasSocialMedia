@@ -137,6 +137,18 @@ public class NotificationService {
                 saveNotification(u.getId(), posterId, NotifType.JOB_POSTED, msg, link, "💼"));
     }
 
+    /**
+     * Notifies FACULTY_ADMIN users of a specific faculty about a new targeted job posting.
+     */
+    @Async @Transactional
+    public void notifyFacultyAdminsNewJob(UUID posterId, UUID jobId, String jobTitle, UUID facultyId) {
+        String msg  = "📢 New job posted targeting your faculty: " + jobTitle;
+        String link = "/career/jobs/" + jobId;
+        userRepo.findByRoleAndFacultyId(UserRole.FACULTY_ADMIN, facultyId).forEach(fa ->
+                saveNotification(fa.getId(), posterId, NotifType.JOB_POSTED, msg, link, "🏛️"));
+        log.info("[Career] Faculty admins of faculty {} notified about job {}", facultyId, jobId);
+    }
+
     /** Called as: notifyJobApplied(employerId, applicantId, jobId, jobTitle, applicantName) */
     @Async @Transactional
     public void notifyJobApplied(UUID employerId, UUID applicantId,

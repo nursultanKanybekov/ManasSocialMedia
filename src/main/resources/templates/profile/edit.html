@@ -52,14 +52,35 @@
       <div id="sec-personal" class="ep-card">
         <div class="ep-card-title">&#128100; <span th:text="#{profile.section.personal}">Personal Information</span></div>
         <div class="ep-form-grid two-col">
+
+          <!-- First + Last Name side by side -->
           <div class="ep-form-group">
-            <label class="ep-label" th:text="#{profile.full_name}">Full Name</label>
-            <input type="text" class="ep-input" th:field="*{fullName}" th:value="${user.fullName}"/>
+            <label class="ep-label">First Name</label>
+            <input type="text" class="ep-input" th:field="*{firstName}" th:value="${user.firstName}"
+                   placeholder="e.g. Aizat"/>
           </div>
+          <div class="ep-form-group">
+            <label class="ep-label">Last Name</label>
+            <input type="text" class="ep-input" th:field="*{lastName}" th:value="${user.lastName}"
+                   placeholder="e.g. Karimova"/>
+          </div>
+
+          <!-- Gender -->
+          <div class="ep-form-group">
+            <label class="ep-label">⚧ Gender</label>
+            <select class="ep-input" th:field="*{gender}">
+              <option value="">— Not specified —</option>
+              <option value="MALE"   th:selected="${user.gender == 'MALE'}">Male</option>
+              <option value="FEMALE" th:selected="${user.gender == 'FEMALE'}">Female</option>
+              <option value="OTHER"  th:selected="${user.gender == 'OTHER'}">Other / Prefer not to say</option>
+            </select>
+          </div>
+
           <div class="ep-form-group">
             <label class="ep-label" th:text="#{profile.headline}">Headline</label>
             <input type="text" class="ep-input" th:field="*{headline}" th:value="${profile.headline}" th:placeholder="#{profile.headline_placeholder}"/>
           </div>
+
           <!-- Course year — only visible for STUDENT role -->
           <div class="ep-form-group" sec:authorize="hasRole('STUDENT')">
             <label class="ep-label">🎓 <span th:text="#{profile.course_year}">Course Year</span></label>
@@ -74,6 +95,43 @@
             </select>
             <span class="ep-hint" th:text="#{profile.course_year_hint}">Automatically synced from OBIS.</span>
           </div>
+
+          <!-- Mezun: place of work -->
+          <div class="ep-form-group" sec:authorize="hasAnyRole('MEZUN')">
+            <label class="ep-label">💼 Place of Work</label>
+            <input type="text" class="ep-input" th:field="*{workPlace}" th:value="${user.workPlace}"
+                   placeholder="e.g. Google LLC, Ministry of Education"/>
+            <span class="ep-hint">Specify where you currently work.</span>
+          </div>
+
+          <!-- Employer: company + field of operation -->
+          <div class="ep-form-group" sec:authorize="hasRole('EMPLOYER')">
+            <label class="ep-label">🏢 Company Name</label>
+            <input type="text" class="ep-input" th:field="*{companyName}" th:value="${user.companyName}"
+                   placeholder="e.g. Google LLC"/>
+          </div>
+          <div class="ep-form-group" sec:authorize="hasRole('EMPLOYER')">
+            <label class="ep-label">📊 Field of Operation</label>
+            <select class="ep-input" th:field="*{companyField}">
+              <option value="">— Select field —</option>
+              <option value="Technology"    th:selected="${user.companyField == 'Technology'}">Technology / IT</option>
+              <option value="Engineering"   th:selected="${user.companyField == 'Engineering'}">Engineering</option>
+              <option value="Healthcare"    th:selected="${user.companyField == 'Healthcare'}">Healthcare / Medicine</option>
+              <option value="Finance"       th:selected="${user.companyField == 'Finance'}">Finance / Banking</option>
+              <option value="Education"     th:selected="${user.companyField == 'Education'}">Education</option>
+              <option value="Government"    th:selected="${user.companyField == 'Government'}">Government / Public Sector</option>
+              <option value="Manufacturing" th:selected="${user.companyField == 'Manufacturing'}">Manufacturing / Industry</option>
+              <option value="Agriculture"   th:selected="${user.companyField == 'Agriculture'}">Agriculture</option>
+              <option value="Media"         th:selected="${user.companyField == 'Media'}">Media / Communications</option>
+              <option value="Retail"        th:selected="${user.companyField == 'Retail'}">Retail / Commerce</option>
+              <option value="Construction"  th:selected="${user.companyField == 'Construction'}">Construction / Real Estate</option>
+              <option value="Transportation" th:selected="${user.companyField == 'Transportation'}">Transportation / Logistics</option>
+              <option value="Energy"        th:selected="${user.companyField == 'Energy'}">Energy / Mining</option>
+              <option value="Tourism"       th:selected="${user.companyField == 'Tourism'}">Tourism / Hospitality</option>
+              <option value="Other"         th:selected="${user.companyField == 'Other'}">Other</option>
+            </select>
+          </div>
+
           <div class="ep-form-group">
             <label class="ep-label" th:text="#{profile.job_title}">Current Job Title</label>
             <input type="text" class="ep-input" th:field="*{currentJobTitle}" th:value="${profile.currentJobTitle}" th:placeholder="#{profile.job_title_ph}"/>

@@ -39,17 +39,32 @@
     <div th:each="val : ${pending}" class="validation-card">
       <div class="validation-info">
         <strong th:text="${val.user.fullName}">Name</strong>
+        <!-- First + Last name -->
+        <span th:if="${val.user.firstName != null or val.user.lastName != null}"
+              style="font-size:12px;color:#64748b;"
+              th:text="'👤 ' + (${val.user.firstName} ?: '') + ' ' + (${val.user.lastName} ?: '')">Name</span>
+        <!-- Gender -->
+        <span th:if="${val.user.gender != null}"
+              style="font-size:12px;color:#64748b;"
+              th:text="'⚧ ' + ${val.user.gender}">Gender</span>
         <span class="role-badge" th:text="${val.user.role}">STUDENT</span>
         <span th:text="${val.user.email}">email</span>
         <span th:if="${val.user.faculty}" th:text="${val.user.faculty.name}">Faculty</span>
-        <span th:if="${val.user.role.name() != 'EMPLOYER'}"
+        <span th:if="${val.user.role.name() != 'EMPLOYER' and val.user.role.name() != 'FACULTY_ADMIN'}"
               th:text="#{secretary.student_id} + ': ' + ${val.user.studentIdNumber}">ID: 123</span>
         <span th:if="${val.user.graduationYear}"
               th:text="#{secretary.grad_year} + ': ' + ${val.user.graduationYear}">Year: 2020</span>
+        <!-- Mezun work place -->
+        <span th:if="${val.user.role.name() == 'MEZUN' and val.user.workPlace != null}"
+              style="font-weight:600;color:#374151;"
+              th:text="'💼 Works at: ' + ${val.user.workPlace}">WorkPlace</span>
         <!-- Employer fields -->
         <span th:if="${val.user.role.name() == 'EMPLOYER' and val.user.companyName != null}"
               style="font-weight:600;color:#1b2a6b;"
               th:text="'🏢 ' + ${val.user.companyName}">Company</span>
+        <span th:if="${val.user.role.name() == 'EMPLOYER' and val.user.companyField != null}"
+              style="font-size:12px;color:#64748b;"
+              th:text="'📊 Field: ' + ${val.user.companyField}">Field</span>
         <a th:if="${val.user.role.name() == 'EMPLOYER' and val.user.companyDocumentUrl != null}"
            th:href="${val.user.companyDocumentUrl}" target="_blank"
            style="color:#7c3aed;font-size:12px;font-weight:700;">📄 View Employment Proof</a>

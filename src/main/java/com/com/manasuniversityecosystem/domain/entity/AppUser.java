@@ -37,6 +37,16 @@ public class AppUser {
     @Column(nullable = false, length = 200)
     private String fullName;
 
+    @Column(length = 100)
+    private String firstName;
+
+    @Column(length = 100)
+    private String lastName;
+
+    /** Gender: MALE, FEMALE, OTHER */
+    @Column(length = 20)
+    private String gender;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserRole role;
@@ -66,6 +76,14 @@ public class AppUser {
     /** EMPLOYER fields */
     @Column(length = 200)
     private String companyName;
+
+    /** Field of operation for EMPLOYER (e.g. Technology, Healthcare, Finance) */
+    @Column(length = 200)
+    private String companyField;
+
+    /** MEZUN field - place of work */
+    @Column(length = 300)
+    private String workPlace;
 
     /** URL of the uploaded employment proof document (image/pdf stored on Cloudinary) */
     @Column(length = 500)

@@ -23,4 +23,7 @@ public class CreateJobRequest {
     private String location;
     private String salaryRange;
     private LocalDate deadline;
+
+    /** Optional: ID of the faculty this job is targeted at */
+    private java.util.UUID targetFacultyId;
 }

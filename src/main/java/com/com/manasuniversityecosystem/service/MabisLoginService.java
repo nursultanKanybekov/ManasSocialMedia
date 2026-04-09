@@ -65,10 +65,25 @@ public class MabisLoginService {
 
         Faculty faculty = resolveFaculty(info);
 
+        // Parse first/last name from fullName
+        String fullName = info.getFullName() != null ? info.getFullName().trim() : "";
+        String firstName = null, lastName = null;
+        if (!fullName.isBlank()) {
+            int idx = fullName.indexOf(' ');
+            if (idx > 0) {
+                firstName = fullName.substring(0, idx);
+                lastName  = fullName.substring(idx + 1);
+            } else {
+                firstName = fullName;
+            }
+        }
+
         AppUser user = AppUser.builder()
                 .email(email)
                 .passwordHash("MABIS_AUTH_ONLY")   // no direct password login
-                .fullName(info.getFullName())
+                .fullName(fullName)
+                .firstName(firstName)
+                .lastName(lastName)
                 .role(UserRole.TEACHER)              // always TEACHER from MABIS
                 .status(UserStatus.ACTIVE)           // MABIS verified — no secretary queue
                 .studentIdNumber(info.getEmployeeNumber())

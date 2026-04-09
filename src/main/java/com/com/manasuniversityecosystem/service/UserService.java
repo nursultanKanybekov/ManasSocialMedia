@@ -75,8 +75,10 @@ public class UserService {
         if (!req.getPassword().equals(req.getConfirmPassword())) {
             throw new IllegalArgumentException("Passwords do not match.");
         }
+        // Allowed self-registration roles
         if (req.getRole() != UserRole.STUDENT && req.getRole() != UserRole.MEZUN
-                && req.getRole() != UserRole.EMPLOYER) {
+                && req.getRole() != UserRole.EMPLOYER && req.getRole() != UserRole.TEACHER
+                && req.getRole() != UserRole.FACULTY_ADMIN) {
             throw new IllegalArgumentException("Invalid self-registration role.");
         }
         if (req.getRole() == UserRole.MEZUN && req.getGraduationYear() == null) {
@@ -86,6 +88,10 @@ public class UserService {
                 && (req.getCompanyName() == null || req.getCompanyName().isBlank())) {
             throw new IllegalArgumentException("Employer must provide company name.");
         }
+        if ((req.getRole() == UserRole.TEACHER || req.getRole() == UserRole.FACULTY_ADMIN)
+                && req.getFacultyId() == null) {
+            throw new IllegalArgumentException("Teacher/Faculty Admin must select a faculty.");
+        }
 
         Faculty faculty = null;
         if (req.getRole() != UserRole.EMPLOYER && req.getFacultyId() != null) {
@@ -93,8 +99,19 @@ public class UserService {
                     .orElseThrow(() -> new IllegalArgumentException("Faculty not found."));
         }
 
+        // Build full name from firstName + lastName if provided
+        String firstName = req.getFirstName() != null ? req.getFirstName().trim() : "";
+        String lastName  = req.getLastName()  != null ? req.getLastName().trim()  : "";
+        String fullName  = (firstName + " " + lastName).trim();
+        if (fullName.isBlank()) {
+            fullName = req.getFullName() != null ? req.getFullName().trim() : "";
+        }
+
         AppUser user = AppUser.builder()
-                .fullName(req.getFullName())
+                .fullName(fullName)
+                .firstName(firstName.isBlank() ? null : firstName)
+                .lastName(lastName.isBlank() ? null : lastName)
+                .gender(req.getGender())
                 .email(req.getEmail())
                 .passwordHash(passwordEncoder.encode(req.getPassword()))
                 .role(req.getRole())
@@ -103,6 +120,8 @@ public class UserService {
                 .studentIdNumber(req.getRole() != UserRole.EMPLOYER ? req.getStudentIdNumber() : null)
                 .graduationYear(req.getGraduationYear())
                 .companyName(req.getCompanyName())
+                .companyField(req.getCompanyField())
+                .workPlace(req.getWorkPlace())
                 .build();
 
         Profile profile = Profile.builder()

@@ -47,8 +47,23 @@ public class ProfileService {
         Profile profile = getByUserId(user.getId());
 
         // ── Account fields ────────────────────────────────────
-        if (req.getFullName() != null && !req.getFullName().isBlank())
+        if (req.getFirstName() != null && !req.getFirstName().isBlank())
+            user.setFirstName(req.getFirstName().trim());
+        if (req.getLastName() != null && !req.getLastName().isBlank())
+            user.setLastName(req.getLastName().trim());
+
+        // Rebuild fullName from firstName + lastName if both provided
+        String fn = req.getFirstName() != null ? req.getFirstName().trim() : (user.getFirstName() != null ? user.getFirstName() : "");
+        String ln = req.getLastName()  != null ? req.getLastName().trim()  : (user.getLastName()  != null ? user.getLastName()  : "");
+        String derived = (fn + " " + ln).trim();
+        if (!derived.isBlank()) {
+            user.setFullName(derived);
+        } else if (req.getFullName() != null && !req.getFullName().isBlank()) {
             user.setFullName(req.getFullName().trim());
+        }
+
+        if (req.getGender() != null && !req.getGender().isBlank())
+            user.setGender(req.getGender().trim());
 
         if (req.getEmail() != null && !req.getEmail().isBlank()
                 && !req.getEmail().equalsIgnoreCase(user.getEmail())) {
@@ -64,6 +79,15 @@ public class ProfileService {
 
         if (req.getGraduationYear() != null)
             user.setGraduationYear(req.getGraduationYear());
+
+        if (req.getWorkPlace() != null)
+            user.setWorkPlace(req.getWorkPlace().isBlank() ? null : req.getWorkPlace().trim());
+
+        if (req.getCompanyField() != null)
+            user.setCompanyField(req.getCompanyField().isBlank() ? null : req.getCompanyField().trim());
+
+        if (req.getCompanyName() != null && !req.getCompanyName().isBlank())
+            user.setCompanyName(req.getCompanyName().trim());
 
         userRepo.save(user);
 

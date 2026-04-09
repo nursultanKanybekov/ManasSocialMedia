@@ -6,6 +6,7 @@ import com.com.manasuniversityecosystem.domain.entity.career.JobApplication;
 import com.com.manasuniversityecosystem.domain.entity.career.JobListing;
 import com.com.manasuniversityecosystem.domain.entity.career.MentorshipRequest;
 import com.com.manasuniversityecosystem.domain.enums.JobType;
+import com.com.manasuniversityecosystem.repository.FacultyRepository;
 import com.com.manasuniversityecosystem.security.UserDetailsImpl;
 import com.com.manasuniversityecosystem.service.UserService;
 import com.com.manasuniversityecosystem.service.ProfileService;
@@ -40,6 +41,7 @@ public class CareerController {
     private final UserService userService;
     private final ProfileService profileService;
     private final ProfileRepository profileRepo;
+    private final FacultyRepository facultyRepo;
 
     // ─────────────────────────── JOBS ────────────────────────
 
@@ -85,10 +87,11 @@ public class CareerController {
 
     // GET /career/jobs/new
     @GetMapping("/jobs/new")
-    @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN','TEACHER')")
+    @PreAuthorize("hasAnyRole('EMPLOYER','ADMIN','MEZUN','TEACHER','FACULTY_ADMIN')")
     public String newJobPage(Model model) {
         model.addAttribute("createJobRequest", new CreateJobRequest());
         model.addAttribute("jobTypes", JobType.values());
+        model.addAttribute("faculties", facultyRepo.findAllByOrderByNameAsc());
         return "career/job-form";
     }
 

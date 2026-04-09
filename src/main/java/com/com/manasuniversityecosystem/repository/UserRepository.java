@@ -27,6 +27,48 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
 
     List<AppUser> findByRole(UserRole role);
 
+    @Query("SELECT u FROM AppUser u WHERE u.role = :role AND u.faculty.id = :facultyId AND u.status = com.com.manasuniversityecosystem.domain.enums.UserStatus.ACTIVE")
+    List<AppUser> findByRoleAndFacultyId(@Param("role") UserRole role, @Param("facultyId") UUID facultyId);
+
+    // ── Analytics queries ──────────────────────────────────────────────────────
+
+    /** Count all users by role */
+    long countByRole(UserRole role);
+
+    /** Count users by role and status */
+    long countByRoleAndStatus(UserRole role, UserStatus status);
+
+    /** Count users in a faculty by role */
+    @Query("SELECT COUNT(u) FROM AppUser u WHERE u.faculty.id = :fid AND u.role = :role AND u.status = com.com.manasuniversityecosystem.domain.enums.UserStatus.ACTIVE")
+    long countActiveFacultyByRole(@Param("fid") UUID facultyId, @Param("role") UserRole role);
+
+    /** All users in a specific faculty with a specific role */
+    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile WHERE u.faculty.id = :fid AND u.role = :role ORDER BY u.fullName")
+    List<AppUser> findByFacultyAndRole(@Param("fid") UUID facultyId, @Param("role") UserRole role);
+
+    /** All mezuns who have a workPlace, ordered by workPlace */
+    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile WHERE u.role = 'MEZUN' AND u.status = 'ACTIVE' AND u.workPlace IS NOT NULL ORDER BY u.workPlace, u.fullName")
+    List<AppUser> findMezunsWithWorkPlace();
+
+    /** Mezuns with workPlace for a specific faculty */
+    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile WHERE u.role = 'MEZUN' AND u.status = 'ACTIVE' AND u.faculty.id = :fid AND u.workPlace IS NOT NULL ORDER BY u.workPlace, u.fullName")
+    List<AppUser> findMezunsWithWorkPlaceByFaculty(@Param("fid") UUID facultyId);
+
+    /** All mezuns by faculty, ordered by graduation year desc */
+    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile WHERE u.role = 'MEZUN' AND u.status = 'ACTIVE' AND u.faculty.id = :fid ORDER BY u.graduationYear DESC NULLS LAST, u.fullName")
+    List<AppUser> findMezunsByFaculty(@Param("fid") UUID facultyId);
+
+    /** All active employers with their profiles */
+    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile WHERE u.role = 'EMPLOYER' AND u.status = 'ACTIVE' ORDER BY u.companyName NULLS LAST, u.fullName")
+    List<AppUser> findAllEmployers();
+
+    /** All students in a faculty */
+    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile WHERE u.role = 'STUDENT' AND u.status = 'ACTIVE' AND u.faculty.id = :fid ORDER BY u.fullName")
+    List<AppUser> findStudentsByFaculty(@Param("fid") UUID facultyId);
+
+    /** Count pending users */
+    long countByStatus(UserStatus status);
+
     List<AppUser> findByStatus(UserStatus status);
 
     List<AppUser> findByRoleAndStatus(UserRole role, UserStatus status);

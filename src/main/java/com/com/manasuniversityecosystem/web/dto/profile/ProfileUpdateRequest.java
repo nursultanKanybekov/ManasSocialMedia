@@ -10,9 +10,20 @@ public class ProfileUpdateRequest {
 
     // ── Account fields ──────────────────────────────────────────
     private String fullName;
+    private String firstName;
+    private String lastName;
+    private String gender;
     private String email;
     private UUID   facultyId;
     private Integer graduationYear;
+
+    // ── Role-specific fields ────────────────────────────────────
+    /** Mezun: place of work */
+    private String workPlace;
+
+    /** Employer: field of operation */
+    private String companyField;
+    private String companyName;
 
     // ── Personal / profile ──────────────────────────────────────
     private String bio;

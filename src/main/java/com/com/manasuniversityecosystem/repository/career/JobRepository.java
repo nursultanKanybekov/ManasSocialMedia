@@ -57,4 +57,8 @@ public interface JobRepository extends JpaRepository<JobListing, UUID> {
     List<JobListing> findLatestActive(Pageable pageable);
 
     long countByIsActiveTrue();
+
+    /** All active jobs, eagerly loading postedBy — used for employer analytics panel */
+    @Query("SELECT j FROM JobListing j JOIN FETCH j.postedBy p WHERE j.isActive = true ORDER BY p.id, j.createdAt DESC")
+    List<JobListing> findAllActiveJobsWithEmployers();
 }

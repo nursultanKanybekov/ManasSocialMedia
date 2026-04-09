@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Manage Faculty Admins')}"></head>
+<body class="app-layout">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="main-content">
+
+  <div class="page-header">
+    <h2>🏛️ Faculty Administration Management</h2>
+    <a th:href="@{/admin}" class="btn btn-outline">← Dashboard</a>
+  </div>
+
+  <div th:if="${successMsg}"
+       style="background:#dcfce7;border:1px solid #86efac;color:#166534;padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13px;font-weight:600;"
+       th:text="${successMsg}"></div>
+  <div th:if="${errorMsg}"
+       style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13px;font-weight:600;"
+       th:text="${errorMsg}"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+
+    <!-- CREATE FORM -->
+    <div style="background:#fff;border-radius:14px;border:1.5px solid #e2e5f0;padding:28px;">
+      <h3 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;color:#1b2a6b;margin:0 0 6px;">
+        ➕ Create Faculty Admin Account
+      </h3>
+      <p style="color:#64748b;font-size:13px;margin:0 0 22px;line-height:1.5;">
+        Faculty Administrators are assigned to a specific faculty.
+        They receive notifications when jobs are posted targeting their faculty
+        and can view relevant CareerHub data.
+        Accounts are immediately active.
+      </p>
+
+      <form th:action="@{/admin/create-faculty-admin}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <!-- First + Last Name -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">First Name</label>
+            <input type="text" name="firstName" class="form-control" required placeholder="e.g. Aizat"/>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Last Name</label>
+            <input type="text" name="lastName" class="form-control" required placeholder="e.g. Bekova"/>
+          </div>
+        </div>
+
+        <!-- Gender -->
+        <div class="form-group">
+          <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">⚧ Gender</label>
+          <select name="gender" class="form-control" required>
+            <option value="">— Select gender —</option>
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+            <option value="OTHER">Other / Prefer not to say</option>
+          </select>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Email</label>
+          <input type="email" name="email" class="form-control" required placeholder="admin.faculty@manas.edu.kg"/>
+        </div>
+
+        <!-- Faculty -->
+        <div class="form-group">
+          <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">🏛️ Faculty</label>
+          <select name="facultyId" class="form-control" required>
+            <option value="">— Select faculty —</option>
+            <option th:each="f : ${faculties}"
+                    th:value="${f.id}"
+                    th:text="${f.name}">Faculty</option>
+          </select>
+          <small style="color:#94a3b8;font-size:11px;margin-top:4px;display:block;">
+            This admin will receive job notifications for this faculty.
+          </small>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Temporary Password</label>
+          <div style="position:relative;">
+            <input type="password" name="password" id="faPwd" class="form-control"
+                   required minlength="8" placeholder="Min 8 characters"
+                   style="padding-right:42px;"/>
+            <button type="button" onclick="togglePwd('faPwd','faEye')"
+                    style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;">
+              <span id="faEye">👁</span>
+            </button>
+          </div>
+          <small style="color:#94a3b8;font-size:11px;">The faculty admin should change this on first login.</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;background:#6b21a8;">
+          🏛️ Create Faculty Admin Account
+        </button>
+      </form>
+    </div>
+
+    <!-- EXISTING FACULTY ADMINS LIST -->
+    <div style="background:#fff;border-radius:14px;border:1.5px solid #e2e5f0;padding:28px;">
+      <h3 style="font-family:Montserrat,sans-serif;font-weight:800;font-size:16px;color:#1b2a6b;margin:0 0 18px;">
+        👥 Existing Faculty Admins
+        <span style="font-size:12px;font-weight:600;color:#8a91a8;margin-left:8px;"
+              th:text="'(' + ${#lists.size(facultyAdmins)} + ')'"></span>
+      </h3>
+
+      <div th:if="${#lists.isEmpty(facultyAdmins)}"
+           style="text-align:center;padding:32px;color:#8a91a8;font-size:13px;">
+        No faculty admin accounts yet.
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div th:each="fa : ${facultyAdmins}"
+             style="background:#f7f8fc;border:1.5px solid #e2e5f0;border-radius:12px;padding:14px 16px;
+                    display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <!-- Avatar initial -->
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6b21a8,#9333ea);
+                        color:#fff;display:flex;align-items:center;justify-content:center;
+                        font-family:Montserrat,sans-serif;font-weight:700;font-size:15px;flex-shrink:0;"
+                 th:text="${#strings.substring(fa.fullName,0,1)}">A</div>
+            <div>
+              <div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;color:#1b2a6b;"
+                   th:text="${fa.fullName}">Name</div>
+              <div style="font-size:11px;color:#8a91a8;" th:text="${fa.email}">email</div>
+              <div th:if="${fa.faculty != null}"
+                   style="font-size:11px;color:#6b21a8;font-weight:600;margin-top:2px;"
+                   th:text="'🏛️ ' + ${fa.faculty.name}">Faculty</div>
+              <div th:if="${fa.gender != null}"
+                   style="font-size:11px;color:#94a3b8;" th:text="'⚧ ' + ${fa.gender}">Gender</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+            <!-- Status badge -->
+            <span th:text="${fa.status}"
+                  th:style="${fa.status.name() == 'ACTIVE'}
+                             ? 'background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;'
+                             : 'background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:Montserrat,sans-serif;'">STATUS</span>
+            <a th:href="@{/admin/users/{id}(id=${fa.id})}"
+               style="padding:5px 10px;background:#f3e8ff;color:#6b21a8;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;">
+              👁 View
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+<script>
+  function togglePwd(id, eyeId) {
+    var el = document.getElementById(id), eye = document.getElementById(eyeId);
+    el.type = el.type === 'password' ? 'text' : 'password';
+    eye.textContent = el.type === 'password' ? '👁' : '🙈';
+  }
+</script>
+</body>
+</html>

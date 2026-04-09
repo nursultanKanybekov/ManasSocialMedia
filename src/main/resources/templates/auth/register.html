@@ -19,14 +19,37 @@
               th:object="${registerRequest}" class="auth-form">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
-            <!-- Full Name -->
+            <!-- First Name / Last Name -->
+            <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" th:field="*{firstName}"
+                           class="form-control" th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid'"
+                           placeholder="e.g. Aizat" required/>
+                    <div th:if="${#fields.hasErrors('firstName')}" class="field-error"
+                         th:errors="*{firstName}"></div>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" th:field="*{lastName}"
+                           class="form-control" th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid'"
+                           placeholder="e.g. Karimova" required/>
+                    <div th:if="${#fields.hasErrors('lastName')}" class="field-error"
+                         th:errors="*{lastName}"></div>
+                </div>
+            </div>
+
+            <!-- Gender -->
             <div class="form-group">
-                <label for="fullName" th:text="#{auth.field.fullname}">Full Name</label>
-                <input type="text" id="fullName" th:field="*{fullName}"
-                       class="form-control" th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid'"
-                       required/>
-                <div th:if="${#fields.hasErrors('fullName')}" class="field-error"
-                     th:errors="*{fullName}"></div>
+                <label for="gender">Gender</label>
+                <select id="gender" th:field="*{gender}" class="form-control" required>
+                    <option value="">-- Select gender --</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other / Prefer not to say</option>
+                </select>
+                <div th:if="${#fields.hasErrors('gender')}" class="field-error"
+                     th:errors="*{gender}"></div>
             </div>
 
             <!-- Email -->
@@ -52,6 +75,14 @@
                         <span th:text="#{role.mezun}">Alumni (Mezun)</span>
                     </label>
                     <label class="role-option">
+                        <input type="radio" th:field="*{role}" value="TEACHER"/>
+                        <span>Teacher</span>
+                    </label>
+                    <label class="role-option">
+                        <input type="radio" th:field="*{role}" value="FACULTY_ADMIN"/>
+                        <span>Faculty Administration</span>
+                    </label>
+                    <label class="role-option">
                         <input type="radio" th:field="*{role}" value="EMPLOYER"/>
                         <span>Employer</span>
                     </label>
@@ -60,20 +91,21 @@
                      th:errors="*{role}"></div>
             </div>
 
-            <!-- Faculty -->
+            <!-- Faculty — shown for all except EMPLOYER -->
             <div class="form-group" id="facultyGroup">
                 <label for="facultyId" th:text="#{auth.field.faculty}">Faculty</label>
-                <select id="facultyId" th:field="*{facultyId}" class="form-control" required>
+                <select id="facultyId" th:field="*{facultyId}" class="form-control">
                     <option value="" th:text="#{auth.field.select_faculty}">Select faculty...</option>
                     <option th:each="f : ${faculties}"
                             th:value="${f.id}"
                             th:text="${f.name}">Faculty</option>
                 </select>
-                <div th:if="${#fields.hasErrors('facultyId')}" class="field-error"
-                     th:errors="*{facultyId}"></div>
+                <small style="color:#94a3b8;font-size:11px;" id="facultyHint">
+                    Required for Teachers and Faculty Administrators.
+                </small>
             </div>
 
-            <!-- Student ID (hidden for EMPLOYER) -->
+            <!-- Student ID — hidden for EMPLOYER / FACULTY_ADMIN -->
             <div class="form-group" id="studentIdGroup">
                 <label for="studentIdNumber" th:text="#{auth.field.student_id}">Student ID</label>
                 <input type="text" id="studentIdNumber" th:field="*{studentIdNumber}"
@@ -81,14 +113,48 @@
                        th:placeholder="#{auth.field.student_id_placeholder}"/>
             </div>
 
-            <!-- Faculty (hidden for EMPLOYER) -->
-            <!-- (moved below — see facultyGroup id added in JS) -->
+            <!-- Graduation Year — only for MEZUN -->
+            <div class="form-group" id="graduationYearGroup" style="display:none">
+                <label for="graduationYear" th:text="#{auth.field.graduation_year}">Graduation Year</label>
+                <input type="number" id="graduationYear" th:field="*{graduationYear}"
+                       class="form-control" min="1993" th:max="${#dates.year(#dates.createNow())}"/>
+            </div>
 
-            <!-- Employer fields (hidden unless EMPLOYER selected) -->
+            <!-- Work Place — only for MEZUN -->
+            <div class="form-group" id="workPlaceGroup" style="display:none">
+                <label for="workPlace">Current Place of Work</label>
+                <input type="text" id="workPlace" th:field="*{workPlace}"
+                       class="form-control" placeholder="e.g. Google LLC, Bishkek City Hall"/>
+                <small style="color:#94a3b8;font-size:11px;">Please specify where you currently work.</small>
+            </div>
+
+            <!-- Employer fields — hidden unless EMPLOYER selected -->
             <div class="form-group" id="companyNameGroup" style="display:none">
                 <label for="companyName">Company / Organization Name</label>
                 <input type="text" id="companyName" th:field="*{companyName}"
                        class="form-control" placeholder="e.g. Google LLC, Manas Tech"/>
+            </div>
+
+            <div class="form-group" id="companyFieldGroup" style="display:none">
+                <label for="companyField">Field of Operation</label>
+                <select id="companyField" th:field="*{companyField}" class="form-control">
+                    <option value="">-- Select field --</option>
+                    <option value="Technology">Technology / IT</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Healthcare">Healthcare / Medicine</option>
+                    <option value="Finance">Finance / Banking</option>
+                    <option value="Education">Education</option>
+                    <option value="Government">Government / Public Sector</option>
+                    <option value="Manufacturing">Manufacturing / Industry</option>
+                    <option value="Agriculture">Agriculture</option>
+                    <option value="Media">Media / Communications</option>
+                    <option value="Retail">Retail / Commerce</option>
+                    <option value="Construction">Construction / Real Estate</option>
+                    <option value="Transportation">Transportation / Logistics</option>
+                    <option value="Energy">Energy / Mining</option>
+                    <option value="Tourism">Tourism / Hospitality</option>
+                    <option value="Other">Other</option>
+                </select>
             </div>
 
             <div class="form-group" id="companyDocGroup" style="display:none">
@@ -96,13 +162,6 @@
                 <input type="file" id="companyDocument" name="companyDocument"
                        class="form-control" accept="image/*,.pdf"/>
                 <small style="color:#94a3b8;font-size:11px;">Max 5MB. This will be reviewed by the secretary.</small>
-            </div>
-
-            <!-- Graduation Year (Mezun only) -->
-            <div class="form-group" id="graduationYearGroup" style="display:none">
-                <label for="graduationYear" th:text="#{auth.field.graduation_year}">Graduation Year</label>
-                <input type="number" id="graduationYear" th:field="*{graduationYear}"
-                       class="form-control" min="1993" th:max="${#dates.year(#dates.createNow())}"/>
             </div>
 
             <!-- Password -->
@@ -157,26 +216,34 @@
 </div>
 
 <script>
-    // Dynamic field switching based on role
     function updateRoleFields() {
         const role = document.querySelector('input[name="role"]:checked')?.value;
-        const isEmployer = role === 'EMPLOYER';
-        const isMezun = role === 'MEZUN';
+        const isEmployer     = role === 'EMPLOYER';
+        const isMezun        = role === 'MEZUN';
+        const isTeacher      = role === 'TEACHER';
+        const isFacultyAdmin = role === 'FACULTY_ADMIN';
+        const needsFaculty   = isTeacher || isFacultyAdmin || !isEmployer;
 
-        // Faculty — hide for EMPLOYER and remove required so browser validation doesn't block submit
+        // Faculty — always shown except for EMPLOYER
         const facultyGroup  = document.getElementById('facultyGroup');
         const facultySelect = document.getElementById('facultyId');
         facultyGroup.style.display = isEmployer ? 'none' : 'block';
-        facultySelect.required     = !isEmployer;
+        // Required for teacher / faculty admin
+        facultySelect.required = isTeacher || isFacultyAdmin;
 
-        // Student ID — hide for EMPLOYER
-        document.getElementById('studentIdGroup').style.display = isEmployer ? 'none' : 'block';
+        // Student ID — shown for STUDENT and MEZUN only
+        const showStudentId = !isEmployer && !isTeacher && !isFacultyAdmin;
+        document.getElementById('studentIdGroup').style.display = showStudentId ? 'block' : 'none';
 
         // Graduation year — only for MEZUN
         document.getElementById('graduationYearGroup').style.display = isMezun ? 'block' : 'none';
 
+        // Work place — only for MEZUN
+        document.getElementById('workPlaceGroup').style.display = isMezun ? 'block' : 'none';
+
         // Employer-only fields
         document.getElementById('companyNameGroup').style.display = isEmployer ? 'block' : 'none';
+        document.getElementById('companyFieldGroup').style.display = isEmployer ? 'block' : 'none';
         document.getElementById('companyDocGroup').style.display  = isEmployer ? 'block' : 'none';
     }
     document.querySelectorAll('input[name="role"]').forEach(r => r.addEventListener('change', updateRoleFields));
