@@ -841,13 +841,33 @@
   const CHANNEL_URL = '/channels/' + ROOM_ID;
 
   const ICE = [
-    { urls: 'stun:stun.l.google.com:19302'  },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: ['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443',
-        'turn:openrelay.metered.ca:80?transport=tcp','turns:openrelay.metered.ca:443'],
-      username:'openrelayproject', credential:'openrelayproject' },
-    { urls: ['turn:freestun.net:3479','turns:freestun.net:5349'],
-      username:'free', credential:'free' }
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    {
+      urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+      username:   'fdb7f88d4d0bdbc8d1b68fe6',
+      credential: 'oRCGzmQMchNTQH8b'
+    },
+    {
+      urls: 'turn:global.relay.metered.ca:443?transport=tcp',
+      username:   'fdb7f88d4d0bdbc8d1b68fe6',
+      credential: 'oRCGzmQMchNTQH8b'
+    },
+    {
+      urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+      username:   'fdb7f88d4d0bdbc8d1b68fe6',
+      credential: 'oRCGzmQMchNTQH8b'
+    },
+    {
+      urls: 'turn:global.relay.metered.ca:80',
+      username:   'fdb7f88d4d0bdbc8d1b68fe6',
+      credential: 'oRCGzmQMchNTQH8b'
+    },
+    {
+      urls: 'turn:global.relay.metered.ca:443',
+      username:   'fdb7f88d4d0bdbc8d1b68fe6',
+      credential: 'oRCGzmQMchNTQH8b'
+    }
   ];
 
   /* ── State ──────────────────────────────────────────────────────── */

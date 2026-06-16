@@ -80,7 +80,70 @@
                 <h2 class="an-title">📊 University Analytics</h2>
                 <p class="an-sub">Complete platform statistics — all faculties, all roles</p>
             </div>
-            <a th:href="@{/analytics/faculty}" class="btn btn-outline" style="font-size:13px;">🏛️ Faculty View →</a>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <a th:href="@{/analytics/download}"
+                   class="btn btn-primary"
+                   style="font-size:13px;display:inline-flex;align-items:center;gap:6px;background:#1b2a6b;border-color:#1b2a6b;">
+                    ⬇️ Download as Excel
+                </a>
+                <button onclick="document.getElementById('uploadModal').style.display='flex'"
+                        class="btn btn-outline"
+                        style="font-size:13px;display:inline-flex;align-items:center;gap:6px;">
+                    ⬆️ Upload Excel
+                </button>
+                <a th:href="@{/analytics/faculty}" class="btn btn-outline" style="font-size:13px;">🏛️ Faculty View →</a>
+            </div>
+        </div>
+
+        <!-- Import Result Banner -->
+        <div th:if="${importResult != null}"
+             th:style="${importResult.errors().isEmpty()} ? 'background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:12px;padding:16px 20px;margin-bottom:20px;' : 'background:#fffbeb;border:1.5px solid #fcd34d;border-radius:12px;padding:16px 20px;margin-bottom:20px;'">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <span style="font-size:20px;" th:text="${importResult.errors().isEmpty()} ? '✅' : '⚠️'"></span>
+                <span style="font-weight:700;font-size:14px;color:#1b2a6b;">
+                    Import complete:
+                    <span th:text="${importResult.imported()}">0</span> imported,
+                    <span th:text="${importResult.skipped()}">0</span> skipped.
+                </span>
+            </div>
+            <ul th:if="${!importResult.errors().isEmpty()}"
+                style="margin:0;padding-left:18px;font-size:12px;color:#92400e;">
+                <li th:each="err : ${importResult.errors()}" th:text="${err}"></li>
+            </ul>
+        </div>
+
+        <!-- Upload Modal -->
+        <div id="uploadModal"
+             style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:18px;padding:36px 40px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative;">
+                <button onclick="document.getElementById('uploadModal').style.display='none'"
+                        style="position:absolute;top:14px;right:18px;background:none;border:none;font-size:20px;cursor:pointer;color:#8a91a8;">✕</button>
+                <div style="font-size:36px;margin-bottom:12px;text-align:center;">⬆️</div>
+                <h3 style="font-family:Montserrat,sans-serif;font-weight:800;color:#1b2a6b;margin:0 0 6px;text-align:center;">Upload Users from Excel</h3>
+                <p style="color:#64748b;font-size:13px;margin:0 0 20px;text-align:center;">
+                    Upload a <code>.xlsx</code> file to bulk-import users into the platform.
+                    <br>
+                    <a th:href="@{/analytics/template}"
+                       style="color:#1b2a6b;font-weight:700;font-size:12px;">⬇️ Download blank template</a>
+                </p>
+                <div style="background:#f7f8fc;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:#374151;line-height:1.7;">
+                    <strong>Expected columns:</strong><br>
+                    A: First Name &nbsp;|&nbsp; B: Last Name &nbsp;|&nbsp; C: Email<br>
+                    D: Role (STUDENT / TEACHER / MEZUN)<br>
+                    E: Faculty name or code &nbsp;|&nbsp; F: Graduation Year<br>
+                    G: Student ID &nbsp;|&nbsp; H: Password
+                </div>
+                <form th:action="@{/analytics/upload}" method="post" enctype="multipart/form-data">
+                    <input type="file" name="file" accept=".xlsx"
+                           style="width:100%;padding:10px;border:1.5px dashed #c4b5fd;border-radius:10px;font-size:13px;margin-bottom:14px;cursor:pointer;"
+                           required>
+                    <button type="submit"
+                            class="btn btn-primary"
+                            style="width:100%;background:#1b2a6b;border-color:#1b2a6b;font-size:14px;">
+                        Import Users
+                    </button>
+                </form>
+            </div>
         </div>
 
         <!-- ══ KPI STRIP ══ -->

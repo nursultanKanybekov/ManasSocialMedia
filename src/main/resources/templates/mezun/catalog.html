@@ -433,8 +433,33 @@
             <h1 class="al-header-title" th:text="#{mezun.catalog.title}">Alumni Catalog</h1>
             <p class="al-header-sub" th:text="#{mezun.catalog.subtitle}">Connect with Manas graduates worldwide</p>
         </div>
-        <div th:if="${mezunPage != null}" class="al-total">
-            Total: <strong th:text="${mezunPage.totalElements}">0</strong> alumni
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div th:if="${mezunPage != null}" class="al-total">
+                Total: <strong th:text="${mezunPage.totalElements}">0</strong> alumni
+            </div>
+            <!-- Download button: passes active filters so export matches what user sees -->
+            <a th:href="@{/mezun/download(
+                    name=${searchName},
+                    facultyId=${selectedFaculty},
+                    graduationYear=${selectedYear},
+                    sortBy=${sortBy},
+                    sortDir=${sortDir})}"
+               style="display:inline-flex;align-items:center;gap:7px;
+                      padding:9px 18px;background:#1b2a6b;color:#fff;
+                      border-radius:10px;font-family:Montserrat,sans-serif;
+                      font-weight:700;font-size:13px;text-decoration:none;
+                      transition:background .15s;white-space:nowrap;
+                      box-shadow:0 2px 8px rgba(27,42,107,0.18);"
+               onmouseover="this.style.background='#2d43a6'"
+               onmouseout="this.style.background='#1b2a6b'">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span th:text="${(searchName != null and !#strings.isEmpty(searchName)) or selectedFaculty != null or selectedYear != null
+                        ? 'Download Filtered (' + mezunPage.totalElements + ')' : 'Download All'}">Download Excel</span>
+            </a>
         </div>
     </div>
 

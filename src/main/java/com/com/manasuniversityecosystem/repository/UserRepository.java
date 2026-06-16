@@ -123,6 +123,18 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
                               @Param("graduationYear") Integer graduationYear,
                               @Param("name") String name,
                               Pageable pageable);
+
+    /** Same filter as searchMezun but returns all results (for Excel export). */
+    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.profile p " +
+            "WHERE u.role = 'MEZUN' " +
+            "AND u.status = com.com.manasuniversityecosystem.domain.enums.UserStatus.ACTIVE " +
+            "AND (:facultyId IS NULL OR u.faculty.id = :facultyId) " +
+            "AND (:graduationYear IS NULL OR u.graduationYear = :graduationYear) " +
+            "AND (:name IS NULL OR LOWER(CAST(u.fullName AS string)) LIKE :name) " +
+            "ORDER BY u.fullName ASC")
+    List<AppUser> searchMezunAll(@Param("facultyId") UUID facultyId,
+                                 @Param("graduationYear") Integer graduationYear,
+                                 @Param("name") String name);
     @Query("""
             SELECT u FROM AppUser u
             WHERE u.role = com.com.manasuniversityecosystem.domain.enums.UserRole.STUDENT

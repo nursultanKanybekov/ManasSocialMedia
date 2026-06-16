@@ -2132,41 +2132,32 @@
        When you move servers, just change the env-var TURN_* — no JS changes.
        ─────────────────────────────────────────────────────────────── */
     const ICE_SERVERS = [
-        /* STUN — fast direct connection attempt */
-        { urls: 'stun:stun.l.google.com:19302'   },
-        { urls: 'stun:stun1.l.google.com:19302'  },
-        { urls: 'stun:stun2.l.google.com:19302'  },
-        { urls: 'stun:stun.cloudflare.com:3478'  },
-
-        /* TURN #1 — Open Relay Project (free, no account) */
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun.relay.metered.ca:80' },
         {
-            urls: [
-                'turn:openrelay.metered.ca:80',
-                'turn:openrelay.metered.ca:443',
-                'turn:openrelay.metered.ca:80?transport=tcp',
-                'turn:openrelay.metered.ca:443?transport=tcp',
-                'turns:openrelay.metered.ca:443'
-            ],
-            username:   'openrelayproject',
-            credential: 'openrelayproject'
+            urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+            username:   'fdb7f88d4d0bdbc8d1b68fe6',
+            credential: 'oRCGzmQMchNTQH8b'
         },
-
-        /* TURN #2 — FreeSWITCH / FreeTURN (free, no account) */
         {
-            urls: [
-                'turn:freestun.net:3479',
-                'turn:freestun.net:5349',
-                'turns:freestun.net:5349'
-            ],
-            username:   'free',
-            credential: 'free'
+            urls: 'turn:global.relay.metered.ca:443?transport=tcp',
+            username:   'fdb7f88d4d0bdbc8d1b68fe6',
+            credential: 'oRCGzmQMchNTQH8b'
         },
-
-        /* TURN #3 — Numb (Viagenie legacy free relay) */
         {
-            urls: 'turn:numb.viagenie.ca',
-            username:   'webrtc@live.com',
-            credential: 'muazkh'
+            urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+            username:   'fdb7f88d4d0bdbc8d1b68fe6',
+            credential: 'oRCGzmQMchNTQH8b'
+        },
+        {
+            urls: 'turn:global.relay.metered.ca:80',
+            username:   'fdb7f88d4d0bdbc8d1b68fe6',
+            credential: 'oRCGzmQMchNTQH8b'
+        },
+        {
+            urls: 'turn:global.relay.metered.ca:443',
+            username:   'fdb7f88d4d0bdbc8d1b68fe6',
+            credential: 'oRCGzmQMchNTQH8b'
         }
     ];
 
@@ -2381,7 +2372,9 @@
             remoteDescSet = true;
             /* Drain queued ICE candidates */
             for (const c of iceCandidateQueue) {
-                try { await callPeerConn.addIceCandidate(c); } catch(e) {}
+                try {
+                    await callPeerConn.addIceCandidate(c ? new RTCIceCandidate(c) : null);
+                } catch(e) { console.warn('[Call] drain candidate failed', e); }
             }
             iceCandidateQueue = [];
 
@@ -2421,7 +2414,9 @@
         remoteDescSet = true;
         /* Drain queued ICE candidates */
         for (const c of iceCandidateQueue) {
-            try { await callPeerConn.addIceCandidate(c); } catch(e) {}
+            try {
+                await callPeerConn.addIceCandidate(c ? new RTCIceCandidate(c) : null);
+            } catch(e) { console.warn('[Call] drain candidate failed', e); }
         }
         iceCandidateQueue = [];
         hideOutgoing();
@@ -2433,14 +2428,15 @@
        ══════════════════════════════════════════════════════════════════ */
     async function onIce(signal) {
         if (!callPeerConn) return;
-        /* null candidate = end-of-candidates signal — add it to finalize gathering */
         const candidate = signal.candidate;
         if (candidate === null || candidate === undefined) {
+            console.log('[Call] Remote ICE gathering complete');
             try { await callPeerConn.addIceCandidate(null); } catch(e) {}
             return;
         }
+        console.log('[Call] Remote ICE candidate received:', candidate.type || candidate.candidate?.split(' ')[7]);
         if (remoteDescSet) {
-            try { await callPeerConn.addIceCandidate(candidate); } catch(e) {
+            try { await callPeerConn.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) {
                 console.warn('[Call] addIceCandidate failed', e);
             }
         } else {
@@ -2537,6 +2533,10 @@
     function buildPeerConn() {
         const pc = new RTCPeerConnection({
             iceServers:           ICE_SERVERS,
+            iceTransportPolicy:   'relay',
+            bundlePolicy:         'max-bundle',
+            rtcpMuxPolicy:        'require',
+            iceCandidatePoolSize: 10,
             iceCandidatePoolSize: 10,        // pre-gather candidates before offer/answer
             bundlePolicy:         'max-bundle',
             rtcpMuxPolicy:        'require'
@@ -2555,12 +2555,17 @@
                     showCallToast('Could not connect — check your network');
                     hangUp();
                 }
-            }, 30000);
+            }, 90000);
         }
 
         /* Send all ICE candidates including null (end-of-candidates) */
         pc.onicecandidate = e => {
             if (callPeerConn !== pc) return;
+            if (e.candidate) {
+                console.log('[Call] ICE candidate:', e.candidate.type, e.candidate.protocol, e.candidate.address);
+            } else {
+                console.log('[Call] ICE gathering complete (null candidate)');
+            }
             sendSignal('call.ice', { candidate: e.candidate || null });
         };
 
